@@ -424,9 +424,19 @@ int main(void)
     for (i = 0; i < 128; i++)
         oamSetEx(i * 4, OBJ_SMALL, OBJ_HIDE);
 
+    /* RAM is not cleared at power-on: set every variable before use. */
     px = MAP_PX_W / 2;
     py = MAP_PX_H / 2;
     heroDir = 0;
+    step = 0;
+    frameCount = 0;
+    npcCount = 0;
+    boxState = BOX_CLOSED;
+    boxDirty = 0;
+    boxTop = 20;
+    boxLine = 0;
+    boxCol = 0;
+    combatInit();
     setBrightness(0); /* forced blank while loading */
 
     /* Enemies, the paddle and the HUD: OBJ tiles 128-255, sprite palettes 5-7. */

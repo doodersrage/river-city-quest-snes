@@ -5,7 +5,7 @@
 ---------------------------------------------------------------------------------*/
 #include "game.h"
 
-u8 hp = 6, hpMax = 6, inv, atk, charging, charge, spin, kt;
+u8 hp, hpMax, inv, atk, charging, charge, spin, kt;
 s8 kx, ky;
 u16 coins;
 u8 dying;
@@ -19,7 +19,7 @@ u8 pkKind[MAX_PK]; /* 0 none, 1 coin, 2 heart */
 s16 pkX[MAX_PK], pkY[MAX_PK];
 u16 pkLife[MAX_PK];
 
-u16 seed = 0xACE1;
+u16 seed;
 u16 rnd(void)
 {
     seed ^= seed << 7;
@@ -42,6 +42,25 @@ const u8 baseAng[4] = {4, 12, 8, 0};
 #define T_BAT 5
 #define T_GHOST 6
 #define FLIES(t) ((t) >= T_BAT)
+
+/* RAM is not cleared at power-on, so every variable is set here. */
+void combatInit(void)
+{
+    hpMax = 6;
+    hp = 6;
+    inv = 0;
+    atk = 0;
+    charging = 0;
+    charge = 0;
+    spin = 0;
+    kt = 0;
+    kx = 0;
+    ky = 0;
+    coins = 0;
+    dying = 0;
+    seed = 0xACE1;
+    enCount = 0;
+}
 
 void combatLoad(u8 *ene)
 {

@@ -42,6 +42,7 @@ u8 blocked(s16 x, s16 y);
 void enterMap(u8 i);
 void openTextAt(u8 *p);
 
+void combatInit(void);
 void combatLoad(u8 *ene);
 void combatUpdate(u16 pad, u16 pressed);
 void combatDraw(void);
