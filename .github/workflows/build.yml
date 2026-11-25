@@ -2,7 +2,7 @@ name: build ROM
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
 

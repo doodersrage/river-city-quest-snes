@@ -69,6 +69,67 @@ fs.writeFileSync(path.join(OUT, 'solid.json'), JSON.stringify({ solid: SOLID + '
 // Hero walk frames: down, up, side (faces right) x 2 steps, in a 16px strip.
 const hero = vm.runInContext('[HERO.down[0],HERO.down[1],HERO.up[0],HERO.up[1],HERO.side[0],HERO.side[1]].map(f=>f.r.c)', sb);
 const strip = createCanvas(16 * hero.length, 16), hx = strip.getContext('2d');
+// (hero strip continues below)
 hero.forEach((c, i) => hx.drawImage(c, i * 16, 16 - c.height));
 fs.writeFileSync(path.join(OUT, 'hero.png'), strip.toBuffer('image/png'));
 console.log('exported', index.length, 'maps of', dump.length);
+
+// ---------- Stage 2: things to read and people to talk to, per outdoor map ----------
+fs.mkdirSync(path.join(OUT, 'npcs'), { recursive: true });
+// Sound and pop-ups have no meaning here; silence them so talk functions run cleanly.
+vm.runInContext('toast=()=>{};tune=()=>{};sfx=()=>{};var SAID=null;say=(l)=>{SAID=l;};p=newPlayer();', sb);
+vm.runInContext('var DEBUG=' + (process.env.DEBUG ? 1 : 0), sb);
+const world = vm.runInContext(`(function(){
+  st=newState();
+  const out={};
+  const pages=r=>Array.isArray(r)?r.map(String):[String(r)];
+  for(const id in SC){const s=SC[id];if(!s.ow)continue;
+    const reads=[];
+    for(let ty=0;ty<s.h;ty++)for(let tx=0;tx<s.w;tx++){
+      const t=s.g[ty][tx];let title=null,text=null;
+      const lmk=t=='X'&&(s.lm||[]).find(L=>tx>=L.x&&tx<L.x+L.w&&ty>=L.y&&ty<L.y+L.h);
+      const r=s.reads[tx+','+ty]||(s.readsT&&s.readsT[t])||(lmk&&lmk.read);
+      if(r&&r[0]=='!'){const x=READX[r];if(x){title=x[0];text=[x[1]];}}
+      else if(r&&LOREM[r]){title=LOREM[r].t;text=[LOREM[r].s];}
+      else if(t=='e'){title='Mural';text=['A bright mural, painted right onto the wall.'];}
+      else if(t=='l'){title='Gas Lamp';text=['A cold gas lamp. The lamplighter could use help.'];}
+      if(text)reads.push({tx,ty,title,pages:text,lore:r&&r[0]!='!'?r:null});
+    }
+    const npcs=(s.npcs||[]).map(n0=>{
+      const talks=[];const seen=new Set();
+      if(n0.lines&&n0.talk=='folk'){for(const l of n0.lines)talks.push([String(l)]);}
+      else{const n=Object.assign({},n0);for(let i=0;i<4;i++){let r;SAID=null;try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;if(DEBUG)console.log(n.who,String(e));}
+        if(!r)continue;const pg=pages(r),k=pg.join('|');if(!seen.has(k)){seen.add(k);talks.push(pg);}}}
+      if(!talks.length&&n0.lines)for(const l of n0.lines)talks.push([String(l)]);
+      if(!talks.length)talks.push(['...']);
+      let sp;try{sp=n0.spr&&n0.spr.down?n0.spr:npcSpr(n0);}catch(e){sp=npcSpr(Object.assign({hat:['#888','#666','#aaa'],shirt:['#888','#666','#aaa']},n0));}
+      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
+    });
+    out[id]={reads,npcs};
+  }
+  return out;
+})()`, sb);
+const worldOut = {};
+for (const id in world) {
+  const w = world[id], safe = id.replace(/[^a-z0-9_-]+/gi, '_');
+  worldOut[id] = { reads: w.reads, npcs: w.npcs.map((n, k) => {
+    const c = createCanvas(48, 16), x = c.getContext('2d');
+    n.spr.forEach((f, i) => x.drawImage(f, i * 16 + Math.floor((16 - f.width) / 2), 16 - f.height));
+    const file = 'npcs/' + safe + '_' + k + '.png';
+    fs.writeFileSync(path.join(OUT, file), c.toBuffer('image/png'));
+    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, file };
+  }) };
+}
+fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1));
+
+// The game's display font (Press Start 2P, OFL), ASCII 32-127 as an 8x8 grid.
+{
+  const { GlobalFonts } = require('@napi-rs/canvas');
+  GlobalFonts.registerFromPath(require.resolve('@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff2'), 'PS2P');
+  const c = createCanvas(128, 48), x = c.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, 128, 48); x.fillStyle = '#fff'; x.font = '8px PS2P'; x.textBaseline = 'top';
+  for (let i = 0; i < 96; i++) x.fillText(String.fromCharCode(32 + i), (i % 16) * 8, Math.floor(i / 16) * 8);
+  fs.writeFileSync(path.join(OUT, 'font.png'), c.toBuffer('image/png'));
+}
+console.log('world: reads', Object.values(worldOut).reduce((a, w) => a + w.reads.length, 0),
+  'npcs', Object.values(worldOut).reduce((a, w) => a + w.npcs.length, 0));
