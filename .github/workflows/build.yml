@@ -67,3 +67,15 @@ jobs:
             --title "Latest build" \
             --notes "Built from ${GITHUB_SHA::7}. Open RiverCityQuest.sfc in Snes9x, bsnes or any SNES emulator." \
             --target "$GITHUB_SHA"
+
+      - name: Publish branch build as a pre-release
+        if: github.ref != 'refs/heads/main' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="dev-${GITHUB_REF_NAME//\//-}"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" RiverCityQuest.sfc --prerelease \
+            --title "Work in progress: $GITHUB_REF_NAME" \
+            --notes "Test build from branch $GITHUB_REF_NAME (${GITHUB_SHA::7}). The finished build is the latest release." \
+            --target "$GITHUB_SHA"
