@@ -75,7 +75,7 @@ jobs:
         run: |
           TAG="dev-${GITHUB_REF_NAME//\//-}"
           gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
-          gh release create "$TAG" RiverCityQuest.sfc --prerelease \
+          gh release create "$TAG" RiverCityQuest.sfc RiverCityQuest.sym --prerelease \
             --title "Work in progress: $GITHUB_REF_NAME" \
             --notes "Test build from branch $GITHUB_REF_NAME (${GITHUB_SHA::7}). The finished build is the latest release." \
             --target "$GITHUB_SHA"
