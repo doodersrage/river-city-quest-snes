@@ -11,3 +11,4 @@ linkfile
 hdr.asm
 src/*.ps
 src/*.asp
+screenshots-ci/

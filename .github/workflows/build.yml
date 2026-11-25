@@ -42,14 +42,20 @@ jobs:
           make || { cat RiverCityQuest.log 2>/dev/null | tail -80; exit 1; }
           ls -l RiverCityQuest.sfc
 
-      - name: Boot test
+      - name: Header check
+        run: python3 tools/romcheck.py RiverCityQuest.sfc
+
+      - name: Boot and walk test (snes9x core)
         run: |
-          python3 tools/romcheck.py RiverCityQuest.sfc
+          pip install stable-retro pillow numpy
+          python3 tools/boottest.py RiverCityQuest.sfc screenshots-ci
 
       - uses: actions/upload-artifact@v4
         with:
           name: RiverCityQuest
-          path: RiverCityQuest.sfc
+          path: |
+            RiverCityQuest.sfc
+            screenshots-ci/
 
       - name: Publish as the "latest" release
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
