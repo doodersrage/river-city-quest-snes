@@ -123,3 +123,33 @@ class Lab:
         self.steer_to(x, y, 20)
         self.run(DIRS[d], 1)
         self.run(None, 1)
+
+    # ---------- combat ----------
+    def enemy(self, k):
+        return {'x': self.ram('enX', 2, True, k) >> 4, 'y': self.ram('enY', 2, True, k) >> 4,
+                'alive': self.ram('enAlive', 1, False, k), 'type': self.ram('enType', 1, False, k),
+                'hp': self.ram('enHp', 1, False, k)}
+
+    def poke(self, name, value, index=0):
+        """Write one byte of a game variable (for tests that need a set-up state)."""
+        self.data.memory.assign(self.sym[name] + index, '|u1', value)
+
+    def fight(self, k, limit=1500):
+        """Chase enemy k and swing at it until it is gone. Returns frames used, or None."""
+        for f in range(limit):
+            e = self.enemy(k)
+            if not e['alive']:
+                return f
+            x, y = self.pos
+            dx, dy = e['x'] - x, e['y'] - y
+            if abs(dx) + abs(dy) < 20 and (abs(dx) < 8 or abs(dy) < 8):
+                d = ('RIGHT' if dx > 0 else 'LEFT') if abs(dx) >= abs(dy) else ('DOWN' if dy > 0 else 'UP')
+                self.run(d, 1)
+                self.press('A', 15)
+            elif abs(dx) > abs(dy) and abs(dy) > 3:
+                self.run('DOWN' if dy > 0 else 'UP', 1)
+            elif abs(dx) >= 8:
+                self.run('RIGHT' if dx > 0 else 'LEFT', 1)
+            else:
+                self.run('DOWN' if dy > 0 else 'UP', 1)
+        return None

@@ -19,9 +19,9 @@ Super Nintendo ROM, built in stages. Each stage ends with a ROM that boots and p
 | BG tiles per layer | 1,024 (4bpp) | Speckle limited to 4 variants per tile type. Busiest map: 466 tiles. |
 | BG palettes | 8 × 15 colours | Greedy packing per map, global median cut if needed. Palette 0 keeps 3 colours for the text layer (BG3 shares CGRAM 1-3). |
 | VRAM | 64 KB | BG1 tiles 0x0000, BG1 map 0x4000 (64×64), BG3 font 0x5000, BG3 map 0x5800, sprites 0x6000 (hero tiles 0-31, NPCs 32-127) |
-| Work RAM | 128 KB | Game state, NPCs, enemies; save data to SRAM |
+| Work RAM | 128 KB | Game state, NPCs, enemies; save data to SRAM. WRAM is not cleared at power-on, so every variable is set in code; initialised globals land in bank $7F |
 | ROM | 1 MB now, up to 4 MB | Each outdoor map is about 26 KB |
-| Sprites | 128 on screen, 32 per scanline | Hero, enemies, NPCs, pickups, effects |
+| Sprites | 128 on screen, 32 per scanline | 8x8 small (HUD, pickups) and 16x16 large. OBJ tiles: hero 0-31, NPCs 32-127, enemies 128-159, paddle 160-223, HUD 224-255. Palettes: hero 0, NPCs 1-4, enemies 5-6, paddle and HUD 7 |
 | Sound | SPC700, 64 KB audio RAM | Chiptunes rebuilt as tracker modules (snesmod) |
 
 ## Stages
@@ -29,7 +29,8 @@ Super Nintendo ROM, built in stages. Each stage ends with a ROM that boots and p
 1. **Walk Richmond** (done in first build). All 24 outdoor neighbourhoods with the web game's art, the hero with walk frames, collision, scrolling and fades between neighbourhoods.
 2. **Text and talking** (done). BG3 font (Press Start 2P) and dialogue box, markers, landmarks, murals and lamps, 70 NPCs standing in place with their lines.
    Still to come with later stages: the journal menu for the 66 stories, Spanish text, NPCs walking around, and talk that changes with progress (gifts, trades and challenges currently show their opening lines only).
-3. **Combat.** Paddle swing and spin attack, hearts, enemies from the web game with their behaviour, pickups, death and continue.
+3. **Combat** (done). Paddle swing (the game's own paddle drawn at 16 angles) and hold-to-charge spin, hearts and coin HUD, the 7 outdoor enemy types with the web game's behaviours, hit stun and knockback, coin and heart drops, waking in Capitol Square.
+   Not yet: cutting bushes, hit sparks and puffs, sound, the hero's hurt flash colour, and night enemies (stage 8).
 4. **Doors and interiors.** Building entrances, the 11 interiors, the row house and the dog, shops and rupees.
 5. **Dungeons.** Small keys, locked doors, push blocks, braziers, cracked walls. One dungeon end to end first (Tredegar), then the other six and the finale.
 6. **Items.** Gas Lantern, Baseballs, Blasting Powder, Gold-Bug, Running Shoes, Grappling Hook, Fishing Rod, Watering Can, Ginger Beer, shield, kayak.

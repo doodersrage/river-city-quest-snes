@@ -52,10 +52,42 @@ lab.screenshot(f'{out}/3-talking.png')
 while lab.ram('boxState'):
     lab.press('A', 4)
 
+# Stage 3: the HUD, a fight, and the spin attack.
+check(lab.ram('hpMax') == 6 and 0 < lab.ram('hp') <= 6, f"three hearts in the HUD ({lab.ram('hp')}/6 health after the walk)")
+alive = [k for k in range(lab.ram('enCount')) if lab.enemy(k)['alive']]
+check(len(alive) > 0, f'enemies are out in the Fan ({len(alive)})')
+target = min(alive, key=lambda k: abs(lab.enemy(k)['x'] - lab.pos[0]) + abs(lab.enemy(k)['y'] - lab.pos[1]))
+used = lab.fight(target)
+check(used is not None, f'the paddle beats a {["rat","squirrel","goose","scooter","crab","bat","ghost"][lab.enemy(target)["type"]]} ({used} frames)')
+lab.screenshot(f'{out}/4-fight.png')
+lab.run('A', 1); lab.run('A', 70)
+check(lab.ram('charging') == 1 and lab.ram('charge') >= 40, 'holding A charges a spin')
+lab.run(None, 3)
+check(lab.ram('spin') > 0, 'letting go spins')
+lab.screenshot(f'{out}/5-spin.png')
+lab.run(None, 30)
+
 # Stage 1: walk off the south edge into Hollywood Cemetery.
 lab.walk_to_cell(16, 21)
 lab.run('DOWN', 60)
 lab.run(None, 40)
 check(lab.map == 17, f'walked south into Hollywood Cemetery (map {lab.map})')
-lab.screenshot(f'{out}/4-hollywood-cemetery.png')
+lab.screenshot(f'{out}/6-hollywood-cemetery.png')
+
+# Stage 3: let a ghost take the last half-heart; wake in Capitol Square.
+lab.poke('hp', 1)
+for _ in range(1500):
+    if lab.ram('dying'):
+        break
+    lab.run(None, 1)
+check(lab.ram('dying') == 1, 'a ghost takes the last heart')
+lab.run(None, 60)
+lab.screenshot(f'{out}/7-fog-takes-you.png')
+for _ in range(10):
+    if not lab.ram('boxState'):
+        break
+    lab.press('A', 6)
+lab.run(None, 60)
+check(lab.map == 12 and lab.pos == (120, 136), f'wakes by the fountain in Capitol Square (map {lab.map}, {lab.pos})')
+check(lab.ram('hp') == lab.ram('hpMax'), 'with full hearts')
 sys.exit(0 if ok else 1)
