@@ -182,7 +182,7 @@ def convert_sprite_strip(path):
 
 # ---------- Stage 2: text, signs, NPCs, font ----------
 BOX_COLS, BOX_LINES = 28, 4
-WLD_GRID, WLD_NNPC, WLD_NTXT, WLD_NPCS, WLD_TOFS, MAX_NPCS = 0, 704, 705, 706, 754, 8
+WLD_GRID, WLD_NNPC, WLD_NTXT, WLD_NPCS, WLD_TOFS, MAX_NPCS = 0, 704, 705, 706, 754, 4
 ASCII_FIX = {'‘': "'", '’': "'", '“': '"', '”': '"', '—': '-', '–': '-', '…': '...', 'é': 'e'}
 
 
@@ -234,6 +234,7 @@ def build_world(w):
             texts.append(encode_text(n['who'], t))
         recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, 0))
     if len(texts) > 255: raise SystemExit('too many texts in one map')
+    if len(w['npcs']) > MAX_NPCS: raise SystemExit(f"{len(w['npcs'])} NPCs, over {MAX_NPCS}")
     head = bytearray(WLD_TOFS + 2 * len(texts))
     head[:704] = grid
     head[WLD_NNPC], head[WLD_NTXT] = len(npcs), len(texts)
@@ -270,7 +271,7 @@ def convert_npcs(exp, npcs):
                         idx.append(nearest(c15(p), colors) + 1 if p[3] > 0 else 0)
                 sheet[(row + qy) * 16 + col + qx] = tile4bpp(idx)
     pals += bytes(32) * (MAX_NPCS - len(npcs))
-    return b''.join(sheet), pals[:7 * 32]
+    return b''.join(sheet), pals[:MAX_NPCS * 32]
 
 
 def tile2bpp(idx):
@@ -314,6 +315,131 @@ def convert_font(path):
     return b''.join(tiles)
 
 
+# ---------- Stage 3: combat art ----------
+ENEMY_TYPES = ['rat', 'squirrel', 'goose', 'scooter', 'crab', 'bat', 'ghost']
+ENEMY_HP = [1, 1, 2, 2, 2, 1, 2]          # HPS in the web game
+ENEMY_FRAME_OF = [0, 1, 2, 3, 4, 5, 7]    # bat animates between frames 5 and 6
+OBJ_ENEMY, OBJ_PADDLE, OBJ_HUD = 128, 160, 224
+HUD_HEART, HUD_HALF, HUD_EMPTY, HUD_COIN, HUD_DIGIT = 0, 1, 2, 3, 5
+
+
+def obj_tile_of_frame(base, i):
+    """16x16 frame i in a 16-tile-wide OBJ sheet starting at tile `base` (a multiple of 32)."""
+    return base + (i // 8) * 32 + (i % 8) * 2
+
+
+def pack_sprite_palettes(sets, n):
+    pals, which = [], []
+    for st_ in sets:
+        best = None
+        for i, p in enumerate(pals):
+            if len(p | st_) <= 15 and (best is None or len(p | st_) < len(pals[best] | st_)):
+                best = i
+        if best is None:
+            if len(pals) == n: raise SystemExit('sprite colours do not fit')
+            pals.append(set()); best = len(pals) - 1
+        pals[best] |= st_
+        which.append(best)
+    return [sorted(p) for p in pals], which
+
+
+def convert_combat(exp):
+    """OBJ tiles 128-255 (enemies, paddle angles, HUD) and sprite palettes 5-7."""
+    d = os.path.join(exp, 'combat')
+    sheet = [bytes(32)] * 128   # tiles 128..255
+    def put16(tile, idx16):      # idx16: 256 palette indices for a 16x16 frame
+        for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            sheet[tile - 128 + qy * 16 + qx] = tile4bpp([idx16[(qy * 8 + y) * 16 + qx * 8 + x] for y in range(8) for x in range(8)])
+
+    en = Image.open(os.path.join(d, 'enemies.png')).convert('RGBA')
+    frames = [[en.getpixel((i * 16 + x, y)) for y in range(16) for x in range(16)] for i in range(8)]
+    sets = [frozenset(c15(p) for p in f if p[3]) for f in frames]
+    epals, ewhich = pack_sprite_palettes(sets, 2)
+    for i, f in enumerate(frames):
+        pal = epals[ewhich[i]]
+        put16(obj_tile_of_frame(OBJ_ENEMY, i), [pal.index(c15(p)) + 1 if p[3] else 0 for p in f])
+
+    # Palette 7: paddle, hearts, coins, digits.
+    pd = Image.open(os.path.join(d, 'paddles.png')).convert('RGBA')
+    hud = Image.open(os.path.join(d, 'hud.png')).convert('RGBA')
+    p7 = sorted({c15(p) for im in (pd, hud) for p in im.getdata() if p[3]} | {(0, 0, 0), (31, 31, 31)})
+    if len(p7) > 15: raise SystemExit(f'palette 7 has {len(p7)} colours')
+    ix = lambda p: p7.index(c15(p)) + 1 if p[3] else 0
+
+    pad_ox, pad_oy = [], []
+    for a in range(16):
+        crop = pd.crop((a * 40, 0, a * 40 + 40, 40))
+        bb = crop.getbbox()
+        x0, y0, x1, y1 = bb
+        # Hero centre is (20, 23). If wider than 16, trim the end nearest the hand.
+        if x1 - x0 > 16:
+            x0, x1 = (x1 - 16, x1) if (x0 + x1) / 2 > 20 else (x0, x0 + 16)
+        if y1 - y0 > 16:
+            y0, y1 = (y1 - 16, y1) if (y0 + y1) / 2 > 20 else (y0, y0 + 16)
+        x0 -= (16 - (x1 - x0)) // 2; y0 -= (16 - (y1 - y0)) // 2
+        px_ = [crop.getpixel((x0 + x, y0 + y)) if 0 <= x0 + x < 40 and 0 <= y0 + y < 40 else (0, 0, 0, 0)
+               for y in range(16) for x in range(16)]
+        put16(obj_tile_of_frame(OBJ_PADDLE, a), [ix(p) for p in px_])
+        pad_ox.append(x0 - 20); pad_oy.append(y0 - 23)
+
+    # 8x8 HUD tiles: heart, half heart, empty heart, coin x2, digits 0-9.
+    def hud8(ox):
+        cols = [c for c in range(9) if c != 4]   # 9px hearts -> 8px by dropping the middle column
+        return [[hud.getpixel((ox + c, y)) for c in cols] for y in range(8)]
+    full, empty = hud8(0), hud8(9)
+    half = [r[:4] + e[4:] for r, e in zip(full, empty)]
+    coin0 = [[hud.getpixel((18 + x, y)) for x in range(8)] for y in range(8)]
+    coin1 = [[hud.getpixel((27 + x, y)) for x in range(8)] for y in range(8)]
+    hud_tiles = [full, half, empty, coin0, coin1]
+    font = Image.open(os.path.join(exp, 'font.png')).convert('L')
+    white, black = (255, 255, 255, 255), (0, 0, 0, 255)
+    for dgt in range(10):
+        gx, gy = ((16 + dgt) % 16) * 8, ((16 + dgt) // 16) * 8
+        ink = [[font.getpixel((gx + x, gy + y)) > 127 for x in range(8)] for y in range(8)]
+        t = []
+        for y in range(8):
+            row = []
+            for x in range(8):
+                if ink[y][x]: row.append(white)
+                elif any(0 <= y + j < 8 and 0 <= x + i < 8 and ink[y + j][x + i] for j in (-1, 0, 1) for i in (-1, 0, 1)): row.append(black)
+                else: row.append((0, 0, 0, 0))
+            t.append(row)
+        hud_tiles.append(t)
+    for i, t in enumerate(hud_tiles):
+        sheet[OBJ_HUD - 128 + i] = tile4bpp([ix(p) for r in t for p in r])
+
+    pals = b''
+    for i in range(2):
+        pals += sprite_palette(epals[i]) if i < len(epals) else bytes(32)
+    pals += sprite_palette(p7)
+    tables = ['/* Combat tables (generated). */',
+              f'#define OBJ_ENEMY {OBJ_ENEMY}', f'#define OBJ_PADDLE {OBJ_PADDLE}', f'#define OBJ_HUD {OBJ_HUD}',
+              f'#define HUD_HEART {OBJ_HUD + HUD_HEART}', f'#define HUD_HALF {OBJ_HUD + HUD_HALF}',
+              f'#define HUD_EMPTY {OBJ_HUD + HUD_EMPTY}', f'#define HUD_COIN {OBJ_HUD + HUD_COIN}',
+              f'#define HUD_DIGIT {OBJ_HUD + HUD_DIGIT}', '#define PAL_HUD 7',
+              f'#define ENEMY_TYPES {len(ENEMY_TYPES)}',
+              '/* ' + ' '.join(f'{i}={t}' for i, t in enumerate(ENEMY_TYPES)) + ' */',
+              f'static const u8 enemyHp[{len(ENEMY_TYPES)}] = {{{", ".join(map(str, ENEMY_HP))}}};',
+              f'static const u16 enemyTile[{len(ENEMY_TYPES)}] = {{{", ".join(str(obj_tile_of_frame(OBJ_ENEMY, f)) for f in ENEMY_FRAME_OF)}}};',
+              f'static const u8 enemyPal[{len(ENEMY_TYPES)}] = {{{", ".join(str(5 + ewhich[f]) for f in ENEMY_FRAME_OF)}}};',
+              f'#define BAT_TILE2 {obj_tile_of_frame(OBJ_ENEMY, 6)}',
+              f'static const u16 paddleTile[16] = {{{", ".join(str(obj_tile_of_frame(OBJ_PADDLE, a)) for a in range(16))}}};',
+              f'static const s16 paddleOx[16] = {{{", ".join(map(str, pad_ox))}}};',
+              f'static const s16 paddleOy[16] = {{{", ".join(map(str, pad_oy))}}};']
+    # Swing: angle goes base-1.1 .. base+1.1 rad over atk 14..6 (web drawPaddle); in 16ths of a turn.
+    import math
+    swing = []
+    for atk in range(15):
+        t = min(1, max(0, (14 - atk) / 8))
+        swing.append(round((-1.1 + 2.2 * t) * 16 / (2 * math.pi)) % 16)
+    spin = [round((1 - sp_ / 22) * 16) % 16 for sp_ in range(23)]
+    tables += [f'static const u8 swingStep[15] = {{{", ".join(map(str, swing))}}};  /* by atk */',
+               f'static const u8 spinStep[23] = {{{", ".join(map(str, spin))}}};   /* by spin */',
+               '/* 0..63 -> sin * 64 */',
+               'static const s8 sinTab[64] = {' + ', '.join(str(round(math.sin(i * 2 * math.pi / 64) * 64)) for i in range(64)) + '};']
+    return b''.join(sheet), pals, tables
+
+
 def main():
     exp, root = sys.argv[1], sys.argv[2]
     out = os.path.join(root, 'data')
@@ -330,15 +456,18 @@ def main():
     nb = {k: [] for k in 'NSEW'}
     report = []
     world = json.load(open(os.path.join(exp, 'world.json')))
+    combat = json.load(open(os.path.join(exp, 'combat', 'combat.json')))
     for i, m in enumerate(maps):
         chr_, tm, pal, nt, npal = convert_bg(os.path.join(exp, m['file']))
         col = bytes(1 if ch in solid else 0 for row in m['grid'] for ch in row)
         assert len(col) == 32 * 22, (m['id'], len(col))
         wld, npcs = build_world(world[m['id']])
+        ene = bytes([len(combat['enemies'][m['id']])]) + b''.join(
+            bytes((ENEMY_TYPES.index(t), tx, ty)) for t, tx, ty in combat['enemies'][m['id']])
         ochr, opal = convert_npcs(exp, npcs)
-        for ext, data in (('chr', chr_), ('map', tm), ('pal', pal), ('col', col), ('wld', wld), ('och', ochr), ('opl', opal)):
+        for ext, data in (('chr', chr_), ('map', tm), ('pal', pal), ('col', col), ('wld', wld), ('och', ochr), ('opl', opal), ('ene', ene)):
             open(os.path.join(out, f'm{i}.{ext}'), 'wb').write(data)
-        size = sum(map(len, (chr_, tm, pal, col, wld, ochr, opal)))
+        size = sum(map(len, (chr_, tm, pal, col, wld, ochr, opal, ene)))
         if size > 0x8000: raise SystemExit(f'{m["id"]}: {size} bytes, over one 32 KB bank')
         asm += [f'.section ".map{i}" superfree',
                 f'm{i}_chr:', f'.incbin "data/m{i}.chr"', f'm{i}_chrend:',
@@ -347,8 +476,9 @@ def main():
                 f'm{i}_col:', f'.incbin "data/m{i}.col"',
                 f'm{i}_wld:', f'.incbin "data/m{i}.wld"',
                 f'm{i}_och:', f'.incbin "data/m{i}.och"',
-                f'm{i}_opl:', f'.incbin "data/m{i}.opl"', '.ends', '']
-        hdr.append(f'extern char m{i}_chr, m{i}_chrend, m{i}_map, m{i}_pal, m{i}_col, m{i}_wld, m{i}_och, m{i}_opl;  /* {m["name"]} */')
+                f'm{i}_opl:', f'.incbin "data/m{i}.opl"',
+                f'm{i}_ene:', f'.incbin "data/m{i}.ene"', '.ends', '']
+        hdr.append(f'extern char m{i}_chr, m{i}_chrend, m{i}_map, m{i}_pal, m{i}_col, m{i}_wld, m{i}_och, m{i}_opl, m{i}_ene;  /* {m["name"]} */')
         ax, ay = m['ax'], m['ay']
         for k, (dx, dy) in zip('NSEW', ((0, -1), (0, 1), (1, 0), (-1, 0))):
             nb[k].append(pos.get((ax + dx, ay + dy), 255))
@@ -359,6 +489,21 @@ def main():
     open(os.path.join(out, 'hero.pal'), 'wb').write(hero_pal)
     asm += ['.section ".hero" superfree', 'hero_chr:', '.incbin "data/hero.chr"', 'hero_chrend:',
             'hero_pal:', '.incbin "data/hero.pal"', 'hero_palend:', '.ends', '']
+    # System texts, from the web game's hurt() and the swing tutorial.
+    sys_texts = [('DEAD', '', ['The fog takes you...', 'You wake by the fountain in Capitol Square.'])]
+    blob, defs = b'', []
+    for name, title, pages in sys_texts:
+        defs.append(f'#define TXT_{name} {len(blob)}')
+        blob += encode_text(title, pages)
+    open(os.path.join(out, 'sys.txt'), 'wb').write(blob)
+    asm += ['.section ".systext" superfree', 'sys_txt:', '.incbin "data/sys.txt"', '.ends', '']
+    hdr += ['extern char sys_txt;'] + defs + [f'#define MAP_CAPITOL {pos[(2, 1)]}', '']
+    cobj, cpal, ctables = convert_combat(exp)
+    open(os.path.join(out, 'combat.chr'), 'wb').write(cobj)
+    open(os.path.join(out, 'combat.pal'), 'wb').write(cpal)
+    asm += ['.section ".combat" superfree', 'combat_chr:', '.incbin "data/combat.chr"', 'combat_chrend:',
+            'combat_pal:', '.incbin "data/combat.pal"', '.ends', '']
+    hdr += ['extern char combat_chr, combat_chrend, combat_pal;', ''] + ctables + ['']
     font = convert_font(os.path.join(exp, 'font.png'))
     open(os.path.join(out, 'font.chr'), 'wb').write(font)
     asm += ['.section ".font" superfree', 'font_chr:', '.incbin "data/font.chr"', 'font_chrend:', '.ends', '']
@@ -375,10 +520,10 @@ def main():
 
     # One loader per map so the C side never needs a table of far pointers.
     loader = ['/* Generated by tools/snesconv.py. Do not edit. */', '#include <snes.h>', '#include "maps.h"', '',
-              'extern void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl);', '',
+              'extern void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl, u8 *ene);', '',
               'void rcqLoadMap(u8 i)', '{', '    switch (i)', '    {']
     for i in range(len(maps)):
-        loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_chrend - &m{i}_chr, &m{i}_map, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl); break;')
+        loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_chrend - &m{i}_chr, &m{i}_map, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl, &m{i}_ene); break;')
     loader += ['    }', '}', '']
 
     open(os.path.join(root, 'maps.asm'), 'w').write('\n'.join(asm))

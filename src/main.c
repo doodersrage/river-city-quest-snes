@@ -2,9 +2,9 @@
     River City Quest for the Super Nintendo
     Stage 1: walk the 24 outdoor neighborhoods of Richmond.
     Stage 2: read signs and landmarks, talk to the people standing around town.
+    Stage 3: fighting lives in combat.c.
 ---------------------------------------------------------------------------------*/
-#include <snes.h>
-#include "maps.h"
+#include "game.h"
 
 /* VRAM layout (word addresses). */
 #define VRAM_BG1_CHR 0x0000 /* up to 1024 4bpp tiles */
@@ -14,12 +14,6 @@
 #define VRAM_OBJ_CHR 0x6000 /* hero at tiles 0-31 */
 #define VRAM_OBJ_NPC (VRAM_OBJ_CHR + 32 * 16) /* NPCs from tile 32 */
 
-#define MAP_PX_W (MAP_W * 16)
-#define MAP_PX_H (MAP_H * 16)
-#define SCREEN_W 256
-#define SCREEN_H 224
-#define HALF 5 /* player collision box half-size, as in the web game */
-#define ABS(v) ((v) < 0 ? -(v) : (v))
 
 #define PRIO 0x2000 /* tilemap priority bit: the box draws over sprites */
 #define BOX_ROWS 8
@@ -88,13 +82,11 @@ void boxDrawFrame(void)
     }
 }
 
-/* Open text entry i of the current map: gold title, then typed-out pages. */
-void openText(u8 i)
+/* Open a text entry (title NUL, then pages): gold title, then typed-out pages. */
+void openTextAt(u8 *p)
 {
-    u16 ofs;
     u8 c;
-    ofs = wld[WLD_TOFS + i * 2] | (wld[WLD_TOFS + i * 2 + 1] << 8);
-    txt = wld + ofs;
+    txt = p;
     /* Keep the hero visible: box at the top when they stand low on screen. */
     boxTop = (py - camY > 120) ? 0 : 20;
     boxDrawFrame();
@@ -110,6 +102,14 @@ void openText(u8 i)
     boxLine = 0;
     boxCol = 0;
     boxState = BOX_TYPING;
+}
+
+/* Open text entry i of the current map. */
+void openText(u8 i)
+{
+    u16 ofs;
+    ofs = wld[WLD_TOFS + i * 2] | (wld[WLD_TOFS + i * 2 + 1] << 8);
+    openTextAt(wld + ofs);
 }
 
 void closeText(void)
@@ -190,7 +190,7 @@ void flushText(void)
 /* ---------- maps ---------- */
 
 /* Called by the generated rcqLoadMap(), during forced blank. */
-void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, u8 *opl)
+void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, u8 *opl, u8 *ene)
 {
     u8 k;
     u8 *rec;
@@ -198,7 +198,7 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     dmaCopyVram(map, VRAM_BG1_MAP, 64 * 64 * 2);
     dmaCopyCGram(pal, 0, 8 * 16 * 2);
     dmaCopyVram(och, VRAM_OBJ_NPC, 16 * 6 * 32);
-    dmaCopyCGram(opl, 128 + 16, 7 * 16 * 2);
+    dmaCopyCGram(opl, 128 + 16, MAX_NPCS * 16 * 2);
     colGrid = col;
     wld = w;
     npcCount = wld[WLD_NNPC];
@@ -210,6 +210,7 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
         npcDir[k] = 0;
         npcTalk[k] = 0;
     }
+    combatLoad(ene);
 }
 
 u8 solidAt(s16 x, s16 y)
@@ -269,23 +270,23 @@ void drawNpcs(void)
     s16 sx, sy;
     for (k = 0; k < MAX_NPCS; k++)
     {
-        id = (k + 1) * 4;
+        id = (OAM_NPCS + k) * 4;
         if (k >= npcCount)
         {
-            oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
+            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
             continue;
         }
         sx = npcX[k] - camX - 8;
         sy = npcY[k] - camY - 10;
         if (sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
         {
-            oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
+            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
             continue;
         }
         f = npcDir[k] == 0 ? 0 : npcDir[k] == 1 ? 1 : 2;
         flip = npcDir[k] == 2;
         idx = k * 3 + f;
-        oamSetEx(id, OBJ_SMALL, OBJ_SHOW);
+        oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
         oamSet(id, sx & 0x1FF, sy & 0xFF, 2, flip, 0, 32 + (idx >> 3) * 32 + (idx & 7) * 2, k + 1);
     }
 }
@@ -305,6 +306,7 @@ void enterMap(u8 i)
     updateCamera();
     drawHero();
     drawNpcs();
+    combatDraw();
     WaitForVBlank();
     for (b = 1; b <= 15; b++)
     {
@@ -325,7 +327,13 @@ void drawHero(void)
         tile = 8 + f * 2;
         if (heroDir == 2) flip = 1; /* the side frames face right */
     }
-    oamSet(0, px - camX - 8, py - camY - 10, 3, flip, 0, tile, 0);
+    if (inv & 4)
+    {
+        oamSetEx(OAM_HERO * 4, OBJ_LARGE, OBJ_HIDE); /* blink while invincible */
+        return;
+    }
+    oamSetEx(OAM_HERO * 4, OBJ_LARGE, OBJ_SHOW);
+    oamSet(OAM_HERO * 4, (px - camX - 8) & 0x1FF, (py - camY - 10) & 0xFF, 3, flip, 0, tile, 0);
 }
 
 /* Walking off an edge moves to the neighboring neighborhood, if there is one. */
@@ -358,8 +366,8 @@ void checkExits(void)
     }
 }
 
-/* A button: talk to whoever is in front, or read what is there. */
-void interact(void)
+/* A button: talk to whoever is in front, or read what is there. Returns 1 if it did. */
+u8 interact(void)
 {
     s16 fx = px, fy = py;
     u8 k, t;
@@ -376,13 +384,27 @@ void interact(void)
             openText(rec[2] + npcTalk[k]);
             npcTalk[k]++;
             if (npcTalk[k] >= rec[3]) npcTalk[k] = 0;
-            return;
+            return 1;
         }
     if (fx < 0 || fy < 0 || fx >= MAP_PX_W || fy >= MAP_PX_H)
-        return;
+        return 0;
     t = wld[WLD_GRID + (fy >> 4) * MAP_W + (fx >> 4)];
-    if (t)
-        openText(t - 1);
+    if (!t)
+        return 0;
+    openText(t - 1);
+    return 1;
+}
+
+/* After "The fog takes you...": wake by the fountain in Capitol Square (web: 7,8 facing left). */
+void respawn(void)
+{
+    dying = 0;
+    hp = hpMax;
+    inv = 60;
+    px = 7 * 16 + 8;
+    py = 8 * 16 + 8;
+    heroDir = 2;
+    enterMap(MAP_CAPITOL);
 }
 
 int main(void)
@@ -397,14 +419,19 @@ int main(void)
     bgSetMapPtr(2, VRAM_BG3_MAP, SC_32x32);
     bgSetDisable(1);
 
-    oamInitGfxSet(&hero_chr, (&hero_chrend - &hero_chr), &hero_pal, (&hero_palend - &hero_pal), 0, VRAM_OBJ_CHR, OBJ_SIZE16_L32);
-    oamSet(0, 0, 0, 3, 0, 0, 0, 0);
-    oamSetEx(0, OBJ_SMALL, OBJ_SHOW);
+    /* 8x8 small sprites for the HUD and pickups, 16x16 large for everyone else */
+    oamInitGfxSet(&hero_chr, (&hero_chrend - &hero_chr), &hero_pal, (&hero_palend - &hero_pal), 0, VRAM_OBJ_CHR, OBJ_SIZE8_L16);
+    for (i = 0; i < 128; i++)
+        oamSetEx(i * 4, OBJ_SMALL, OBJ_HIDE);
 
     px = MAP_PX_W / 2;
     py = MAP_PX_H / 2;
     heroDir = 0;
     setBrightness(0); /* forced blank while loading */
+
+    /* Enemies, the paddle and the HUD: OBJ tiles 128-255, sprite palettes 5-7. */
+    dmaCopyVram(&combat_chr, VRAM_OBJ_CHR + 128 * 16, (&combat_chrend - &combat_chr));
+    dmaCopyCGram(&combat_pal, 128 + 5 * 16, 3 * 16 * 2);
 
     /* Font, and an empty text layer. */
     dmaCopyVram(&font_chr, VRAM_BG3_CHR, (&font_chrend - &font_chr));
@@ -420,6 +447,8 @@ int main(void)
     updateCamera();
     drawHero();
     drawNpcs();
+    combatDraw();
+    hudDraw();
     WaitForVBlank();
     for (spd = 1; spd <= 15; spd++)
     {
@@ -437,21 +466,32 @@ int main(void)
         {
             updateText(pressed);
             step = 0;
+            if (boxState == BOX_CLOSED && dying)
+            {
+                WaitForVBlank();
+                flushText();
+                respawn();
+            }
         }
-        else if (pressed & KEY_A)
+        else if ((pressed & KEY_A) && !heroBusy() && !charging && interact())
         {
-            interact();
+            step = 0;
         }
         else
         {
+            combatUpdate(pad, pressed);
             dx = 0;
             dy = 0;
-            /* 1.5 px per frame, like the web game's walk. */
+            /* 1.5 px per frame like the web game's walk; slower while charging a spin */
             spd = (frameCount & 1) ? 2 : 1;
-            if (pad & KEY_UP) { dy = -spd; heroDir = 1; }
-            else if (pad & KEY_DOWN) { dy = spd; heroDir = 0; }
-            if (pad & KEY_LEFT) { dx = -spd; heroDir = 2; }
-            else if (pad & KEY_RIGHT) { dx = spd; heroDir = 3; }
+            if (charging) spd = (frameCount % 5) ? 1 : 0;
+            if (!heroBusy() && !dying)
+            {
+                if (pad & KEY_UP) { dy = -spd; if (!charging) heroDir = 1; }
+                else if (pad & KEY_DOWN) { dy = spd; if (!charging) heroDir = 0; }
+                if (pad & KEY_LEFT) { dx = -spd; if (!charging) heroDir = 2; }
+                else if (pad & KEY_RIGHT) { dx = spd; if (!charging) heroDir = 3; }
+            }
 
             if (dx || dy)
             {
@@ -459,14 +499,16 @@ int main(void)
                 if (dx && !blocked(px + dx, py)) px += dx;
                 if (dy && !blocked(px, py + dy)) py += dy;
                 checkExits();
-                updateCamera();
             }
-            else
+            else if (!charging)
                 step = 0;
+            updateCamera();
         }
 
         drawHero();
         drawNpcs();
+        combatDraw();
+        hudDraw();
         WaitForVBlank();
         flushText();
     }

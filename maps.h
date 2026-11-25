@@ -6,30 +6,60 @@
 #define MAP_W 32
 #define MAP_H 22
 
-extern char m0_chr, m0_chrend, m0_map, m0_pal, m0_col, m0_wld, m0_och, m0_opl;  /* Richmond Raceway */
-extern char m1_chr, m1_chrend, m1_map, m1_pal, m1_col, m1_wld, m1_och, m1_opl;  /* Bryan Park */
-extern char m2_chr, m2_chrend, m2_map, m2_pal, m2_col, m2_wld, m2_och, m2_opl;  /* Lewis Ginter Botanical Garden */
-extern char m3_chr, m3_chrend, m3_map, m3_pal, m3_col, m3_wld, m3_och, m3_opl;  /* VCU & Court End */
-extern char m4_chr, m4_chrend, m4_map, m4_pal, m4_col, m4_wld, m4_och, m4_opl;  /* Arthur Ashe Boulevard */
-extern char m5_chr, m5_chrend, m5_map, m5_pal, m5_col, m5_wld, m5_och, m5_opl;  /* Scott's Addition */
-extern char m6_chr, m6_chrend, m6_map, m6_pal, m6_col, m6_wld, m6_och, m6_opl;  /* Broad Street */
-extern char m7_chr, m7_chrend, m7_map, m7_pal, m7_col, m7_wld, m7_och, m7_opl;  /* Jackson Ward */
-extern char m8_chr, m8_chrend, m8_map, m8_pal, m8_col, m8_wld, m8_och, m8_opl;  /* Church Hill */
-extern char m9_chr, m9_chrend, m9_map, m9_pal, m9_col, m9_wld, m9_och, m9_opl;  /* Chimborazo */
-extern char m10_chr, m10_chrend, m10_map, m10_pal, m10_col, m10_wld, m10_och, m10_opl;  /* Carytown */
-extern char m11_chr, m11_chrend, m11_map, m11_pal, m11_col, m11_wld, m11_och, m11_opl;  /* The Fan */
-extern char m12_chr, m12_chrend, m12_map, m12_pal, m12_col, m12_wld, m12_och, m12_opl;  /* Capitol Square */
-extern char m13_chr, m13_chrend, m13_map, m13_pal, m13_col, m13_wld, m13_och, m13_opl;  /* Shockoe Bottom */
-extern char m14_chr, m14_chrend, m14_map, m14_pal, m14_col, m14_wld, m14_och, m14_opl;  /* Canal Walk & Brown's Island */
-extern char m15_chr, m15_chrend, m15_map, m15_pal, m15_col, m15_wld, m15_och, m15_opl;  /* Texas Beach & Agecroft */
-extern char m16_chr, m16_chrend, m16_map, m16_pal, m16_col, m16_wld, m16_och, m16_opl;  /* Byrd Park & Maymont */
-extern char m17_chr, m17_chrend, m17_map, m17_pal, m17_col, m17_wld, m17_och, m17_opl;  /* Hollywood Cemetery */
-extern char m18_chr, m18_chrend, m18_map, m18_pal, m18_col, m18_wld, m18_och, m18_opl;  /* Belle Isle */
-extern char m19_chr, m19_chrend, m19_map, m19_pal, m19_col, m19_wld, m19_och, m19_opl;  /* Rocketts Landing */
-extern char m20_chr, m20_chrend, m20_map, m20_pal, m20_col, m20_wld, m20_och, m20_opl;  /* Pony Pasture */
-extern char m21_chr, m21_chrend, m21_map, m21_pal, m21_col, m21_wld, m21_och, m21_opl;  /* Forest Hill Park */
-extern char m22_chr, m22_chrend, m22_map, m22_pal, m22_col, m22_wld, m22_och, m22_opl;  /* Manchester */
-extern char m23_chr, m23_chrend, m23_map, m23_pal, m23_col, m23_wld, m23_och, m23_opl;  /* Ancarrow's Landing */
+extern char m0_chr, m0_chrend, m0_map, m0_pal, m0_col, m0_wld, m0_och, m0_opl, m0_ene;  /* Richmond Raceway */
+extern char m1_chr, m1_chrend, m1_map, m1_pal, m1_col, m1_wld, m1_och, m1_opl, m1_ene;  /* Bryan Park */
+extern char m2_chr, m2_chrend, m2_map, m2_pal, m2_col, m2_wld, m2_och, m2_opl, m2_ene;  /* Lewis Ginter Botanical Garden */
+extern char m3_chr, m3_chrend, m3_map, m3_pal, m3_col, m3_wld, m3_och, m3_opl, m3_ene;  /* VCU & Court End */
+extern char m4_chr, m4_chrend, m4_map, m4_pal, m4_col, m4_wld, m4_och, m4_opl, m4_ene;  /* Arthur Ashe Boulevard */
+extern char m5_chr, m5_chrend, m5_map, m5_pal, m5_col, m5_wld, m5_och, m5_opl, m5_ene;  /* Scott's Addition */
+extern char m6_chr, m6_chrend, m6_map, m6_pal, m6_col, m6_wld, m6_och, m6_opl, m6_ene;  /* Broad Street */
+extern char m7_chr, m7_chrend, m7_map, m7_pal, m7_col, m7_wld, m7_och, m7_opl, m7_ene;  /* Jackson Ward */
+extern char m8_chr, m8_chrend, m8_map, m8_pal, m8_col, m8_wld, m8_och, m8_opl, m8_ene;  /* Church Hill */
+extern char m9_chr, m9_chrend, m9_map, m9_pal, m9_col, m9_wld, m9_och, m9_opl, m9_ene;  /* Chimborazo */
+extern char m10_chr, m10_chrend, m10_map, m10_pal, m10_col, m10_wld, m10_och, m10_opl, m10_ene;  /* Carytown */
+extern char m11_chr, m11_chrend, m11_map, m11_pal, m11_col, m11_wld, m11_och, m11_opl, m11_ene;  /* The Fan */
+extern char m12_chr, m12_chrend, m12_map, m12_pal, m12_col, m12_wld, m12_och, m12_opl, m12_ene;  /* Capitol Square */
+extern char m13_chr, m13_chrend, m13_map, m13_pal, m13_col, m13_wld, m13_och, m13_opl, m13_ene;  /* Shockoe Bottom */
+extern char m14_chr, m14_chrend, m14_map, m14_pal, m14_col, m14_wld, m14_och, m14_opl, m14_ene;  /* Canal Walk & Brown's Island */
+extern char m15_chr, m15_chrend, m15_map, m15_pal, m15_col, m15_wld, m15_och, m15_opl, m15_ene;  /* Texas Beach & Agecroft */
+extern char m16_chr, m16_chrend, m16_map, m16_pal, m16_col, m16_wld, m16_och, m16_opl, m16_ene;  /* Byrd Park & Maymont */
+extern char m17_chr, m17_chrend, m17_map, m17_pal, m17_col, m17_wld, m17_och, m17_opl, m17_ene;  /* Hollywood Cemetery */
+extern char m18_chr, m18_chrend, m18_map, m18_pal, m18_col, m18_wld, m18_och, m18_opl, m18_ene;  /* Belle Isle */
+extern char m19_chr, m19_chrend, m19_map, m19_pal, m19_col, m19_wld, m19_och, m19_opl, m19_ene;  /* Rocketts Landing */
+extern char m20_chr, m20_chrend, m20_map, m20_pal, m20_col, m20_wld, m20_och, m20_opl, m20_ene;  /* Pony Pasture */
+extern char m21_chr, m21_chrend, m21_map, m21_pal, m21_col, m21_wld, m21_och, m21_opl, m21_ene;  /* Forest Hill Park */
+extern char m22_chr, m22_chrend, m22_map, m22_pal, m22_col, m22_wld, m22_och, m22_opl, m22_ene;  /* Manchester */
+extern char m23_chr, m23_chrend, m23_map, m23_pal, m23_col, m23_wld, m23_och, m23_opl, m23_ene;  /* Ancarrow's Landing */
+extern char sys_txt;
+#define TXT_DEAD 0
+#define MAP_CAPITOL 12
+
+extern char combat_chr, combat_chrend, combat_pal;
+
+/* Combat tables (generated). */
+#define OBJ_ENEMY 128
+#define OBJ_PADDLE 160
+#define OBJ_HUD 224
+#define HUD_HEART 224
+#define HUD_HALF 225
+#define HUD_EMPTY 226
+#define HUD_COIN 227
+#define HUD_DIGIT 229
+#define PAL_HUD 7
+#define ENEMY_TYPES 7
+/* 0=rat 1=squirrel 2=goose 3=scooter 4=crab 5=bat 6=ghost */
+static const u8 enemyHp[7] = {1, 1, 2, 2, 2, 1, 2};
+static const u16 enemyTile[7] = {128, 130, 132, 134, 136, 138, 142};
+static const u8 enemyPal[7] = {5, 5, 5, 5, 6, 6, 6};
+#define BAT_TILE2 140
+static const u16 paddleTile[16] = {160, 162, 164, 166, 168, 170, 172, 174, 192, 194, 196, 198, 200, 202, 204, 206};
+static const s16 paddleOx[16] = {4, 3, 1, -2, -7, -12, -15, -18, -19, -18, -15, -12, -7, -2, 1, 3};
+static const s16 paddleOy[16] = {-10, -5, -2, 0, 1, 0, -2, -5, -10, -15, -18, -21, -22, -21, -18, -15};
+static const u8 swingStep[15] = {3, 3, 3, 3, 3, 3, 3, 2, 1, 1, 0, 15, 15, 14, 13};  /* by atk */
+static const u8 spinStep[23] = {0, 15, 15, 14, 13, 12, 12, 11, 10, 9, 9, 8, 7, 7, 6, 5, 4, 4, 3, 2, 1, 1, 0};   /* by spin */
+/* 0..63 -> sin * 64 */
+static const s8 sinTab[64] = {0, 6, 12, 19, 24, 30, 36, 41, 45, 49, 53, 56, 59, 61, 63, 64, 64, 64, 63, 61, 59, 56, 53, 49, 45, 41, 36, 30, 24, 19, 12, 6, 0, -6, -12, -19, -24, -30, -36, -41, -45, -49, -53, -56, -59, -61, -63, -64, -64, -64, -63, -61, -59, -56, -53, -49, -45, -41, -36, -30, -24, -19, -12, -6};
+
 
 extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;
 
@@ -37,7 +67,7 @@ extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;
 #define WLD_NNPC 704
 #define WLD_NPCS 706
 #define WLD_TOFS 754
-#define MAX_NPCS 8
+#define MAX_NPCS 4
 #define BOX_COLS 28
 #define FONT_WHITE 1  /* tile for char c is FONT_WHITE + c - 32 */
 #define FONT_GOLD 97

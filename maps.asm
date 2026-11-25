@@ -16,6 +16,8 @@ m0_och:
 .incbin "data/m0.och"
 m0_opl:
 .incbin "data/m0.opl"
+m0_ene:
+.incbin "data/m0.ene"
 .ends
 
 .section ".map1" superfree
@@ -34,6 +36,8 @@ m1_och:
 .incbin "data/m1.och"
 m1_opl:
 .incbin "data/m1.opl"
+m1_ene:
+.incbin "data/m1.ene"
 .ends
 
 .section ".map2" superfree
@@ -52,6 +56,8 @@ m2_och:
 .incbin "data/m2.och"
 m2_opl:
 .incbin "data/m2.opl"
+m2_ene:
+.incbin "data/m2.ene"
 .ends
 
 .section ".map3" superfree
@@ -70,6 +76,8 @@ m3_och:
 .incbin "data/m3.och"
 m3_opl:
 .incbin "data/m3.opl"
+m3_ene:
+.incbin "data/m3.ene"
 .ends
 
 .section ".map4" superfree
@@ -88,6 +96,8 @@ m4_och:
 .incbin "data/m4.och"
 m4_opl:
 .incbin "data/m4.opl"
+m4_ene:
+.incbin "data/m4.ene"
 .ends
 
 .section ".map5" superfree
@@ -106,6 +116,8 @@ m5_och:
 .incbin "data/m5.och"
 m5_opl:
 .incbin "data/m5.opl"
+m5_ene:
+.incbin "data/m5.ene"
 .ends
 
 .section ".map6" superfree
@@ -124,6 +136,8 @@ m6_och:
 .incbin "data/m6.och"
 m6_opl:
 .incbin "data/m6.opl"
+m6_ene:
+.incbin "data/m6.ene"
 .ends
 
 .section ".map7" superfree
@@ -142,6 +156,8 @@ m7_och:
 .incbin "data/m7.och"
 m7_opl:
 .incbin "data/m7.opl"
+m7_ene:
+.incbin "data/m7.ene"
 .ends
 
 .section ".map8" superfree
@@ -160,6 +176,8 @@ m8_och:
 .incbin "data/m8.och"
 m8_opl:
 .incbin "data/m8.opl"
+m8_ene:
+.incbin "data/m8.ene"
 .ends
 
 .section ".map9" superfree
@@ -178,6 +196,8 @@ m9_och:
 .incbin "data/m9.och"
 m9_opl:
 .incbin "data/m9.opl"
+m9_ene:
+.incbin "data/m9.ene"
 .ends
 
 .section ".map10" superfree
@@ -196,6 +216,8 @@ m10_och:
 .incbin "data/m10.och"
 m10_opl:
 .incbin "data/m10.opl"
+m10_ene:
+.incbin "data/m10.ene"
 .ends
 
 .section ".map11" superfree
@@ -214,6 +236,8 @@ m11_och:
 .incbin "data/m11.och"
 m11_opl:
 .incbin "data/m11.opl"
+m11_ene:
+.incbin "data/m11.ene"
 .ends
 
 .section ".map12" superfree
@@ -232,6 +256,8 @@ m12_och:
 .incbin "data/m12.och"
 m12_opl:
 .incbin "data/m12.opl"
+m12_ene:
+.incbin "data/m12.ene"
 .ends
 
 .section ".map13" superfree
@@ -250,6 +276,8 @@ m13_och:
 .incbin "data/m13.och"
 m13_opl:
 .incbin "data/m13.opl"
+m13_ene:
+.incbin "data/m13.ene"
 .ends
 
 .section ".map14" superfree
@@ -268,6 +296,8 @@ m14_och:
 .incbin "data/m14.och"
 m14_opl:
 .incbin "data/m14.opl"
+m14_ene:
+.incbin "data/m14.ene"
 .ends
 
 .section ".map15" superfree
@@ -286,6 +316,8 @@ m15_och:
 .incbin "data/m15.och"
 m15_opl:
 .incbin "data/m15.opl"
+m15_ene:
+.incbin "data/m15.ene"
 .ends
 
 .section ".map16" superfree
@@ -304,6 +336,8 @@ m16_och:
 .incbin "data/m16.och"
 m16_opl:
 .incbin "data/m16.opl"
+m16_ene:
+.incbin "data/m16.ene"
 .ends
 
 .section ".map17" superfree
@@ -322,6 +356,8 @@ m17_och:
 .incbin "data/m17.och"
 m17_opl:
 .incbin "data/m17.opl"
+m17_ene:
+.incbin "data/m17.ene"
 .ends
 
 .section ".map18" superfree
@@ -340,6 +376,8 @@ m18_och:
 .incbin "data/m18.och"
 m18_opl:
 .incbin "data/m18.opl"
+m18_ene:
+.incbin "data/m18.ene"
 .ends
 
 .section ".map19" superfree
@@ -358,6 +396,8 @@ m19_och:
 .incbin "data/m19.och"
 m19_opl:
 .incbin "data/m19.opl"
+m19_ene:
+.incbin "data/m19.ene"
 .ends
 
 .section ".map20" superfree
@@ -376,6 +416,8 @@ m20_och:
 .incbin "data/m20.och"
 m20_opl:
 .incbin "data/m20.opl"
+m20_ene:
+.incbin "data/m20.ene"
 .ends
 
 .section ".map21" superfree
@@ -394,6 +436,8 @@ m21_och:
 .incbin "data/m21.och"
 m21_opl:
 .incbin "data/m21.opl"
+m21_ene:
+.incbin "data/m21.ene"
 .ends
 
 .section ".map22" superfree
@@ -412,6 +456,8 @@ m22_och:
 .incbin "data/m22.och"
 m22_opl:
 .incbin "data/m22.opl"
+m22_ene:
+.incbin "data/m22.ene"
 .ends
 
 .section ".map23" superfree
@@ -430,6 +476,8 @@ m23_och:
 .incbin "data/m23.och"
 m23_opl:
 .incbin "data/m23.opl"
+m23_ene:
+.incbin "data/m23.ene"
 .ends
 
 .section ".hero" superfree
@@ -439,6 +487,19 @@ hero_chrend:
 hero_pal:
 .incbin "data/hero.pal"
 hero_palend:
+.ends
+
+.section ".systext" superfree
+sys_txt:
+.incbin "data/sys.txt"
+.ends
+
+.section ".combat" superfree
+combat_chr:
+.incbin "data/combat.chr"
+combat_chrend:
+combat_pal:
+.incbin "data/combat.pal"
 .ends
 
 .section ".font" superfree

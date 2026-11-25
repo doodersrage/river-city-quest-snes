@@ -133,3 +133,31 @@ fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1)
 }
 console.log('world: reads', Object.values(worldOut).reduce((a, w) => a + w.reads.length, 0),
   'npcs', Object.values(worldOut).reduce((a, w) => a + w.npcs.length, 0));
+
+// ---------- Stage 3: combat art and enemy placements ----------
+fs.mkdirSync(path.join(OUT, 'combat'), { recursive: true });
+const combat = vm.runInContext(`(function(){
+  st=newState();p=newPlayer();
+  const en={};for(const id in SC){const s=SC[id];if(s.ow)en[id]=s.en.map(e=>e.slice());}
+  // Enemy frames, facing right (the ROM flips them for left).
+  const frames=[['rat',SPR.rat.r.c],['squirrel',SPR.squirrel.r.c],['goose',SPR.goose.r.c],['scooter',SPR.scooter.r.c],
+    ['crab',SPR.crab.r.c],['bat0',SPR.bat[0].r.c],['bat1',SPR.bat[1].r.c],['ghost',SPR.ghost.r.c]];
+  // The paddle at 16 angles, drawn by the game itself around a hero at (20,23) (paddle centre y-3 = 20).
+  const paddles=[];
+  for(let i=0;i<16;i++){const c=mkCanvas(40,40),old=g;g=c.getContext('2d');p.x=20;p.y=23;paddleAt(i*Math.PI/8,false);g=old;paddles.push(c);}
+  return {en,frames,paddles,heart:HEART,heart0:HEART0,coins:[COIN[0].r.c,COIN[1].r.c]};
+})()`, sb);
+{
+  const strip = createCanvas(16 * combat.frames.length, 16), x = strip.getContext('2d');
+  combat.frames.forEach(([n, c], i) => x.drawImage(c, i * 16, 16 - c.height));
+  fs.writeFileSync(path.join(OUT, 'combat', 'enemies.png'), strip.toBuffer('image/png'));
+  const ps = createCanvas(40 * 16, 40), px = ps.getContext('2d');
+  combat.paddles.forEach((c, i) => px.drawImage(c, i * 40, 0));
+  fs.writeFileSync(path.join(OUT, 'combat', 'paddles.png'), ps.toBuffer('image/png'));
+  const hud = createCanvas(9 * 4, 8), hx2 = hud.getContext('2d');
+  [combat.heart, combat.heart0, combat.coins[0], combat.coins[1]].forEach((c, i) => hx2.drawImage(c, i * 9, 0));
+  fs.writeFileSync(path.join(OUT, 'combat', 'hud.png'), hud.toBuffer('image/png'));
+  fs.writeFileSync(path.join(OUT, 'combat', 'combat.json'), JSON.stringify({
+    enemies: combat.en, frames: combat.frames.map(f => f[0]) }, null, 1));
+  console.log('combat: enemies', Object.values(combat.en).reduce((a, e) => a + e.length, 0));
+}
