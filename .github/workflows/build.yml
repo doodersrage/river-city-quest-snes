@@ -1,0 +1,63 @@
+name: build ROM
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # Pinned so a library change never breaks the ROM unexpectedly.
+  PVSNESLIB_REF: 0d68f8e6944167cc8ef3c50a257130ec41ee7ae6
+
+jobs:
+  rom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache PVSnesLib
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: pvsneslib
+          key: pvsneslib-${{ env.PVSNESLIB_REF }}-v1
+
+      - name: Build PVSnesLib
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/alekmaul/pvsneslib pvsneslib
+          cd pvsneslib
+          git checkout "$PVSNESLIB_REF"
+          git submodule update --init --depth 1
+          export PVSNESLIB_HOME="$PWD"
+          make compiler tools pvsneslib
+
+      - name: Build ROM
+        run: |
+          export PVSNESLIB_HOME="$PWD/pvsneslib"
+          make || { cat RiverCityQuest.log 2>/dev/null | tail -80; exit 1; }
+          ls -l RiverCityQuest.sfc
+
+      - name: Boot test
+        run: |
+          python3 tools/romcheck.py RiverCityQuest.sfc
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RiverCityQuest
+          path: RiverCityQuest.sfc
+
+      - name: Publish as the "latest" release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest RiverCityQuest.sfc \
+            --title "Latest build" \
+            --notes "Built from ${GITHUB_SHA::7}. Open RiverCityQuest.sfc in Snes9x, bsnes or any SNES emulator." \
+            --target "$GITHUB_SHA"

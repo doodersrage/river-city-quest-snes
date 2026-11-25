@@ -1,0 +1,13 @@
+build/
+tools/export/node_modules/
+pvsneslib/
+*.obj
+*.o
+*.sfc
+*.sym
+*.symfull
+*.log
+linkfile
+hdr.asm
+src/*.ps
+src/*.asp
