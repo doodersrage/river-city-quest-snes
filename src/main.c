@@ -16,19 +16,19 @@
 #define SCREEN_H 224
 #define HALF 5 /* player collision box half-size, as in the web game */
 
-extern void mapLoad(u8 i);
+extern void rcqLoadMap(u8 i);
 void drawHero(void);
 
 u8 *colGrid;  /* 32x22 bytes, 1 = solid, for the current map */
 u8 curMap;
 s16 px, py;   /* player centre in map pixels */
 s16 camX, camY;
-u8 dir;       /* 0 down, 1 up, 2 left, 3 right */
+u8 heroDir;       /* 0 down, 1 up, 2 left, 3 right */
 u8 step;
 u16 frameCount;
 
-/* Called by the generated mapLoad(), during forced blank. */
-void mapUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col)
+/* Called by the generated rcqLoadMap(), during forced blank. */
+void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col)
 {
     dmaCopyVram(chr, VRAM_BG1_CHR, chrSize);
     dmaCopyVram(map, VRAM_BG1_MAP, 64 * 64 * 2);
@@ -92,7 +92,7 @@ void enterMap(u8 i)
     }
     setBrightness(0); /* forced blank: safe to DMA into VRAM */
     curMap = i;
-    mapLoad(i);
+    rcqLoadMap(i);
     settle();
     updateCamera();
     drawHero();
@@ -109,12 +109,12 @@ void drawHero(void)
     u16 tile;
     u8 flip = 0;
     u8 f = (step >> 3) & 1;
-    if (dir == 0) tile = 0 + f * 2;
-    else if (dir == 1) tile = 4 + f * 2;
+    if (heroDir == 0) tile = 0 + f * 2;
+    else if (heroDir == 1) tile = 4 + f * 2;
     else
     {
         tile = 8 + f * 2;
-        if (dir == 2) flip = 1; /* the side frames face right */
+        if (heroDir == 2) flip = 1; /* the side frames face right */
     }
     oamSet(0, px - camX - 8, py - camY - 10, 3, flip, 0, tile, 0);
 }
@@ -166,10 +166,10 @@ int main(void)
 
     px = MAP_PX_W / 2;
     py = MAP_PX_H / 2;
-    dir = 0;
+    heroDir = 0;
     setBrightness(0); /* forced blank while loading */
     curMap = MAP_START;
-    mapLoad(curMap);
+    rcqLoadMap(curMap);
     settle();
     updateCamera();
     drawHero();
@@ -188,10 +188,10 @@ int main(void)
         dy = 0;
         /* 1.5 px per frame, like the web game's walk. */
         spd = (frameCount & 1) ? 2 : 1;
-        if (pad & KEY_UP) { dy = -spd; dir = 1; }
-        else if (pad & KEY_DOWN) { dy = spd; dir = 0; }
-        if (pad & KEY_LEFT) { dx = -spd; dir = 2; }
-        else if (pad & KEY_RIGHT) { dx = spd; dir = 3; }
+        if (pad & KEY_UP) { dy = -spd; heroDir = 1; }
+        else if (pad & KEY_DOWN) { dy = spd; heroDir = 0; }
+        if (pad & KEY_LEFT) { dx = -spd; heroDir = 2; }
+        else if (pad & KEY_RIGHT) { dx = spd; heroDir = 3; }
 
         if (dx || dy)
         {
