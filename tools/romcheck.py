@@ -15,7 +15,7 @@ def check(cond, msg):
 
 check(len(rom) == 32 * 0x8000, f'size is 1 MB ({len(rom)} bytes)')
 h = rom[0x7FC0:0x7FE0]
-title = h[:21].decode('ascii', 'replace').rstrip()
+title = h[:21].decode('ascii', 'replace').strip(' \x00')
 check(title == 'RIVER CITY QUEST', f'title "{title}"')
 check(h[0x15] & 0x0F == 0, f'LoROM map mode (${h[0x15]:02X})')
 comp = h[0x1C] | h[0x1D] << 8
