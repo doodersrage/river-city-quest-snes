@@ -9,13 +9,18 @@ Open it in any SNES emulator (Snes9x, bsnes, Mesen, RetroArch; Snes9x EX+ on And
 
 | | |
 |---|---|
+| ![Reading a marker](screenshots/reading.png) | ![Talking to the Runner](screenshots/talking.png) |
+| Reading the Arthur Ashe marker in the Fan | Talking to the Runner |
 | ![The Fan](screenshots/the-fan.png) | ![Hollywood Cemetery](screenshots/hollywood-cemetery.png) |
 | The Fan, where you start | Walk south into Hollywood Cemetery |
 
 ## What works so far
 
-Stage 1: walk all 24 outdoor neighbourhoods, from Richmond Raceway to Ancarrow's Landing, using the web game's art. Walk off any edge into the next neighbourhood. Start is in the Fan.
-Every build is booted in the snes9x core in CI and walked from the Fan into Hollywood Cemetery.
+- **Stage 1:** walk all 24 outdoor neighbourhoods, from Richmond Raceway to Ancarrow's Landing, using the web game's art. Walk off any edge into the next neighbourhood. Start is in the Fan.
+- **Stage 2:** press A to read historical markers, landmarks, signs, murals and gas lamps, and to talk to the 70 people standing around town, in the web game's own pixel font. People turn to face you and cycle through their lines.
+
+Every build is played in the snes9x core in CI: it reads a marker, talks to someone and walks into the next neighbourhood (`tools/boottest.py`, driven by `tools/sneslab.py`).
+Branch builds are published as `dev-<branch>` pre-releases for testing.
 
 See [ROADMAP.md](ROADMAP.md) for the stages still to come.
 

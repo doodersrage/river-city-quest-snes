@@ -1,28 +1,13 @@
 #!/usr/bin/env python3
-"""Boot the ROM in the snes9x core (via stable-retro), walk south from the start in the Fan
-into Hollywood Cemetery, and check the screen at each step. Saves screenshots to <out-dir>.
-Usage: boottest.py RiverCityQuest.sfc <out-dir>"""
+"""Play the ROM in the snes9x core and check each stage still works. Saves screenshots.
+Usage: boottest.py RiverCityQuest.sfc RiverCityQuest.sym <out-dir>"""
 import os, sys
 import numpy as np
-import stable_retro as retro
-from PIL import Image
+from sneslab import Lab
 
-ORDER = ['B', 'Y', 'SELECT', 'START', 'UP', 'DOWN', 'LEFT', 'RIGHT', 'A', 'X', 'L', 'R']
-rom, out = sys.argv[1], sys.argv[2]
+rom, sym, out = sys.argv[1], sys.argv[2], sys.argv[3]
 os.makedirs(out, exist_ok=True)
-emu = retro.RetroEmulator(rom)
-
-
-def run(button, frames):
-    mask = np.zeros(12, dtype=np.uint8)
-    if button:
-        mask[ORDER.index(button)] = 1
-    for _ in range(frames):
-        emu.set_button_mask(mask, 0)
-        emu.step()
-    return emu.get_screen().copy()
-
-
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ok = True
 
 
@@ -32,17 +17,45 @@ def check(cond, msg):
     ok &= bool(cond)
 
 
-start = run(None, 120)
-Image.fromarray(start).save(f'{out}/1-the-fan.png')
-check(start.std() > 10, 'boots to a drawn map, not a blank screen')
+def screen():
+    return lab.emu.get_screen().astype(int)
 
-walked = run('DOWN', 60)
-check(np.abs(walked.astype(int) - start).mean() > 1, 'walking down scrolls the view')
 
-south = run('DOWN', 400)
-south = run(None, 40)
-Image.fromarray(south).save(f'{out}/2-hollywood-cemetery.png')
-# Hollywood Cemetery is mostly grass: far more green than the Fan's street grid.
-green = lambda im: float(((im[..., 1] > im[..., 0] + 30) & (im[..., 1] > im[..., 2] + 30)).mean())
-check(green(south) > green(start) + 0.15, f'walked into the next neighborhood (green {green(start):.2f} -> {green(south):.2f})')
+# Stage 1: boot, walk, change neighborhood.
+lab = Lab(rom, sym, root)
+lab.run(None, 120)
+check(screen().std() > 10, 'boots to a drawn map')
+check(lab.map == 11, f'starts in the Fan (map {lab.map})')
+lab.screenshot(f'{out}/1-the-fan.png')
+
+# Stage 2: read the Arthur Ashe marker (cell 7,10) from the path above it.
+lab.walk_to_cell(7, 9)
+lab.face('down')
+before = screen()
+lab.press('A', 70)
+check(lab.ram('boxState') != 0, 'A on a marker opens the text box')
+check(np.abs(screen() - before).mean() > 3, 'the box is drawn on screen')
+lab.screenshot(f'{out}/2-reading.png')
+for _ in range(12):
+    if lab.ram('boxState') == 0:
+        break
+    lab.press('A', 4)
+check(lab.ram('boxState') == 0, 'A pages through and closes the box')
+
+# Stage 2: talk to the Runner (cell 26,6) from below; he should turn to face us.
+lab.walk_to_cell(26, 7)
+lab.face('up')
+lab.press('A', 60)
+check(lab.ram('boxState') != 0, 'A next to a person starts a conversation')
+check(lab.ram('npcDir', 1, index=1) == 0, 'the person turns to face the hero')
+lab.screenshot(f'{out}/3-talking.png')
+while lab.ram('boxState'):
+    lab.press('A', 4)
+
+# Stage 1: walk off the south edge into Hollywood Cemetery.
+lab.walk_to_cell(16, 21)
+lab.run('DOWN', 60)
+lab.run(None, 40)
+check(lab.map == 17, f'walked south into Hollywood Cemetery (map {lab.map})')
+lab.screenshot(f'{out}/4-hollywood-cemetery.png')
 sys.exit(0 if ok else 1)

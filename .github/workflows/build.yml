@@ -45,10 +45,10 @@ jobs:
       - name: Header check
         run: python3 tools/romcheck.py RiverCityQuest.sfc
 
-      - name: Boot and walk test (snes9x core)
+      - name: Play test in the snes9x core (walk, read, talk, change maps)
         run: |
           pip install stable-retro pillow numpy
-          python3 tools/boottest.py RiverCityQuest.sfc screenshots-ci
+          python3 tools/boottest.py RiverCityQuest.sfc RiverCityQuest.sym screenshots-ci
 
       - uses: actions/upload-artifact@v4
         with:

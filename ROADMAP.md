@@ -17,8 +17,8 @@ Super Nintendo ROM, built in stages. Each stage ends with a ROM that boots and p
 | Resource | Limit | Plan |
 |---|---|---|
 | BG tiles per layer | 1,024 (4bpp) | Speckle limited to 4 variants per tile type. Busiest map: 466 tiles. |
-| BG palettes | 8 × 15 colours | Greedy packing per map, global median cut if needed |
-| VRAM | 64 KB | BG1 tiles 0x0000, BG1 map 0x4000 (64×64), sprites 0x6000, BG3 HUD/text later |
+| BG palettes | 8 × 15 colours | Greedy packing per map, global median cut if needed. Palette 0 keeps 3 colours for the text layer (BG3 shares CGRAM 1-3). |
+| VRAM | 64 KB | BG1 tiles 0x0000, BG1 map 0x4000 (64×64), BG3 font 0x5000, BG3 map 0x5800, sprites 0x6000 (hero tiles 0-31, NPCs 32-127) |
 | Work RAM | 128 KB | Game state, NPCs, enemies; save data to SRAM |
 | ROM | 1 MB now, up to 4 MB | Each outdoor map is about 26 KB |
 | Sprites | 128 on screen, 32 per scanline | Hero, enemies, NPCs, pickups, effects |
@@ -27,7 +27,8 @@ Super Nintendo ROM, built in stages. Each stage ends with a ROM that boots and p
 ## Stages
 
 1. **Walk Richmond** (done in first build). All 24 outdoor neighbourhoods with the web game's art, the hero with walk frames, collision, scrolling and fades between neighbourhoods.
-2. **Text and talking.** BG3 font and dialogue box, signs, NPCs standing in place, the journal's 66 stories (English, then Spanish).
+2. **Text and talking** (done). BG3 font (Press Start 2P) and dialogue box, markers, landmarks, murals and lamps, 70 NPCs standing in place with their lines.
+   Still to come with later stages: the journal menu for the 66 stories, Spanish text, NPCs walking around, and talk that changes with progress (gifts, trades and challenges currently show their opening lines only).
 3. **Combat.** Paddle swing and spin attack, hearts, enemies from the web game with their behaviour, pickups, death and continue.
 4. **Doors and interiors.** Building entrances, the 11 interiors, the row house and the dog, shops and rupees.
 5. **Dungeons.** Small keys, locked doors, push blocks, braziers, cracked walls. One dungeon end to end first (Tredegar), then the other six and the finale.
