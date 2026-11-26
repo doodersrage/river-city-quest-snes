@@ -80,7 +80,7 @@ def close_box():
         if not lab.ram('boxState'):
             return
         # a question (stage 10's challenge offers): B says "not now"
-        lab.press('B' if lab.ram('boxState') == 6 else 'A', 6)
+        lab.press('B' if lab.ram('boxState') in (6, 8) else 'A', 6)   # a question or the card list: B backs out
 
 lab.walk_to_cell(3, 20)
 lab.face('left')
@@ -1071,9 +1071,9 @@ lab.run('RIGHT', 30)
 edge = (lab.ram('carX', 2, True, 1) >> 4) - 13
 check(lab.pos[0] < edge, f"and you can't walk through it (you {lab.pos[0]}, its back bumper {edge})")
 lab.run('DOWN', 30)
-for _ in range(12):
+for i in range(12):
     if lab.ram('carX', 2, True, 1) != xs: break
-    lab.run('DOWN', 10); lab.run(None, 20)
+    lab.run('UP' if i >= 4 else 'DOWN', 12); lab.run(None, 20)   # out of its lane, whichever way is open
 check(lab.ram('carX', 2, True, 1) != xs, 'it drives on once you are out of the way')
 # the Local on Broad Street wanders near home
 k = 1
