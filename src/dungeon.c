@@ -19,7 +19,15 @@ u8 roomFlags[MAP_COUNT]; /* ROOM_* bits */
 u8 linkOpen[(LINK_COUNT + 7) / 8];
 u8 keys[AREA_COUNT];
 u8 hasHook, hasPowder, hasLantern, hasShield, hasBug, powder, eqItem;
-u8 *pickPtr;   /* count, then pickups lying in the room: x (2 bytes), y, kind, id */
+u8 *pickPtr;   /* count, then pickups lying in the room: x, y (2 bytes each), kind, id */
+u8 *blkPtr;    /* count, then push blocks (tx, ty); then count, then switches (tx, ty) */
+u8 hasCarkey, pieces, hasKayak, tradeItem, melonTaken;
+
+/* push blocks (web blocks, tryPush, updBlocks) */
+#define MAX_BLK 4
+u8 blkN, blkTX[MAX_BLK], blkTY[MAX_BLK], blkMv[MAX_BLK], pushN, pushDir;
+s16 blkX[MAX_BLK], blkY[MAX_BLK], blkDX[MAX_BLK], blkDY[MAX_BLK];
+s16 bossZ; /* the Bell's height */
 u8 pickupGot[(PICKUP_COUNT + 7) / 8];
 
 /* the Gold-Bug (web updBug), in pixels */
@@ -62,6 +70,9 @@ const u16 *bossTiles;
 #define BOSS_TURTLE 2
 #define BOSS_WRAITH 3
 #define BOSS_RAVEN 4
+#define BOSS_BELL 5
+#define B_DROP 4
+#define B_RISE 5
 #define SRC_PADDLE 0
 #define SRC_BOMB 1
 #define SRC_REFL 2
@@ -80,6 +91,12 @@ void dungeonInit(void)
     hasLantern = 0;
     hasShield = 0;
     hasBug = 0;
+    hasCarkey = 0;
+    pieces = 0;
+    hasKayak = 0;
+    tradeItem = 0;
+    melonTaken = 0;
+    blkN = 0;
     bugOn = 0;
     for (i = 0; i < sizeof(pickupGot); i++) pickupGot[i] = 0;
     for (i = 0; i < sizeof(linkOpen); i++) linkOpen[i] = 0;
@@ -349,6 +366,14 @@ void bossLoad(void)
         bossX = (8 * 16 + 8) * 16;
         bossY = (2 * 16 + 8) * 16;
     }
+    else if (bossType == BOSS_BELL)
+    {
+        bossTiles = boss5Tile;
+        bossHp = 8;
+        bossX = (8 * 16 + 8) * 16;
+        bossY = (4 * 16 + 8) * 16;
+        bossZ = 40;
+    }
     else
     {
         bossTiles = boss1Tile;
@@ -402,7 +427,9 @@ u8 bossHit(u8 dmg, u8 src)
     }
     /* the Foreman only takes hits once the hook rips his plate off; Old Snapper takes bombs any
        time, and the paddle once he's stunned himself charging into a wall */
-    if (bossType != BOSS_RAVEN && bossState != B_STUN && !(bossType == BOSS_TURTLE && src == SRC_BOMB)) return 2;
+    /* the Bell can't be reached up high, and only a keg dents it unless it has just slammed down */
+    if (bossType == BOSS_BELL && bossZ > 12) return 0;
+    if (bossType != BOSS_RAVEN && bossState != B_STUN && !((bossType == BOSS_TURTLE || bossType == BOSS_BELL) && src == SRC_BOMB)) return 2;
     bossFlash = 16;
     if (bossHp <= dmg)
     {
@@ -495,6 +522,41 @@ void updTurtle(s16 dx, s16 dy)
     }
 }
 
+/* The Bronze Bell (web updBell): hangs above you, then slams down and rings out a circle of shots. */
+void updBell(s16 dx, s16 dy, s16 d)
+{
+    u8 i;
+    if (bossState == B_RISE)
+    {
+        bossZ += 1 + (bossT & 1);
+        bossT++;
+        if (bossZ > 40) bossZ = 40;
+        if (!--bossSt) bossState = B_WALK;
+        return;
+    }
+    if (bossState == B_DROP)
+    {
+        bossZ -= 4;
+        if (bossZ <= 0)
+        {
+            bossZ = 0;
+            bossState = B_STUN;
+            bossSt = 110;
+            for (i = 0; i < 8; i++)
+                shoot(bossX, bossY, sinTab[(i * 8 + 16) & 63] * 26 / 64, sinTab[(i * 8) & 63] * 26 / 64, 3);
+        }
+        return;
+    }
+    bossZ = 40;
+    if (d > 4)
+    {
+        bossX += dx * 13 / d;
+        bossY += dy * 13 / d;
+    }
+    bossT++;
+    if (bossT % 140 == 139) bossState = B_DROP;
+}
+
 /* The Raven (web updEnemy 'raven'): hangs above you, throws a feather, then dives. */
 void updRaven(s16 dx, s16 dy, s16 d)
 {
@@ -573,7 +635,12 @@ void updBoss(void)
     {
         if (!--bossSt)
         {
-            bossState = B_WALK;
+            if (bossType == BOSS_BELL)
+            {
+                bossState = B_RISE;
+                bossSt = 30;
+            }
+            else bossState = B_WALK;
             bossT = 0;
         }
         return; /* stunned bosses don't hurt */
@@ -581,11 +648,16 @@ void updBoss(void)
     if (bossType == BOSS_TURTLE) updTurtle(dx, dy);
     else if (bossType == BOSS_WRAITH) updWraith(dx, dy, d);
     else if (bossType == BOSS_RAVEN) updRaven(dx, dy, d);
+    else if (bossType == BOSS_BELL)
+    {
+        updBell(dx, dy, d);
+        if (bossZ > 12) return; /* up high: it can't touch you */
+    }
     else updForeman(dx, dy, d);
     bx = bossX >> 4;
     by = bossY >> 4;
     if (ABS(bx - px) < (bossType >= BOSS_WRAITH ? 11 : 13) && ABS(by - py) < (bossType >= BOSS_WRAITH ? 11 : 13) && !dying)
-        hurtHeroBy(bx, by, bossState == B_CHARGE ? 2 : 1);
+        hurtHeroBy(bx, by, bossState == B_CHARGE || bossState == B_DROP ? 2 : 1);
 }
 
 void drawBoss(void)
@@ -606,6 +678,8 @@ void drawBoss(void)
             f = (bossVis ? 0 : 2) + ((frameCount >> 3) & 1);
         else if (bossType == BOSS_RAVEN)
             f = (frameCount >> 3) & 1;
+        else if (bossType == BOSS_BELL)
+            f = bossState == B_STUN ? 1 : 0;
         else if (bossType == BOSS_TURTLE)
             f = bossState == B_STUN ? 2 + ((frameCount >> 2) & 1) : (frameCount >> (bossState == B_CHARGE ? 1 : 3)) & 1;
         else
@@ -616,7 +690,7 @@ void drawBoss(void)
         col = k % 3;
         if ((bossType == BOSS_TURTLE || bossType == BOSS_RAVEN) && bossFlip) col = 2 - col;
         sx = (bossX >> 4) - camX - 24 + col * 16 + sh;
-        sy = (bossY >> 4) - camY - 40 + (k / 3) * 16;
+        sy = (bossY >> 4) - camY - 40 + (k / 3) * 16 - (bossType == BOSS_BELL ? bossZ : 0);
         if (!t || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
         {
             sprHide((id) >> 2);
@@ -725,6 +799,142 @@ void drawBombs(void)
         sy = boomY - camY - 16 + (k >> 1) * 16;
         sprPut((id) >> 2, 1, sx, sy, 3, 0, OBJ_I_BOOM + ((boomT < 8 ? 4 : 0) + k) * 2, PAL_ITEM);
     }
+}
+
+/* ---------- push blocks and switches (web tryPush, updBlocks) ---------- */
+
+u8 *switchPtr(void)
+{
+    return blkPtr + 1 + blkPtr[0] * 2;
+}
+
+u8 onSwitch(u8 tx, u8 ty)
+{
+    u8 k;
+    u8 *sw = switchPtr();
+    for (k = 0; k < sw[0]; k++)
+        if (sw[1 + k * 2] == tx && sw[2 + k * 2] == ty) return 1;
+    return 0;
+}
+
+void blocksLoad(void)
+{
+    u8 k;
+    u8 *sw = switchPtr();
+    blkN = blkPtr[0];
+    if (blkN > MAX_BLK) blkN = MAX_BLK;
+    pushN = 0;
+    for (k = 0; k < blkN; k++)
+    {
+        blkTX[k] = blkPtr[1 + k * 2];
+        blkTY[k] = blkPtr[2 + k * 2];
+        /* solved rooms keep their blocks on the switches (web load) */
+        if ((roomFlags[curMap] & ROOM_SOLVED) && k < sw[0])
+        {
+            blkTX[k] = sw[1 + k * 2];
+            blkTY[k] = sw[2 + k * 2];
+        }
+        blkX[k] = blkTX[k] * 16;
+        blkY[k] = blkTY[k] * 16;
+        blkMv[k] = 0;
+    }
+    if (blkN) dmaCopyCGram(&block_pal, 128 + PAL_BLOCK * 16, 16 * 2);
+}
+
+u8 blockAtCell(s16 tx, s16 ty)
+{
+    u8 k;
+    for (k = 0; k < blkN; k++)
+    {
+        if (blkTX[k] == tx && blkTY[k] == ty) return k;
+        if (blkMv[k] && blkTX[k] - blkDX[k] == tx && blkTY[k] - blkDY[k] == ty) return k;
+    }
+    return 255;
+}
+
+void notPushing(void)
+{
+    pushN = 0;
+}
+
+void tryPush(void)
+{
+    s16 fx = px + dirX[heroDir] * 8, fy = py + dirY[heroDir] * 8, nx, ny;
+    u8 k, c;
+    if (fx < 0 || fy < 0) return;
+    k = blockAtCell(fx >> 4, fy >> 4);
+    if (k == 255 || blkMv[k])
+    {
+        pushN = 0;
+        return;
+    }
+    if (onSwitch(blkTX[k], blkTY[k])) return; /* locked onto the switch */
+    if (pushDir != heroDir)
+    {
+        pushDir = heroDir;
+        pushN = 0;
+    }
+    if (++pushN < 14) return;
+    pushN = 0;
+    nx = blkTX[k] + dirX[heroDir];
+    ny = blkTY[k] + dirY[heroDir];
+    if (nx < 0 || ny < 0 || nx >= mapW || ny >= mapH) return;
+    c = colGrid[ny * COL_STRIDE + nx];
+    if (c != CELL_OPEN || blockAtCell(nx, ny) != 255) return;
+    blkTX[k] = nx;
+    blkTY[k] = ny;
+    blkDX[k] = dirX[heroDir];
+    blkDY[k] = dirY[heroDir];
+    blkMv[k] = 8;
+}
+
+void updBlocks(void)
+{
+    u8 k, j, all;
+    u8 *sw;
+    for (k = 0; k < blkN; k++)
+        if (blkMv[k])
+        {
+            blkMv[k]--;
+            blkX[k] += blkDX[k] * 2;
+            blkY[k] += blkDY[k] * 2;
+            if (blkMv[k] || roomSolve != 3 || (roomFlags[curMap] & ROOM_SOLVED)) continue;
+            /* every switch covered: the room is solved */
+            sw = switchPtr();
+            all = sw[0] > 0;
+            for (j = 0; j < sw[0]; j++)
+                if (blockAtCell(sw[1 + j * 2], sw[2 + j * 2]) == 255) all = 0;
+            if (all)
+            {
+                roomFlags[curMap] |= ROOM_SOLVED;
+                applyRoomState(0);
+            }
+        }
+}
+
+void drawBlocks(void)
+{
+    u8 k;
+    for (k = 0; k < MAX_BLK; k++)
+    {
+        if (k >= blkN)
+        {
+            sprHide(OAM_BLOCKS + k);
+            continue;
+        }
+        sprPut(OAM_BLOCKS + k, 1, blkX[k] - camX, blkY[k] - camY - 1, 2, 0, OBJ_I_BLOCK, PAL_BLOCK);
+    }
+}
+
+void gotPiece(void)
+{
+    pieces++;
+    if ((pieces & 3) == 0 && hpMax < 20)
+    {
+        hpMax += 2;
+        hp = hpMax;
+    }
+    openTextAt((u8 *)&sys_txt + pieceTxt[pieces & 3]);
 }
 
 /* ---------- the Gold-Bug (web updBug) ---------- */
@@ -1062,7 +1272,7 @@ void drawShots(void)
             sprHide((id) >> 2);
             continue;
         }
-        sprPut((id) >> 2, 0, sx, sy, 3, 0, shotRefl[i] ? OBJ_REFL : shotKind[i] == 2 ? OBJ_FEATHER : shotKind[i] ? OBJ_ORB : OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
+        sprPut((id) >> 2, 0, sx, sy, 3, 0, shotRefl[i] ? OBJ_REFL : shotKind[i] == 3 ? OBJ_RING : shotKind[i] == 2 ? OBJ_FEATHER : shotKind[i] ? OBJ_ORB : OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
     }
 }
 
@@ -1070,6 +1280,7 @@ void dungeonUpdate(void)
 {
     updHook();
     updBug();
+    updBlocks();
     updBombs();
     updBoss();
     updShots();
@@ -1080,6 +1291,7 @@ void dungeonDraw(void)
 {
     drawBoss();
     drawBug();
+    drawBlocks();
     drawBombs();
     drawItemHud();
     drawHook();
@@ -1119,12 +1331,18 @@ void dungeonLoad(void)
         dmaCopyVram(&boss4_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss4_chrend - &boss4_chr));
         dmaCopyCGram(&boss4_pal, 128 + 16, 16 * 2);
     }
+    else if (roomBoss == BOSS_BELL)
+    {
+        dmaCopyVram(&boss5_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss5_chrend - &boss5_chr));
+        dmaCopyCGram(&boss5_pal, 128 + 16, 16 * 2);
+    }
+    blocksLoad();
     /* pickups lying in the room, unless already taken */
     for (i = 0; i < pickPtr[0]; i++)
     {
-        r = pickPtr + 1 + i * 5;
-        if (!(pickupGot[r[4] >> 3] & (1 << (r[4] & 7))))
-            dropPickup(r[0] | (r[1] << 8), r[2], r[3], r[4]);
+        r = pickPtr + 1 + i * 6;
+        if (!(pickupGot[r[5] >> 3] & (1 << (r[5] & 7))))
+            dropPickup(r[0] | (r[1] << 8), r[2] | (r[3] << 8), r[4], r[5]);
     }
 }
 

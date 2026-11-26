@@ -461,6 +461,7 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     stairsPtr = rec;
     brazPtr = stairsPtr + 1 + stairsPtr[0] * 10;
     pickPtr = brazPtr + 1 + brazPtr[0] * 10;
+    blkPtr = pickPtr + 1 + pickPtr[0] * 6;
     for (n = 0; n < COL_STRIDE * 22; n++)
         colRam[n] = col[n];
     colGrid = colRam;
@@ -486,7 +487,8 @@ u8 solidAt(s16 x, s16 y)
     tx = x >> 4;
     ty = y >> 4;
     tx = colGrid[ty * COL_STRIDE + tx];
-    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_LOCK;
+    if (tx == CELL_RIVER) return !hasKayak; /* the kayak paddles the James */
+    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_LOCK || tx == CELL_BRAZIER;
 }
 
 u8 blocked(s16 x, s16 y)
@@ -496,6 +498,10 @@ u8 blocked(s16 x, s16 y)
     if (solidAt(x + HALF, y - HALF)) return 1;
     if (solidAt(x - HALF, y + HALF)) return 1;
     if (solidAt(x + HALF, y + HALF)) return 1;
+    /* push blocks */
+    if (blockAtCell((x - HALF) >> 4, (y - HALF) >> 4) != 255 || blockAtCell((x + HALF) >> 4, (y - HALF) >> 4) != 255 ||
+        blockAtCell((x - HALF) >> 4, (y + HALF) >> 4) != 255 || blockAtCell((x + HALF) >> 4, (y + HALF) >> 4) != 255)
+        return 1;
     for (k = 0; k < npcCount; k++)
         if (ABS(x - npcX[k]) < 12 && ABS(y - npcY[k]) < 12)
             return 1;
@@ -660,6 +666,19 @@ u8 interact(void)
                 openShop(rec[5] - 1);
                 return 1;
             }
+            /* the trading quest: melon -> sheet music -> river map -> kayak */
+            if (rec[8] != 255 && ((rec[8] == 0 && !tradeItem && !hasKayak && !melonTaken) || (rec[8] && tradeItem == rec[8])))
+            {
+                openText(rec[9]);
+                if (rec[10] == 4)
+                {
+                    hasKayak = 1;
+                    tradeItem = 0;
+                }
+                else tradeItem = rec[10];
+                if (rec[10] == 1) melonTaken = 1;
+                return 1;
+            }
             /* someone handing you something (the Archivist's Gas Lantern) */
             if (rec[7] && !hasItem(rec[7]))
                 npcTalk[k] = rec[6];
@@ -695,6 +714,12 @@ u8 interact(void)
                 keys[roomArea]++;
             else if (rec[3] == EFFECT_ITEM)
                 gotItem(rec[4]);
+            else if (rec[3] == EFFECT_PIECE)
+            {
+                chestTiles(k, 0);
+                gotPiece();
+                return 1;
+            }
             chestTiles(k, 0);
             openText(rec[5]);
             return 1;
@@ -721,7 +746,7 @@ void useDoor(u8 tx, u8 ty)
     {
         d = doors + 1 + k * 4;
         if (d[0] != tx || d[1] != ty) continue;
-        if (d[2] != 255 && d[3] == DOOR_OPEN)
+        if (d[2] != 255 && (d[3] == DOOR_OPEN || (d[3] == DOOR_CARKEY && hasCarkey)))
         {
             retMap = curMap;
             retX = tx;
@@ -788,6 +813,7 @@ int main(void)
 {
     u16 pad, pressed, i;
     s16 dx, dy, spd;
+    u8 b;
 
     setMode(BG_MODE1, BG3_MODE1_PRIORITY_HIGH);
     bgSetGfxPtr(0, VRAM_BG1_CHR);
@@ -902,10 +928,14 @@ int main(void)
             if (dx || dy)
             {
                 step++;
-                if (dx && !blocked(px + dx, py)) px += dx;
+                b = 0;
+                if (dx && !blocked(px + dx, py)) { px += dx; b = 1; }
                 else if (dx) tryUnlock(px + dx * 8, py);
-                if (dy && !blocked(px, py + dy)) py += dy;
+                if (dy && !blocked(px, py + dy)) { py += dy; b = 1; }
                 else if (dy) tryUnlock(px, py + dy * 8);
+                /* leaning on a block in one direction pushes it (web tryPush) */
+                if (!b && (!dx || !dy)) tryPush();
+                else notPushing();
                 checkExits();
                 checkCells();
             }

@@ -112,9 +112,16 @@ void combatLoad(u8 *ene)
 }
 
 /* Walls and the map edge stop walking enemies. */
+u8 riverAt(s16 x, s16 y)
+{
+    return colGrid[(y >> 4) * COL_STRIDE + (x >> 4)] == CELL_RIVER;
+}
+
 u8 enBlocked(s16 x, s16 y)
 {
     if (x - HALF < 0 || y - HALF < 0 || x + HALF >= MAP_PX_W || y + HALF >= MAP_PX_H) return 1;
+    /* enemies never cross the river, kayak or not */
+    if (riverAt(x - HALF, y - HALF) || riverAt(x + HALF, y - HALF) || riverAt(x - HALF, y + HALF) || riverAt(x + HALF, y + HALF)) return 1;
     if (solidAt(x - HALF, y - HALF)) return 1;
     if (solidAt(x + HALF, y - HALF)) return 1;
     if (solidAt(x - HALF, y + HALF)) return 1;
@@ -317,6 +324,12 @@ void collectPickup(u8 k)
         keys[roomArea]++;
         openTextAt((u8 *)&sys_txt + TXT_SKEY);
     }
+    else if (kind == 10)
+    {
+        hasCarkey = 1;
+        openTextAt((u8 *)&sys_txt + TXT_CARKEY_GOT);
+    }
+    else if (kind == 11) gotPiece();
     else gotKeystone(kind - 5);
     if (pkId[k] != 255) pickupGot[pkId[k] >> 3] |= 1 << (pkId[k] & 7);
 }
@@ -636,7 +649,8 @@ void combatDraw(void)
         }
         if (pkKind[k] >= 3)
         {
-            tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : pkKind[k] == 9 ? OBJ_I_KEY : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
+            tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : pkKind[k] == 9 ? OBJ_I_KEY : pkKind[k] == 10 ? OBJ_I_CARKEY :
+                   pkKind[k] == 11 ? OBJ_I_PIECE : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
             sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, PAL_ITEM);
             continue;
         }

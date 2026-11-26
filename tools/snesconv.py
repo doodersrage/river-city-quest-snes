@@ -231,7 +231,8 @@ def encode_text(title, pages):
 
 
 GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug']   # same numbering as ITEM_* in the ROM
-NPC_REC = 8
+NPC_REC = 12
+TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4}
 
 
 def build_world(w, extra_texts=()):
@@ -258,7 +259,13 @@ def build_world(w, extra_texts=()):
         for t_, item in n.get('gifts') or []:
             if item in GIFT_ITEMS:
                 gift_talk, gift_item = t_, GIFT_ITEMS.index(item) + 1
-        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, shop, gift_talk, gift_item))
+        # trading quest: what this person wants, what they say, what they give
+        q_need, q_text, q_give = 255, 0, 0
+        for q in n.get('quest') or []:
+            q_need, q_give = TRADE[q['need']], TRADE[q['give']]
+            q_text = len(texts)
+            texts.append(encode_text(n['who'], q['pages']))
+        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, shop, gift_talk, gift_item, q_need, q_text, q_give, 0))
     extra_ids = []
     for title, pages in extra_texts:
         extra_ids.append(text_id(title, pages))
@@ -438,7 +445,7 @@ def convert_combat(exp):
         sheet[OBJ_HUD - 128 + i] = tile4bpp([ix(p) for r in t for p in r])
     # spark shot x2, hook head, chain link (nearest palette-7 colours)
     sm = Image.open(os.path.join(d, 'small.png')).convert('RGBA')
-    for i in range(7):
+    for i in range(8):
         idx = []
         for y in range(8):
             for x in range(8):
@@ -459,7 +466,7 @@ def convert_combat(exp):
               f'#define HUD_EMPTY {OBJ_HUD + HUD_EMPTY}', f'#define HUD_COIN {OBJ_HUD + HUD_COIN}',
               f'#define HUD_DIGIT {OBJ_HUD + HUD_DIGIT}', '#define PAL_HUD 7',
               f'#define OBJ_SPARK {OBJ_HUD + 15}', f'#define OBJ_HOOK {OBJ_HUD + 17}', f'#define OBJ_CHAIN {OBJ_HUD + 18}',
-              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}',
+              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}', f'#define OBJ_RING {OBJ_HUD + 22}',
               f'#define ENEMY_TYPES {len(ENEMY_TYPES)}',
               '/* ' + ' '.join(f'{i}={t}' for i, t in enumerate(ENEMY_TYPES)) + ' */',
               f'static const u8 enemyHp[{len(ENEMY_TYPES)}] = {{{", ".join(map(str, ENEMY_HP))}}};',
@@ -489,10 +496,10 @@ def convert_combat(exp):
 # lantern, explosion (2 frames x 4 cells), Gold-Bug, small key. Tiles 352+ hold the current boss,
 # loaded in its room; only its non-empty cells take space.
 ITEM_CELLS = {'keg': 0, 'hook': 1, 'granite': 2, 'iron': 3, 'brick': 4, 'bronze': 5, 'container': 6, 'lantern': 7,
-              'boom': 8, 'bug': 16, 'key': 17}
+              'boom': 8, 'bug': 16, 'key': 17, 'carkey': 18, 'piece': 19, 'block': 20}
 ITEM_SHEET_CELLS = 24
 BOSS_FIRST_CELL = 24
-BOSSES = ['foreman', 'turtle', 'wraith', 'raven']          # boss type 1, 2, ...
+BOSSES = ['foreman', 'turtle', 'wraith', 'raven', 'bell']          # boss type 1, 2, ...
 
 
 def item_palette(p7):
@@ -513,8 +520,16 @@ def convert_items(exp, pal):
                     idx.append(nearest(c15(p_), pal) + 1 if p_[3] > 96 else 0)
             sheet[t + qy * 16 + qx] = tile4bpp(idx)
     icons = Image.open(os.path.join(d, 'icons.png')).convert('RGBA')
-    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern', 'bug', 'key']):
+    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern', 'bug', 'key', 'carkey', 'piece']):
         put(ITEM_CELLS[name], icons, i * 16, 0)
+    # the push block has its own palette (sprite palette 3, free in dungeon rooms)
+    blk = Image.open(os.path.join(d, 'block.png')).convert('RGBA')
+    bpal = sorted({c15(p_) for p_ in blk.getdata() if p_[3]})
+    t = obj_tile_of_frame(0, ITEM_CELLS['block'])
+    for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+        sheet[t + qy * 16 + qx] = tile4bpp([bpal.index(c15(blk.getpixel((qx * 8 + x, qy * 8 + y)))) + 1
+            if blk.getpixel((qx * 8 + x, qy * 8 + y))[3] else 0 for y in range(8) for x in range(8)])
+    open(os.path.join(exp, '..', 'block.pal'), 'wb').write(sprite_palette(bpal))
     put(ITEM_CELLS['container'], Image.open(os.path.join(d, 'container.png')).convert('RGBA'), 0, 0)
     boom = Image.open(os.path.join(d, 'boom.png')).convert('RGBA')
     for f in range(2):
@@ -604,7 +619,7 @@ def convert_shops(extra):
 
 
 DOOR_OPEN, DOOR_KEYSTONES, DOOR_CARKEY, DOOR_LATER = 0, 1, 2, 3
-CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT, CELL_COUNTER, CELL_BUSH, CELL_POST, CELL_LOW, CELL_LOCK, CELL_BRAZIER = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT, CELL_COUNTER, CELL_BUSH, CELL_POST, CELL_LOW, CELL_LOCK, CELL_BRAZIER, CELL_RIVER = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 
 
 def main():
@@ -663,7 +678,7 @@ def main():
         chr_, tm, pal, nt, npal, open_entries = convert_bg(os.path.join(exp, m['file']), extra_tiles)
         def cell(ch):
             return CELL_BRAZIER if ch in 'jJ' else CELL_BUSH if ch == 'b' else CELL_COUNTER if ch == 'V' else CELL_POST if ch == '+' else \
-                CELL_LOCK if ch == 'L' else CELL_LOW if ch in '_w~' and ch in solid else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
+                CELL_LOCK if ch == 'L' else CELL_RIVER if ch == '~' else CELL_LOW if ch in '_w' and ch in solid else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
         col = bytearray(32 * 22)
         for y, row in enumerate(m['grid']):
             for x, ch in enumerate(row):
@@ -691,6 +706,7 @@ def main():
             elif item == 'hc': effect, amount = 1, 2
             elif item == 'key': effect, amount = 3, 1
             elif item in items_list: effect, amount = 4, items_list.index(item) + 1
+            elif item == 'piece': effect, amount = 5, 1
             else: effect, amount = 2, 0
             xtr += bytes((q['tx'], q['ty'], gid, effect, amount, chest_txt[k], 1 if q.get('appear') else 0))
             xtr += words(k) + words(nC + k)
@@ -701,7 +717,7 @@ def main():
             xtr += bytes((bx, by)) + words(base + k)
         base += len(bushes)
         # Room: area, solve (0 none, 1 clear), boss type (0 none, 1 foreman), entry room?
-        solve = {'clear': 1, 'lit': 2, 'switch': 3}.get(m.get('solve'), 0)
+        solve = {'clear': 1, 'lit': 2, 'switch': 3}.get(m.get('solve'), 0)   # SOLVE_*
         boss = BOSSES.index(m['bossT']) + 1 if m.get('bossT') in BOSSES else 0
         reward = ['granite', 'iron', 'brick', 'bronze'].index(m['reward']) + 1 if m.get('reward') else 0
         xtr += bytes((area_id.get(m['area'], 0), solve, boss, (1 if m.get('entry') else 0) | (reward << 4)))
@@ -725,13 +741,19 @@ def main():
         for c in braz:
             xtr += bytes(c) + words(base)
             base += 1
-        # Pickups lying in the room (the key on the Enchanted Garden island): x, y, kind, id.
+        # Pickups lying in the room (the key on the Enchanted Garden island): x, y (2 bytes each), kind, id.
         pk = m.get('pickups') or []
         xtr.append(len(pk))
         for it in pk:
             gid = pickup_gid.setdefault(m['id'] + ':' + it['id'], len(pickup_gid))
-            kind = {'skey': 9}[it['kind']]
-            xtr += bytes((it['x'] & 0xFF, it['x'] >> 8, it['y'], kind, gid))
+            kind = {'skey': 9, 'carkey': 10, 'piece': 11}[it['kind']]
+            xtr += bytes((it['x'] & 0xFF, it['x'] >> 8, it['y'] & 0xFF, it['y'] >> 8, kind, gid))
+        # Push blocks and the switches they go on (tx, ty each).
+        bl, sw = (m.get('blocks') or [])[:4], m.get('switches') or []
+        xtr.append(len(bl))
+        for c in bl: xtr += bytes(c)
+        xtr.append(len(sw))
+        for c in sw: xtr += bytes(c)
         ochr, opal = convert_npcs(exp, npcs)
         for ext, data in (('chr', chr_), ('map', tm), ('pal', pal), ('col', col), ('wld', wld), ('och', ochr), ('opl', opal), ('ene', ene), ('xtr', xtr)):
             open(os.path.join(out, f'm{i}.{ext}'), 'wb').write(data)
@@ -784,6 +806,13 @@ def main():
                  ('RAVEN_IN', "The Raven's Roost", boss_text['ravenIntro']),
                  ('RAVEN_OUT', "The Raven's Roost", boss_text['raven']),
                  ('SKEY', '', ['The Gold-Bug brought back a small key!']),
+                 ('BELL_IN', 'The Great Bell', boss_text['bellIntro']),
+                 ('BELL_OUT', 'The Great Bell', boss_text['bell']),
+                 ('CARKEY_GOT', '', ['You found the Carillon Key!', 'Bring it to the Carillon in Byrd Park.']),
+                 ('PIECE1', 'Treasure', ['A heart piece! (1 of 4) Find four to grow a heart.']),
+                 ('PIECE2', 'Treasure', ['A heart piece! (2 of 4) Find four to grow a heart.']),
+                 ('PIECE3', 'Treasure', ['A heart piece! (3 of 4) Find four to grow a heart.']),
+                 ('PIECE4', 'Treasure', ['A heart piece! That makes four. Your hearts grew by one.']),
                  ('NOPOWDER', '', ['Out of blasting powder.'])]
     # "You found the Granite Keystone! (1 of 4)" for every keystone and count (web collect())
     for k, kname in enumerate(['granite', 'iron', 'brick', 'bronze']):
@@ -798,13 +827,14 @@ def main():
     asm += ['.section ".systext" superfree', 'sys_txt:', '.incbin "data/sys.txt"', '.ends', '']
     hdr += ['extern char sys_txt;'] + defs + [f'#define MAP_CAPITOL {pos[(2, 1)]}',
             'static const u16 keystoneTxt[16] = {%s};' % ', '.join(f'TXT_KEY{k}_{n}' for k in range(4) for n in range(1, 5)),
-            'static const u16 bossInTxt[5] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN};',
-            'static const u16 bossOutTxt[5] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT, TXT_RAVEN_OUT};', '']
+            'static const u16 bossInTxt[6] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN, TXT_BELL_IN};',
+            'static const u16 bossOutTxt[6] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT, TXT_RAVEN_OUT, TXT_BELL_OUT};',
+            'static const u16 pieceTxt[4] = {TXT_PIECE4, TXT_PIECE1, TXT_PIECE2, TXT_PIECE3};  /* by pieces % 4 */', '']
     shops, shop_defs = convert_shops(extra)
     open(os.path.join(out, 'shops.bin'), 'wb').write(shops)
     asm += ['.section ".shops" superfree', 'shops_bin:', '.incbin "data/shops.bin"', '.ends', '']
     hdr += ['extern char shops_bin;'] + shop_defs + [f'#define CHEST_COUNT {len(chest_gid)}',
-            '#define CELL_OPEN 0', '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4', '#define CELL_BUSH 5', '#define CELL_POST 6', '#define CELL_LOW 7', '#define CELL_LOCK 8', '#define CELL_BRAZIER 9',
+            '#define CELL_OPEN 0', '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4', '#define CELL_BUSH 5', '#define CELL_POST 6', '#define CELL_LOW 7', '#define CELL_LOCK 8', '#define CELL_BRAZIER 9', '#define CELL_RIVER 10',
             '#define DOOR_OPEN 0', '#define DOOR_KEYSTONES 1', '#define DOOR_CARKEY 2', '#define DOOR_LATER 3', '']
     bblobs, bpals, bdefs = convert_bosses(exp)
     for i, (bb, bp) in enumerate(zip(bblobs, bpals)):
@@ -816,7 +846,8 @@ def main():
     hdr += bdefs + ['#define PAL_BOSS 1', '#define PAL_ITEM 7',
             f'#define AREA_COUNT {len(dungeon_areas) + 1}', f'#define LINK_COUNT {max(1, len(link_flag))}',
             '#define ITEM_HOOK 1', '#define ITEM_POWDER 2', '#define ITEM_LANTERN 3', '#define ITEM_SHIELD 4', '#define ITEM_BUG 5',
-            '#define EFFECT_KEY 3', '#define EFFECT_ITEM 4', f'#define PICKUP_COUNT {max(1, len(pickup_gid))}', '']
+            '#define EFFECT_KEY 3', '#define EFFECT_ITEM 4', '#define EFFECT_PIECE 5', f'#define PICKUP_COUNT {max(1, len(pickup_gid))}',
+            '#define PAL_BLOCK 3', '']
     cobj, cpal, ctables = convert_combat(exp)
     open(os.path.join(out, 'combat.chr'), 'wb').write(cobj)
     open(os.path.join(out, 'combat.pal'), 'wb').write(cpal)
@@ -824,8 +855,10 @@ def main():
             'combat_pal:', '.incbin "data/combat.pal"', '.ends', '']
     import shutil
     shutil.copy(os.path.join(exp, '..', 'items.chr'), os.path.join(out, 'items.chr'))
-    asm += ['.section ".items" superfree', 'items_chr:', '.incbin "data/items.chr"', 'items_chrend:', '.ends', '']
-    hdr += ['extern char items_chr, items_chrend;']
+    shutil.copy(os.path.join(exp, '..', 'block.pal'), os.path.join(out, 'block.pal'))
+    asm += ['.section ".items" superfree', 'items_chr:', '.incbin "data/items.chr"', 'items_chrend:',
+            'block_pal:', '.incbin "data/block.pal"', '.ends', '']
+    hdr += ['extern char items_chr, items_chrend, block_pal;']
     hdr += ['extern char combat_chr, combat_chrend, combat_pal;', ''] + ctables + ['']
     font = convert_font(os.path.join(exp, 'font.png'))
     open(os.path.join(out, 'font.chr'), 'wb').write(font)

@@ -28,6 +28,7 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define OAM_BOOM 82   /* 4 */
 #define OAM_BICON 86  /* 3: item icon and count */
 #define OAM_BUG 89
+#define OAM_BLOCKS 90 /* 4 */
 #define MAX_EN 6
 #define MAX_PK 6
 
@@ -84,7 +85,12 @@ void spawnEnemy(u8 type, s16 x, s16 y);
 u8 enemyCount(u8 type);
 extern u8 *brazPtr, *pickPtr;
 extern u8 pickupGot[];
-extern u8 hasBug;
+extern u8 hasBug, hasCarkey, pieces, hasKayak, tradeItem, melonTaken;
+extern u8 *blkPtr;
+u8 blockAtCell(s16 tx, s16 ty);
+void tryPush(void);
+void notPushing(void);
+void gotPiece(void);
 void dropPickup(s16 x, s16 y, u8 kind, u8 id);
 u8 pickupAt(s16 x, s16 y);
 void movePickup(u8 k, s16 x, s16 y);

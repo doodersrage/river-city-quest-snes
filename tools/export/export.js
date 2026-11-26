@@ -39,7 +39,7 @@ for (const f of files) {
 // Top-level consts (SC, TS, g...) live in the context's shared script scope.
 // Scenes for the SNES port so far: the outdoor maps plus every single-room area (interiors, caves).
 vm.runInContext(`var SNES_AREAN={};for(const id in SC){const a=SC[id].area;SNES_AREAN[a]=(SNES_AREAN[a]||0)+1;}
-  var PORT_AREAS=${JSON.stringify((process.env.DUNGEONS || 'tredegar,quarry,pyramid,poe').split(','))};
+  var PORT_AREAS=${JSON.stringify((process.env.DUNGEONS || 'tredegar,quarry,pyramid,poe,carillon').split(','))};
   function portScene(s){return s.ow||SNES_AREAN[s.area]==1||PORT_AREAS.includes(s.area);}`, sb);
 vm.runInContext('shadow=()=>{};', sb);   // soft shadows don't survive palette reduction
 const dump = vm.runInContext(`(function(){
@@ -72,7 +72,9 @@ const dump = vm.runInContext(`(function(){
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
       grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,
       solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],
-      pickups:(s.items||[]).filter(it=>it.kind=='skey').map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
+      pickups:(s.items||[]).filter(it=>['skey','carkey','piece'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
+      blocks:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='#'?[x,y]:null).filter(Boolean)),
+      switches:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='^'?[x,y]:null).filter(Boolean)),
       dyn:s.dyn.map(d=>({cells:d.cells,closed:d.closed,open:d.open,flag:d.flag||null,solved:d.solved||null})),
       doors:(s.doors||[]).map(d=>({tx:d.tx,ty:d.ty,to:d.to,need:d.need||null,ret:d.ret})),
       chests:(s.chests||[]).map(q=>({id:q.id,tx:q.tx,ty:q.ty,item:q.item,appear:!!q.appear})),bushes});
@@ -138,8 +140,16 @@ const world = vm.runInContext(`(function(){
       if(!talks.length&&n0.talk=='shop')talks.push(['What can I get you?']);
       if(!talks.length&&n0.talk=='grocer')talks.push(['Fresh from the farms!']);
       if(!talks.length)talks.push(['...']);
+      // Trading quest (melon -> sheet music -> river map -> kayak): talks that change what you carry.
+      const quest=[];
+      for(const need of [null,'melon','music','rivermap']){
+        const keep=st;st=newState();st.trade=need;const n=Object.assign({},n0);let r=null;SAID=null;
+        try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
+        const got=st.items.kayak?'kayak':st.trade;
+        if(r&&got!==need)quest.push({need:need||'none',give:got,pages:pages(r)});
+        st=keep;}
       let sp;try{sp=n0.spr&&n0.spr.down?n0.spr:npcSpr(n0);}catch(e){sp=npcSpr(Object.assign({hat:['#888','#666','#aaa'],shirt:['#888','#666','#aaa']},n0));}
-      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,gifts,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
+      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,gifts,quest,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
     });
     out[id]={reads,npcs};
   }
@@ -153,7 +163,7 @@ for (const id in world) {
     n.spr.forEach((f, i) => x.drawImage(f, i * 16 + Math.floor((16 - f.width) / 2), 16 - f.height));
     const file = 'npcs/' + safe + '_' + k + '.png';
     fs.writeFileSync(path.join(OUT, file), c.toBuffer('image/png'));
-    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, gifts: n.gifts, shop: n.shop, file };
+    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, gifts: n.gifts, quest: n.quest, shop: n.shop, file };
   }) };
 }
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1));
@@ -232,11 +242,17 @@ const bossArt = vm.runInContext(`(function(){
     drawWraith(e,false);g=old;return c;};
   out.wraith=[wdraw(true,0),wdraw(true,8),wdraw(false,0),wdraw(false,8)];
   // The Raven: body and two wing beats, facing right (web drawEnemy 'raven').
+  // The Bronze Bell, on the ground (the ROM lifts it by its height): hanging, and stunned.
+  out.bell=['float','stun'].map(stt=>{const c=mkCanvas(48,48),old=g;g=c.getContext('2d');frame=0;
+    drawBell({x:24,y:40,z:0,state:stt,t:1},false);g=old;return c;});
+  // a push block (web drawBlocks, without its soft shadow)
+  {const c=mkCanvas(16,16),x=c.getContext('2d'),R3=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(a,b,w,h);};
+   R3(0,0,16,15,'#1a1423');R3(1,1,14,13,'#8a7a6a');R3(1,1,14,3,'#b4a490');R3(1,11,14,3,'#5e5044');R3(4,5,8,5,'#6e5e4e');R3(5,6,6,3,'#9a8a76');out.block=c;}
   out.raven=[0,1].map(fl=>{const c=mkCanvas(48,48),x=c.getContext('2d'),X=24,Y=38;
     x.drawImage(SPR.raven.r.c,X-12,Y-9);x.drawImage(WINGS[fl].r.c,X-12+4,Y-9+(fl?6:-3));return c;});
   // 16x16 icons: keg, hook, keystones (granite, iron, brick, bronze); explosion 32x32 x2
   const icon=(img)=>{const c=mkCanvas(16,16),x=c.getContext('2d');x.drawImage(img,Math.floor((16-img.width)/2),Math.floor((16-img.height)/2));return c;};
-  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key)];
+  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key),icon(IC.carkey),icon(IC.piece)];
   out.boom=[0,1].map(i=>{const c=mkCanvas(32,32),old=g;g=c.getContext('2d');
     const cols=['#ffffff','#fff2a8','#f8e060','#f08020','#e83048'];const r0=i?14:10;
     for(let r=r0;r>0;r-=2){g.fillStyle=cols[Math.min(4,Math.floor((r0-r)/2.5)+i)];g.beginPath();g.arc(16,16,r,0,7);g.fill();}
@@ -245,14 +261,15 @@ const bossArt = vm.runInContext(`(function(){
   // heart container pickup (16x16, centre 8,9)
   {const c=mkCanvas(16,16),old=g;g=c.getContext('2d');frame=0;const k={kind:'container',x:8,y:9,life:1e9,t:0};
    R(1,1,15,14,'#1a1423');R(2,2,13,12,'#fff2a8');R(3,3,11,10,'#3a1c30');g.drawImage(HEART,4,4);g=old;out.container=c;}
-  out.text={foreman:BOSSTXT.foreman,foremanIntro:BOSSINTRO.foreman,turtle:BOSSTXT.turtle,turtleIntro:BOSSINTRO.turtle,wraith:BOSSTXT.wraith,wraithIntro:BOSSINTRO.wraith,raven:BOSSTXT.raven,ravenIntro:BOSSINTRO.raven};
+  out.text={foreman:BOSSTXT.foreman,foremanIntro:BOSSINTRO.foreman,turtle:BOSSTXT.turtle,turtleIntro:BOSSINTRO.turtle,wraith:BOSSTXT.wraith,wraithIntro:BOSSINTRO.wraith,raven:BOSSTXT.raven,ravenIntro:BOSSINTRO.raven,bell:BOSSTXT.bell,bellIntro:BOSSINTRO.bell};
   return out;})()`, sb);
 {
   const strip = createCanvas(48 * bossArt.foreman.length, 48), x = strip.getContext('2d');
   bossArt.foreman.forEach((c, i) => x.drawImage(c, i * 48, 0));
   fs.writeFileSync(path.join(OUT, 'combat', 'foreman.png'), strip.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'container.png'), bossArt.container.toBuffer('image/png'));
-  for (const name of ['turtle', 'wraith', 'raven']) {
+  fs.writeFileSync(path.join(OUT, 'combat', 'block.png'), bossArt.block.toBuffer('image/png'));
+  for (const name of ['turtle', 'wraith', 'raven', 'bell']) {
     const ts = createCanvas(48 * bossArt[name].length, 48), tx2 = ts.getContext('2d');
     bossArt[name].forEach((c, i) => tx2.drawImage(c, i * 48, 0));
     fs.writeFileSync(path.join(OUT, 'combat', name + '.png'), ts.toBuffer('image/png'));
@@ -264,14 +281,14 @@ const bossArt = vm.runInContext(`(function(){
   bossArt.boom.forEach((c, i) => bx.drawImage(c, i * 32, 0));
   fs.writeFileSync(path.join(OUT, 'combat', 'boom.png'), bm.toBuffer('image/png'));
   // spark shot (2 blinks) and the hook head and chain link, 8x8 each, drawn like the web game
-  const sm = createCanvas(56, 8), q = sm.getContext('2d');
+  const sm = createCanvas(64, 8), q = sm.getContext('2d');
   const R2 = (X, Y, W, H, C) => { q.fillStyle = C; q.fillRect(X, Y, W, H); };
   for (const [i, c] of [[0, '#f8e060'], [1, '#f08020']]) { const X = i * 8 + 4, Y = 4;
     R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
   { const X = 20, Y = 4; R2(X - 3, Y - 3, 7, 7, '#1a1423'); R2(X - 2, Y - 2, 5, 5, '#d8dce4'); R2(X - 1, Y - 1, 3, 3, '#8e909c'); }
   { const X = 28, Y = 4; R2(X - 1, Y - 1, 3, 3, '#1a1423'); R2(X, Y, 1, 1, '#aeb2c0'); }
   // orb (the Wraith's) and a reflected shot
-  for (const [i, c] of [[4, '#e83048'], [5, '#fff2a8'], [6, '#4a4662']]) { const X = i * 8 + 4, Y = 4;
+  for (const [i, c] of [[4, '#e83048'], [5, '#fff2a8'], [6, '#4a4662'], [7, '#f0c070']]) { const X = i * 8 + 4, Y = 4;
     R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
   fs.writeFileSync(path.join(OUT, 'combat', 'small.png'), sm.toBuffer('image/png'));
   const intro = vm.runInContext("(function(){try{return Object.entries(BANNERS||{})}catch(e){return null}})()", sb);

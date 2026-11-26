@@ -1452,6 +1452,116 @@ m65_xtr:
 .incbin "data/m65.xtr"
 .ends
 
+.section ".map66" superfree
+m66_chr:
+.incbin "data/m66.chr"
+m66_chrend:
+m66_map:
+.incbin "data/m66.map"
+m66_pal:
+.incbin "data/m66.pal"
+m66_col:
+.incbin "data/m66.col"
+m66_wld:
+.incbin "data/m66.wld"
+m66_och:
+.incbin "data/m66.och"
+m66_opl:
+.incbin "data/m66.opl"
+m66_ene:
+.incbin "data/m66.ene"
+m66_xtr:
+.incbin "data/m66.xtr"
+.ends
+
+.section ".map67" superfree
+m67_chr:
+.incbin "data/m67.chr"
+m67_chrend:
+m67_map:
+.incbin "data/m67.map"
+m67_pal:
+.incbin "data/m67.pal"
+m67_col:
+.incbin "data/m67.col"
+m67_wld:
+.incbin "data/m67.wld"
+m67_och:
+.incbin "data/m67.och"
+m67_opl:
+.incbin "data/m67.opl"
+m67_ene:
+.incbin "data/m67.ene"
+m67_xtr:
+.incbin "data/m67.xtr"
+.ends
+
+.section ".map68" superfree
+m68_chr:
+.incbin "data/m68.chr"
+m68_chrend:
+m68_map:
+.incbin "data/m68.map"
+m68_pal:
+.incbin "data/m68.pal"
+m68_col:
+.incbin "data/m68.col"
+m68_wld:
+.incbin "data/m68.wld"
+m68_och:
+.incbin "data/m68.och"
+m68_opl:
+.incbin "data/m68.opl"
+m68_ene:
+.incbin "data/m68.ene"
+m68_xtr:
+.incbin "data/m68.xtr"
+.ends
+
+.section ".map69" superfree
+m69_chr:
+.incbin "data/m69.chr"
+m69_chrend:
+m69_map:
+.incbin "data/m69.map"
+m69_pal:
+.incbin "data/m69.pal"
+m69_col:
+.incbin "data/m69.col"
+m69_wld:
+.incbin "data/m69.wld"
+m69_och:
+.incbin "data/m69.och"
+m69_opl:
+.incbin "data/m69.opl"
+m69_ene:
+.incbin "data/m69.ene"
+m69_xtr:
+.incbin "data/m69.xtr"
+.ends
+
+.section ".map70" superfree
+m70_chr:
+.incbin "data/m70.chr"
+m70_chrend:
+m70_map:
+.incbin "data/m70.map"
+m70_pal:
+.incbin "data/m70.pal"
+m70_col:
+.incbin "data/m70.col"
+m70_wld:
+.incbin "data/m70.wld"
+m70_och:
+.incbin "data/m70.och"
+m70_opl:
+.incbin "data/m70.opl"
+m70_ene:
+.incbin "data/m70.ene"
+m70_xtr:
+.incbin "data/m70.xtr"
+.ends
+
 .section ".hero" superfree
 hero_chr:
 .incbin "data/hero.chr"
@@ -1503,6 +1613,14 @@ boss4_pal:
 .incbin "data/boss4.pal"
 .ends
 
+.section ".boss5" superfree
+boss5_chr:
+.incbin "data/boss5.chr"
+boss5_chrend:
+boss5_pal:
+.incbin "data/boss5.pal"
+.ends
+
 .section ".combat" superfree
 combat_chr:
 .incbin "data/combat.chr"
@@ -1515,6 +1633,8 @@ combat_pal:
 items_chr:
 .incbin "data/items.chr"
 items_chrend:
+block_pal:
+.incbin "data/block.pal"
 .ends
 
 .section ".font" superfree

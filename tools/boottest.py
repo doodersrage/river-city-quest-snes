@@ -96,7 +96,7 @@ lab.screenshot(f'{out}/7-row-house.png')
 lab.walk_to_cell(7, 8)
 lab.run('DOWN', 40)
 lab.run(None, 40)
-check(lab.map == 11 and lab.pos[1] // 16 == 17, f'the stairs lead back out to the Fan (map {lab.map}, {lab.pos})')
+check(lab.map == 11 and abs(lab.pos[0] - 72) < 24 and abs(lab.pos[1] - 280) < 24, f'the stairs lead back out to the Fan, by the door (map {lab.map}, {lab.pos})')  # a rat may bump you
 
 # Stage 4: Carytown Goods. Buy a heart charm.
 lab.walk_to_cell(0, 11)
@@ -574,13 +574,117 @@ lab.run('DOWN', 30)
 lab.run(None, 40)
 check(lab.map == 17, 'back west and south to Hollywood Cemetery')
 
-# Stage 3: let a ghost take the last half-heart; wake in Capitol Square.
+# Stage 6: the trading quest, the kayak, the Carillon Key and the Carillon.
+def go(d, cell):
+    lab.walk_to_cell(*cell); lab.run(d, 30); lab.run(None, 40)
+def talk(cell, d):
+    lab.walk_to_cell(*cell); lab.face(d); lab.press('A', 60); close_box()
+def push(start_cell, d, frames):
+    lab.walk_to_cell(*start_cell)
+    for _ in range(frames):
+        lab.run(d, 1)
+        if lab.ram('hp') <= 2:
+            lab.poke('hp', lab.ram('hpMax'))
+    lab.run(None, 10)
+go('UP', (15, 0)); go('LEFT', (0, 10))
+talk((25, 18), 'up')
+check(lab.ram('tradeItem') == 1, 'a Carytown vendor hands over a melon')
+go('RIGHT', (31, 10)); go('UP', (15, 0)); go('RIGHT', (31, 10))
+talk((12, 4), 'up')
+check(lab.map == lab.map_named('Jackson Ward') and lab.ram('tradeItem') == 2, 'the Jackson Ward musician trades sheet music for it')
+go('LEFT', (0, 10)); go('DOWN', (15, 21)); go('LEFT', (0, 10))
+lab.walk_to_cell(22, 17); lab.run('UP', 20); lab.run(None, 60)
+talk((10, 3), 'up')
+check(lab.map == lab.map_named('The Byrd Theatre') and lab.ram('tradeItem') == 3, 'the Byrd organist trades a river map')
+lab.walk_to_cell(7, 8); lab.run('DOWN', 30); lab.run(None, 60)
+go('RIGHT', (31, 10)); go('DOWN', (15, 21)); go('RIGHT', (31, 10))
+talk((8, 5), 'up')
+check(lab.ram('hasKayak') == 1, 'the Belle Isle kayaker lends a kayak')
+go('DOWN', (15, 21))
+check(lab.map == lab.map_named('Manchester'), 'paddle across the James to Manchester')
+go('LEFT', (0, 10))
+equip(2); lab.walk_to_cell(22, 9); lab.face('up'); lab.press('B', 2); lab.walk_to_cell(22, 12); lab.run(None, 90)
+lab.walk_to_cell(22, 8); lab.run('UP', 20); lab.run(None, 30)
+lab.screenshot(f'{out}/23-carillon-key.png'); close_box()
+check(lab.map == lab.map_named('Forest Hill Park') and lab.ram('hasCarkey') == 1, 'a keg clears the Forest Hill rubble: the Carillon Key')
+go('RIGHT', (31, 10)); go('UP', (15, 0)); go('LEFT', (0, 10)); go('LEFT', (0, 10))
+lab.walk_to_cell(4, 8); lab.run('UP', 20); lab.run(None, 70); close_box()
+check(lab.map == lab.map_named('Carillon Base'), 'the key opens the Carillon')
+clear_room()
+push((3, 5), 'RIGHT', 320)
+lab.screenshot(f'{out}/24-carillon-base.png')
+check(lab.ram('roomFlags', 1, False, lab.map) & 16, 'a push block onto the switch opens the gate')
+lab.walk_to_cell(7, 1); lab.run('UP', 40); lab.run(None, 40); close_box()
+check(lab.map == lab.map_named('Rope Room') and clear_room(), 'the Rope Room is cleared')
+lab.walk_to_cell(1, 5); lab.run('LEFT', 40); lab.run(None, 40); close_box()
+clear_room()
+push((3, 3), 'RIGHT', 300); push((12, 7), 'LEFT', 300)
+lab.screenshot(f'{out}/25-bell-loft.png')
+check(lab.map == lab.map_named('Bell Loft') and lab.ram('roomFlags', 1, False, lab.map) & 16, 'two blocks solve the Bell Loft')
+lab.walk_to_cell(12, 5); lab.face('right'); lab.press('A', 60); close_box()
+check(lab.ram('keys', 1, False, lab.ram('roomArea')) == 1, 'a small key')
+lab.walk_to_cell(14, 5); lab.run('RIGHT', 40); lab.run(None, 40)
+lab.walk_to_cell(7, 1); lab.run('UP', 10); lab.run('UP', 40); lab.run(None, 60)
+check(lab.map == lab.map_named('The Great Bell') and lab.ram('boxState'), 'the key opens the Great Bell')
+lab.screenshot(f'{out}/26-the-great-bell.png'); close_box()
+shot = False
+for _ in range(9000):
+    if lab.ram('boxState') or not lab.ram('bossOn') or lab.map != lab.map_named('The Great Bell'):
+        break
+    if lab.ram('hp') <= 2:
+        lab.poke('hp', lab.ram('hpMax'))
+    st, bt = lab.ram('bossState'), lab.ram('bossT')
+    bx, by = lab.ram('bossX', 2, True) >> 4, lab.ram('bossY', 2, True) >> 4
+    x, y = lab.pos
+    dx, dy = bx - x, (by - 4) - y
+    if st == 2:
+        if not shot and lab.ram('bossSt') < 100:
+            lab.screenshot(f'{out}/27-bell-slams.png'); shot = True
+        if abs(dx) < 12 and abs(dy) < 24:
+            lab.run('UP' if dy < 0 else 'DOWN', 1); lab.press('A', 8)
+        elif abs(dx) < 22 and abs(dy) < 12:
+            lab.run('RIGHT' if dx > 0 else 'LEFT', 1); lab.press('A', 8)
+        else:
+            lab.run(('RIGHT' if dx > 0 else 'LEFT') if abs(dx) > abs(dy) else ('DOWN' if dy > 0 else 'UP'), 1)
+    elif st == 4 or (st == 0 and bt % 140 > 110):
+        gx = 40 if bx > 120 else 200
+        b = []
+        if abs(gx - x) > 3: b.append('RIGHT' if gx > x else 'LEFT')
+        if abs(100 - y) > 3: b.append('DOWN' if 100 > y else 'UP')
+        lab.run('+'.join(b) or None, 1)
+    else:
+        lab.run(None, 1)
+check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'the Bronze Bell is beaten')
+lab.run(None, 40); close_box()
+hpmax = lab.ram('hpMax')
+for c in [(7, 4), (9, 4)]:
+    try:
+        lab.walk_to_cell(*c)
+    except RuntimeError:
+        pass
+    lab.run(None, 20); close_box(); lab.run('DOWN', 4); lab.run(None, 20); close_box()
+lab.screenshot(f'{out}/28-bell-beaten.png')
+check(lab.ram('keystones') == 15, 'the Bronze Keystone (4 of 4)')
+check(lab.ram('hpMax') == hpmax + 2, 'and a heart container')
+lab.walk_to_cell(7, 9); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+equip(2); lab.walk_to_cell(14, 5); lab.face('right'); lab.press('B', 2); lab.walk_to_cell(10, 5); lab.run(None, 100)
+lab.walk_to_cell(15, 5); lab.run('RIGHT', 30); lab.run(None, 60); close_box()
+check(lab.map == lab.map_named('Belfry Ledge') and clear_room(), 'a keg opens the Belfry Ledge')
+lab.walk_to_cell(8, 4); lab.face('up'); lab.press('A', 60)
+lab.screenshot(f'{out}/29-heart-piece.png'); close_box()
+check(lab.ram('pieces') == 1, 'a heart piece (1 of 4)')
+lab.walk_to_cell(0, 5); lab.run('LEFT', 30); lab.run(None, 60); close_box()
+lab.walk_to_cell(7, 9); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+lab.walk_to_cell(7, 9); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+check(lab.map == lab.map_named('Byrd Park & Maymont'), 'back out to Byrd Park')
+
+# Stage 3: let an enemy take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)
 for _ in range(1500):
     if lab.ram('dying'):
         break
     lab.run(None, 1)
-check(lab.ram('dying') == 1, 'a ghost takes the last heart')
+check(lab.ram('dying') == 1, 'an enemy takes the last heart')
 lab.run(None, 60)
 lab.screenshot(f'{out}/22-fog-takes-you.png')
 for _ in range(10):
