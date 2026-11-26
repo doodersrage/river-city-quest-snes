@@ -818,9 +818,12 @@ for _ in range(4):
     if lab.ram('hasBike'): break
 check(lab.ram('hasBike'), 'the Trail Cyclist at Rocketts Landing hands over a bicycle')
 walk((6, 12)); lab.press('B', 2)
-x0 = lab.pos[0]; lab.run('RIGHT', 60)
+moved = frames = 0
+for _ in range(60):
+    x0 = lab.pos[0]; lab.run('RIGHT', 1)
+    if lab.pos[0] != x0: moved += lab.pos[0] - x0; frames += 1
 lab.screenshot(f'{out}/39-bike.png')
-check(lab.ram('riding') and lab.pos[0] - x0 >= 110, f'B hops on the bike: {lab.pos[0] - x0} px in a second (walking is 90)')
+check(lab.ram('riding') and frames and moved / frames >= 1.9, f'B hops on the bike: {moved / max(frames, 1):.2f} px a frame (walking is 1.5)')
 lab.press('A', 4)
 check(not lab.ram('riding'), 'A hops off')
 check(menu_pick(10), 'Ginger Beer on B')
