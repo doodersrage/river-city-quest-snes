@@ -4,6 +4,7 @@
 m0_chr:
 .incbin "data/m0.chr"
 m0_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map0" superfree
@@ -29,6 +30,7 @@ m0_xtr:
 m1_chr:
 .incbin "data/m1.chr"
 m1_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map1" superfree
@@ -54,6 +56,7 @@ m1_xtr:
 m2_chr:
 .incbin "data/m2.chr"
 m2_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map2" superfree
@@ -79,6 +82,7 @@ m2_xtr:
 m3_chr:
 .incbin "data/m3.chr"
 m3_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map3" superfree
@@ -104,6 +108,7 @@ m3_xtr:
 m4_chr:
 .incbin "data/m4.chr"
 m4_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map4" superfree
@@ -129,6 +134,7 @@ m4_xtr:
 m5_chr:
 .incbin "data/m5.chr"
 m5_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map5" superfree
@@ -154,6 +160,7 @@ m5_xtr:
 m6_chr:
 .incbin "data/m6.chr"
 m6_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map6" superfree
@@ -179,6 +186,7 @@ m6_xtr:
 m7_chr:
 .incbin "data/m7.chr"
 m7_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map7" superfree
@@ -204,6 +212,7 @@ m7_xtr:
 m8_chr:
 .incbin "data/m8.chr"
 m8_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map8" superfree
@@ -229,6 +238,7 @@ m8_xtr:
 m9_chr:
 .incbin "data/m9.chr"
 m9_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map9" superfree
@@ -254,6 +264,7 @@ m9_xtr:
 m10_chr:
 .incbin "data/m10.chr"
 m10_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map10" superfree
@@ -279,6 +290,7 @@ m10_xtr:
 m11_chr:
 .incbin "data/m11.chr"
 m11_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map11" superfree
@@ -304,6 +316,7 @@ m11_xtr:
 m12_chr:
 .incbin "data/m12.chr"
 m12_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map12" superfree
@@ -329,6 +342,7 @@ m12_xtr:
 m13_chr:
 .incbin "data/m13.chr"
 m13_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map13" superfree
@@ -354,6 +368,7 @@ m13_xtr:
 m14_chr:
 .incbin "data/m14.chr"
 m14_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map14" superfree
@@ -379,6 +394,7 @@ m14_xtr:
 m15_chr:
 .incbin "data/m15.chr"
 m15_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map15" superfree
@@ -404,6 +420,7 @@ m15_xtr:
 m16_chr:
 .incbin "data/m16.chr"
 m16_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map16" superfree
@@ -429,6 +446,7 @@ m16_xtr:
 m17_chr:
 .incbin "data/m17.chr"
 m17_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map17" superfree
@@ -454,6 +472,7 @@ m17_xtr:
 m18_chr:
 .incbin "data/m18.chr"
 m18_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map18" superfree
@@ -479,6 +498,7 @@ m18_xtr:
 m19_chr:
 .incbin "data/m19.chr"
 m19_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map19" superfree
@@ -504,6 +524,7 @@ m19_xtr:
 m20_chr:
 .incbin "data/m20.chr"
 m20_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map20" superfree
@@ -529,6 +550,7 @@ m20_xtr:
 m21_chr:
 .incbin "data/m21.chr"
 m21_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map21" superfree
@@ -554,6 +576,7 @@ m21_xtr:
 m22_chr:
 .incbin "data/m22.chr"
 m22_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map22" superfree
@@ -579,6 +602,7 @@ m22_xtr:
 m23_chr:
 .incbin "data/m23.chr"
 m23_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map23" superfree
@@ -604,6 +628,7 @@ m23_xtr:
 m24_chr:
 .incbin "data/m24.chr"
 m24_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map24" superfree
@@ -629,6 +654,7 @@ m24_xtr:
 m25_chr:
 .incbin "data/m25.chr"
 m25_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map25" superfree
@@ -654,6 +680,7 @@ m25_xtr:
 m26_chr:
 .incbin "data/m26.chr"
 m26_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map26" superfree
@@ -679,6 +706,7 @@ m26_xtr:
 m27_chr:
 .incbin "data/m27.chr"
 m27_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map27" superfree
@@ -704,6 +732,7 @@ m27_xtr:
 m28_chr:
 .incbin "data/m28.chr"
 m28_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map28" superfree
@@ -729,6 +758,7 @@ m28_xtr:
 m29_chr:
 .incbin "data/m29.chr"
 m29_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map29" superfree
@@ -754,6 +784,7 @@ m29_xtr:
 m30_chr:
 .incbin "data/m30.chr"
 m30_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map30" superfree
@@ -779,6 +810,7 @@ m30_xtr:
 m31_chr:
 .incbin "data/m31.chr"
 m31_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map31" superfree
@@ -804,6 +836,7 @@ m31_xtr:
 m32_chr:
 .incbin "data/m32.chr"
 m32_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map32" superfree
@@ -829,6 +862,7 @@ m32_xtr:
 m33_chr:
 .incbin "data/m33.chr"
 m33_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map33" superfree
@@ -854,6 +888,7 @@ m33_xtr:
 m34_chr:
 .incbin "data/m34.chr"
 m34_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map34" superfree
@@ -879,6 +914,7 @@ m34_xtr:
 m35_chr:
 .incbin "data/m35.chr"
 m35_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map35" superfree
@@ -904,6 +940,7 @@ m35_xtr:
 m36_chr:
 .incbin "data/m36.chr"
 m36_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map36" superfree
@@ -929,6 +966,7 @@ m36_xtr:
 m37_chr:
 .incbin "data/m37.chr"
 m37_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map37" superfree
@@ -954,6 +992,7 @@ m37_xtr:
 m38_chr:
 .incbin "data/m38.chr"
 m38_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map38" superfree
@@ -979,6 +1018,7 @@ m38_xtr:
 m39_chr:
 .incbin "data/m39.chr"
 m39_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map39" superfree
@@ -1004,6 +1044,7 @@ m39_xtr:
 m40_chr:
 .incbin "data/m40.chr"
 m40_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map40" superfree
@@ -1029,6 +1070,7 @@ m40_xtr:
 m41_chr:
 .incbin "data/m41.chr"
 m41_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map41" superfree
@@ -1054,6 +1096,7 @@ m41_xtr:
 m42_chr:
 .incbin "data/m42.chr"
 m42_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map42" superfree
@@ -1079,6 +1122,7 @@ m42_xtr:
 m43_chr:
 .incbin "data/m43.chr"
 m43_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map43" superfree
@@ -1104,6 +1148,7 @@ m43_xtr:
 m44_chr:
 .incbin "data/m44.chr"
 m44_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map44" superfree
@@ -1129,6 +1174,7 @@ m44_xtr:
 m45_chr:
 .incbin "data/m45.chr"
 m45_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map45" superfree
@@ -1154,6 +1200,7 @@ m45_xtr:
 m46_chr:
 .incbin "data/m46.chr"
 m46_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map46" superfree
@@ -1179,6 +1226,7 @@ m46_xtr:
 m47_chr:
 .incbin "data/m47.chr"
 m47_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map47" superfree
@@ -1204,6 +1252,7 @@ m47_xtr:
 m48_chr:
 .incbin "data/m48.chr"
 m48_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map48" superfree
@@ -1229,6 +1278,7 @@ m48_xtr:
 m49_chr:
 .incbin "data/m49.chr"
 m49_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map49" superfree
@@ -1254,6 +1304,7 @@ m49_xtr:
 m50_chr:
 .incbin "data/m50.chr"
 m50_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map50" superfree
@@ -1279,6 +1330,7 @@ m50_xtr:
 m51_chr:
 .incbin "data/m51.chr"
 m51_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map51" superfree
@@ -1304,6 +1356,7 @@ m51_xtr:
 m52_chr:
 .incbin "data/m52.chr"
 m52_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map52" superfree
@@ -1329,6 +1382,7 @@ m52_xtr:
 m53_chr:
 .incbin "data/m53.chr"
 m53_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map53" superfree
@@ -1354,6 +1408,7 @@ m53_xtr:
 m54_chr:
 .incbin "data/m54.chr"
 m54_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map54" superfree
@@ -1379,6 +1434,7 @@ m54_xtr:
 m55_chr:
 .incbin "data/m55.chr"
 m55_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map55" superfree
@@ -1404,6 +1460,7 @@ m55_xtr:
 m56_chr:
 .incbin "data/m56.chr"
 m56_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map56" superfree
@@ -1429,6 +1486,7 @@ m56_xtr:
 m57_chr:
 .incbin "data/m57.chr"
 m57_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map57" superfree
@@ -1454,6 +1512,7 @@ m57_xtr:
 m58_chr:
 .incbin "data/m58.chr"
 m58_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map58" superfree
@@ -1479,6 +1538,7 @@ m58_xtr:
 m59_chr:
 .incbin "data/m59.chr"
 m59_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map59" superfree
@@ -1504,6 +1564,7 @@ m59_xtr:
 m60_chr:
 .incbin "data/m60.chr"
 m60_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map60" superfree
@@ -1529,6 +1590,7 @@ m60_xtr:
 m61_chr:
 .incbin "data/m61.chr"
 m61_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map61" superfree
@@ -1554,6 +1616,7 @@ m61_xtr:
 m62_chr:
 .incbin "data/m62.chr"
 m62_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map62" superfree
@@ -1579,6 +1642,7 @@ m62_xtr:
 m63_chr:
 .incbin "data/m63.chr"
 m63_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map63" superfree
@@ -1604,6 +1668,7 @@ m63_xtr:
 m64_chr:
 .incbin "data/m64.chr"
 m64_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map64" superfree
@@ -1629,6 +1694,7 @@ m64_xtr:
 m65_chr:
 .incbin "data/m65.chr"
 m65_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map65" superfree
@@ -1654,6 +1720,7 @@ m65_xtr:
 m66_chr:
 .incbin "data/m66.chr"
 m66_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map66" superfree
@@ -1679,6 +1746,7 @@ m66_xtr:
 m67_chr:
 .incbin "data/m67.chr"
 m67_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map67" superfree
@@ -1704,6 +1772,7 @@ m67_xtr:
 m68_chr:
 .incbin "data/m68.chr"
 m68_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map68" superfree
@@ -1729,6 +1798,7 @@ m68_xtr:
 m69_chr:
 .incbin "data/m69.chr"
 m69_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map69" superfree
@@ -1754,6 +1824,7 @@ m69_xtr:
 m70_chr:
 .incbin "data/m70.chr"
 m70_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map70" superfree
@@ -1779,6 +1850,7 @@ m70_xtr:
 m71_chr:
 .incbin "data/m71.chr"
 m71_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map71" superfree
@@ -1804,6 +1876,7 @@ m71_xtr:
 m72_chr:
 .incbin "data/m72.chr"
 m72_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map72" superfree
@@ -1829,6 +1902,7 @@ m72_xtr:
 m73_chr:
 .incbin "data/m73.chr"
 m73_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map73" superfree
@@ -1854,6 +1928,7 @@ m73_xtr:
 m74_chr:
 .incbin "data/m74.chr"
 m74_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map74" superfree
@@ -1879,6 +1954,7 @@ m74_xtr:
 m75_chr:
 .incbin "data/m75.chr"
 m75_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map75" superfree
@@ -1904,6 +1980,7 @@ m75_xtr:
 m76_chr:
 .incbin "data/m76.chr"
 m76_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map76" superfree
@@ -1929,6 +2006,7 @@ m76_xtr:
 m77_chr:
 .incbin "data/m77.chr"
 m77_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map77" superfree
@@ -1954,6 +2032,7 @@ m77_xtr:
 m78_chr:
 .incbin "data/m78.chr"
 m78_chrend:
+.db 0   ; (keeps the end label inside the bank)
 .ends
 
 .section ".map78" superfree

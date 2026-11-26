@@ -1127,7 +1127,7 @@ def main():
         # section, so the linker can put them in a different bank from the rest of the map
         if len(chr_) > 0x8000: raise SystemExit(f'{m["id"]}: {len(chr_)} bytes of tiles, over one 32 KB bank')
         if size - len(chr_) > 0x8000: raise SystemExit(f'{m["id"]}: {size - len(chr_)} bytes of map data, over one 32 KB bank')
-        asm += [f'.section ".map{i}c" superfree', f'm{i}_chr:', f'.incbin "data/m{i}.chr"', f'm{i}_chrend:', '.ends', '',
+        asm += [f'.section ".map{i}c" superfree', f'm{i}_chr:', f'.incbin "data/m{i}.chr"', f'm{i}_chrend:', '.db 0   ; (keeps the end label inside the bank)', '.ends', '',
                 f'.section ".map{i}" superfree',
                 f'm{i}_map:', f'.incbin "data/m{i}.map"',
                 f'm{i}_pal:', f'.incbin "data/m{i}.pal"',
