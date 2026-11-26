@@ -851,6 +851,12 @@ def equip(item):
         lab.press('SELECT', 2)
     return lab.ram('eqItem') == item
 travel(lab, N('Church Hill'), close_box)
+lab.run('RIGHT', 20)   # off the edge, then deal with whatever's waiting by it
+for _ in range(4):
+    near = [k for k in range(6) if lab.enemy(k)['alive'] and abs(lab.enemy(k)['x'] - lab.pos[0]) + abs(lab.enemy(k)['y'] - lab.pos[1]) < 96]
+    if not near or lab.map != N('Church Hill'): break
+    lab.fight(near[0], 300)
+if lab.map != N('Church Hill'): travel(lab, N('Church Hill'), close_box); lab.run('RIGHT', 20)
 walk((4, 5)); lab.steer_to(72, 90); lab.run('UP', 40); lab.run(None, 70); close_box()
 check(lab.map == N('Church Hill Tunnel'), 'the four keystones open the Church Hill Tunnel')
 lab.screenshot(f'{out}/41-church-hill-tunnel.png')
