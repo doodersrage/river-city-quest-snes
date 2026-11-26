@@ -222,6 +222,7 @@ check(lab.map == lab.map_named('Furnace Hall') and lab.ram('boxState'), 'the Iro
 check(song() == 'boss', f'the boss theme ({song()})')
 close_box()
 lab.screenshot(f'{out}/11-iron-foreman.png')
+hpmax_before_foreman = lab.ram('hpMax')
 clanked = stunned = False
 def poke16(name, v):
     lab.poke(name, v & 0xFF, 0); lab.poke(name, (v >> 8) & 0xFF, 1)
@@ -267,7 +268,7 @@ check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'th
 close_box()
 lab.run(None, 10)
 check(song() == 'forge', f'and back to the forge theme once its last words are read ({song()})')
-hpmax = lab.ram('hpMax')
+hpmax = hpmax_before_foreman   # (the fight may already have walked over the container)
 try:
     lab.walk_to_cell(9, 3)      # the container is at (144, 80); walking past it picks it up
 except RuntimeError:
@@ -1014,7 +1015,7 @@ set_clock(4500); lab.run(None, 4); day = brightness()
 set_clock(16 * 1500); lab.run(None, 4); night = brightness()
 lab.screenshot(f'{out}/48-night.png')
 check(lab.ram('darkLevel') == 4 and night < day * .75, f'night falls at 10pm ({day:.0f} -> {night:.0f} brightness)')
-check(lab.ram('lightR1') == 32, f"a circle of light around you ({lab.ram('lightR1')})")
+check(lab.ram('lightR1') == (54 if lab.ram('hasLantern') else 32), f"a circle of light around you, wider with the lantern ({lab.ram('lightR1')})")
 set_clock(12 * 1500 + 600); lab.run(None, 4)
 check(0 < lab.ram('darkLevel') < 4, f"dusk comes on gradually (level {lab.ram('darkLevel')})")
 set_clock(4500); lab.run(None, 4)
