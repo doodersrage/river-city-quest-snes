@@ -1334,6 +1334,7 @@ check(play_mini(0, hoops), 'the Rams Coach hands you the ball')
 check(lab.ram('mgMade') >= 8, f"{lab.ram('mgMade')} of 10 from the line")
 check(lab.ram('coins', 2) == min(999, coins + 2 * lab.ram('mgMade')), f"two coins a basket ({coins} -> {lab.ram('coins', 2)})")
 close_box()
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()   # back out to VCU
 
 # The scrolling-road races: steer around what's ahead.
 def racer(f):
