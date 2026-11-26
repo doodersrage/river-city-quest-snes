@@ -182,7 +182,10 @@ const world = vm.runInContext(`(function(){
       const MG={ballplayer:'bat',hoops:'hoops',tennis:'tennis',racer:'derby',cyclist:'trail',racedir:'race'}[n0.talk]||null;let mtext=null;
       if(MG){const keep=st;st=newState();st.items.bike=st.items.balls=1;st.ammo.balls=st.cap.balls;st.pins.flies=1;const n=Object.assign({},n0);SAID=null;let r=null;
         try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}st=keep;mtext=r?pages(r):null;}
-      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',wander:!!n0.wander,chal:n0.chal||null,mini:MG,miniText:mtext,talks,gifts,quest,refill,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
+      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',wander:!!n0.wander,chal:n0.chal||null,mini:MG,miniText:mtext,talks,gifts,quest,refill,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c],
+        look:(()=>{let q=0;const key=(n0.who||'')+(n0.hx|0)+','+(n0.hy|0);for(const c of key)q=(q*31+c.charCodeAt(0))>>>0;   // web npcSpr's choices
+          return {hat:n0.hat||['#888888','#666666','#aaaaaa'],shirt:n0.shirt||['#888888','#666666','#aaaaaa'],skin:SKINS[q%4],hair:HAIRS[(q>>>3)%HAIRS.length],
+            pants:["#3c3c54","#5a4a3a","#2e3a5e","#4a4a4a"][(q>>>6)%4],q};})()};
     });
     out[id]={reads,npcs};
   }
@@ -196,7 +199,7 @@ for (const id in world) {
     n.spr.forEach((f, i) => x.drawImage(f, i * 16 + Math.floor((16 - f.width) / 2), 16 - f.height));
     const file = 'npcs/' + safe + '_' + k + '.png';
     fs.writeFileSync(path.join(OUT, file), c.toBuffer('image/png'));
-    return { tx: n.tx, ty: n.ty, who: n.who, wander: n.wander, chal: n.chal, mini: n.mini, miniText: n.miniText, talks: n.talks, gifts: n.gifts, quest: n.quest, refill: n.refill, shop: n.shop, file };
+    return { look: n.look, tx: n.tx, ty: n.ty, who: n.who, wander: n.wander, chal: n.chal, mini: n.mini, miniText: n.miniText, talks: n.talks, gifts: n.gifts, quest: n.quest, refill: n.refill, shop: n.shop, file };
   }) };
 }
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1));

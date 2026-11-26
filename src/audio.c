@@ -46,6 +46,7 @@ void rcqVBlank(void)
 {
     WaitForVBlank();
     heroVBlank();  /* a new frame of the hero, if he changed */
+    npcVBlank();   /* and of one townsperson */
     lightVBlank();
     if (miniOn) miniVBlank(); /* its score line, while still in VBlank */
     spcProcess();

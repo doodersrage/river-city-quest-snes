@@ -357,28 +357,32 @@ def sprite_palette(colors):
     return bgr555((0, 0, 0)) + b''.join(bgr555(c) for c in colors) + bgr555((0, 0, 0)) * (15 - len(colors))
 
 
+NPC_FRAME_BYTES = 256      # one 16x32 frame: two 128-byte chunks (OBJ tiles 32+4k and 48+4k)
+NPC_FRAMES = 9
+
+
+def frame_chunks(im, colors):
+    """A 16x32 frame as the two 128-byte chunks the ROM streams (as for the hero)."""
+    px = im.load()
+    def t(x0, y0):
+        return tile4bpp([nearest(c15(px[x0 + x, y0 + y]), colors) + 1 if px[x0 + x, y0 + y][3] > 0 else 0
+                         for y in range(8) for x in range(8)])
+    return t(0, 0) + t(8, 0) + t(0, 16) + t(8, 16) + t(0, 8) + t(8, 8) + t(0, 24) + t(8, 24)
+
+
 def convert_npcs(exp, npcs):
-    """Up to 8 NPCs x 3 frames (down, up, side) as 16x16 OBJs from tile 32 on; one palette each."""
-    sheet = [bytes(32)] * (16 * 6)   # 6 tile rows = 3 rows of 16x16 frames, 8 per row
-    pals = b''
-    for k, n in enumerate(npcs):
-        im = Image.open(os.path.join(exp, n['file'])).convert('RGBA'); px = im.load()
-        colors = sorted({c15(px[x, y]) for x in range(48) for y in range(16) if px[x, y][3] > 0})
-        if len(colors) > 15:
-            colors = colors[:15]
+    """Stage 12: townspeople at 16x32 in the hero's style (tools/art/hero32.py), nine frames each, streamed by the
+    ROM a frame at a time; one palette each."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'art'))
+    import hero32
+    out, pals = b'', b''
+    for n in npcs:
+        fs = hero32.person(n['look'])
+        colors = sorted({c15(p) for f in fs for p in f.getdata() if p[3] > 0})[:15]
         pals += sprite_palette(colors)
-        for f in range(3):
-            idx_ = k * 3 + f
-            col, row = (idx_ % 8) * 2, (idx_ // 8) * 2
-            for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
-                idx = []
-                for y in range(8):
-                    for x in range(8):
-                        p = px[f * 16 + qx * 8 + x, qy * 8 + y]
-                        idx.append(nearest(c15(p), colors) + 1 if p[3] > 0 else 0)
-                sheet[(row + qy) * 16 + col + qx] = tile4bpp(idx)
+        for f in fs: out += frame_chunks(f, colors)
     pals += bytes(32) * (MAX_NPCS - len(npcs))
-    return b''.join(sheet), pals[:MAX_NPCS * 32]
+    return out, pals[:MAX_NPCS * 32]
 
 
 def tile2bpp(idx):

@@ -112,7 +112,15 @@ LEGS_SIDE = [
 ]
 
 
-def frame(head, body, legs):
+BARE_DOWN = ["................", "................", ".....kkkkkk.....", "...kkoooooykk...", "..koooooooyyyk..",
+             ".kooooooooooyok.", ".kOoooooooooooOk", ".kOoOoooooOoOOk."]
+BARE_UP = ["................", "................", ".....kkkkkk.....", "...kkoooooykk...", "..koooooooyyyk..",
+           ".kooooooooooyok.", ".kOoooooooooooOk", ".kOooooooooooOk."]
+BARE_SIDE = ["................", "................", ".....kkkkkk.....", "...kkoooooykk...", "..koooooooyyyk..",
+             ".kooooooooooyok.", ".kOoooooooooook.", ".kOoOooooOoOOk.."]
+
+
+def frame(head, body, legs, pal=PAL):
     rows = head + body + legs
     rows = rows + ["................"] * (32 - len(rows))
     assert len(rows) == 32, len(rows)
@@ -121,19 +129,58 @@ def frame(head, body, legs):
         r = r.replace('к', 'k')
         assert len(r) == 16, (y, r)
         for x, ch in enumerate(r):
-            if ch != '.': im.putpixel((x, y), PAL[ch] + (255,))
+            if ch != '.': im.putpixel((x, y), pal[ch] + (255,))
     return im
 
 
-def sheet():
-    frames = []
-    for legs in LEGS_FRONT: frames.append(frame(HEAD_DOWN, BODY_DOWN, legs))
-    for legs in LEGS_FRONT: frames.append(frame(HEAD_UP, BODY_UP, legs))
-    for legs in LEGS_SIDE: frames.append(frame(HEAD_SIDE, BODY_SIDE, legs))
-    im = Image.new('RGBA', (16 * len(frames), 32), (0, 0, 0, 0))
-    for i, f in enumerate(frames): im.paste(f, (i * 16, 0))
+def frames(pal=PAL, bare=False, stripe=True):
+    """Nine 16x32 frames: down, up, side (facing right), each standing and two steps."""
+    def head(h, b):
+        return (b + h[8:]) if bare else h
+    def body(rows):
+        return rows if stripe else [r.replace('W', 'b') for r in rows]
+    out = []
+    for legs in LEGS_FRONT: out.append(frame(head(HEAD_DOWN, BARE_DOWN), body(BODY_DOWN), legs, pal))
+    for legs in LEGS_FRONT: out.append(frame(head(HEAD_UP, BARE_UP), body(BODY_UP), legs, pal))
+    for legs in LEGS_SIDE: out.append(frame(head(HEAD_SIDE, BARE_SIDE), body(BODY_SIDE), legs, pal))
+    return out
+
+
+def rgb(c):
+    return tuple(int(c[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def darker(c, t=.35):
+    r, g, b = rgb(c)
+    return (round(r + (40 - r) * t), round(g + (24 - g) * t), round(b + (56 - b) * t))
+
+
+def lighter(c, t=.35):
+    r, g, b = rgb(c)
+    return (round(r + (255 - r) * t), round(g + (244 - g) * t), round(b + (214 - b) * t))
+
+
+def person(look):
+    """A townsperson from the web game's look (hat and shirt ramps, skin, hair, trousers): about half go bareheaded."""
+    bare = (look['q'] >> 9) % 2 == 1
+    hat, shirt, skin = look['hat'], look['shirt'], look['skin']
+    hair = look.get('hair') or '#6a4020'
+    pants = look.get('pants') or '#3c3c54'
+    pal = dict(PAL)
+    if bare:
+        pal.update(o=rgb(hair), O=darker(hair), y=lighter(hair), W=lighter(hair, .6))
+    else:
+        pal.update(o=rgb(hat[0]), O=rgb(hat[1]), y=rgb(hat[2]), W=lighter(hat[2], .5))
+    pal.update(H=darker(hair), h=rgb(hair), S=rgb(skin[1]), s=rgb(skin[0]),
+               B=rgb(shirt[1]), b=rgb(shirt[0]), l=rgb(shirt[2]), p=rgb(pants), P=darker(pants))
+    return frames(pal, bare, stripe=False)
+
+
+def strip(fs):
+    im = Image.new('RGBA', (16 * len(fs), 32), (0, 0, 0, 0))
+    for i, f in enumerate(fs): im.paste(f, (i * 16, 0))
     return im
 
 
 if __name__ == '__main__':
-    sheet().save(sys.argv[1] if len(sys.argv) > 1 else 'art/hero32.png')
+    strip(frames()).save(sys.argv[1] if len(sys.argv) > 1 else 'art/hero32.png')

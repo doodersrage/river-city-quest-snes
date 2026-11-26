@@ -57,6 +57,7 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define OAM_BLOCKS 90 /* 4 */
 #define OAM_BALLS 94  /* 3 */
 #define OAM_BIKE 97
+#define OAM_NPCTOP 36  /* 4: their heads (stage 12) */
 #define OAM_HEROTOP 99 /* the hero's head (stage 12: 16x32) */
 #define MAX_EN 6
 #define MAX_PK 10 /* room for a challenge's eight tokens */
@@ -267,6 +268,7 @@ void dungeonEntered(void);
 void rcqNmi(void);
 void heroFrame(u8 f);
 void heroVBlank(void);
+void npcVBlank(void);
 void drawHero(void);
 void runEnding(void);
 

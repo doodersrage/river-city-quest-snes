@@ -9,6 +9,9 @@
 /* VRAM layout (word addresses, see game.h): BG1 tiles 0x0000, BG1 map 0x4000 (64x64),
    BG3 font 0x5000, BG3 map 0x5800, sprites 0x6000 (hero 0-31), boss art 0x7000 (tiles 256+). */
 #define VRAM_OBJ_NPC (VRAM_OBJ_CHR + 32 * 16) /* NPCs from tile 32 */
+#define NPC_BYTES (9 * 256)  /* one person's frames */
+u8 *npcChr;              /* the map's people: 9 frames each, 256 bytes a frame */
+u8 npcShown[MAX_NPCS];
 
 
 #define PRIO 0x2000 /* tilemap priority bit: the box draws over sprites */
@@ -539,7 +542,15 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     dmaCopyVram(chr, VRAM_BG1_CHR, chrSize);
     dmaCopyVram(map, VRAM_BG1_MAP, 64 * 64 * 2);
     dmaCopyCGram(pal, 0, 8 * 16 * 2);
-    dmaCopyVram(och, VRAM_OBJ_NPC, 16 * 6 * 32);
+    /* stage 12: people are 16x32 and streamed like the hero; here, while the screen is off, each one's first frame */
+    npcChr = och;
+    for (k = 0; k < MAX_NPCS; k++)
+    {
+        dmaCopyVram(och + k * NPC_BYTES, VRAM_OBJ_NPC + k * 4 * 16, 128);
+        dmaCopyVram(och + k * NPC_BYTES + 128, VRAM_OBJ_NPC + (16 + k * 4) * 16, 128);
+        npcShown[k] = 0;
+    }
+    npcPend = 0;
     dmaCopyCGram(opl, 128 + 16, MAX_NPCS * 16 * 2);
     colGrid = col;
     wld = w;
@@ -642,30 +653,56 @@ void updateCamera(void)
     bgSetScroll(0, camX, camY);
 }
 
+static const u8 walkFrame[4] = {0, 1, 0, 2}; /* stand, step, stand, the other step */
+
+/* Stage 12: each person on the map has a 16x32 slot in VRAM (OBJ tiles 32+4k and 48+4k) holding the frame on
+   show. A changed frame waits its turn: one person's frame is copied a VBlank, by npcVBlank. */
+u8 npcPend;
+u8 *npcSrc;
+u16 npcDst;
+
+void npcVBlank(void)
+{
+    if (!npcPend) return;
+    dmaCopyVram(npcSrc, npcDst, 128);
+    dmaCopyVram(npcSrc + 128, npcDst + 16 * 16, 128);
+    npcPend = 0;
+}
+
+extern s8 npcVx[], npcVy[];
+
 void drawNpcs(void)
 {
-    u8 k, f, idx, flip;
-    u16 id;
+    u8 k, f, flip;
     s16 sx, sy;
     for (k = 0; k < MAX_NPCS; k++)
     {
-        id = (OAM_NPCS + k) * 4;
         if (k >= npcCount)
         {
-            sprHide((id) >> 2);
+            sprHide(OAM_NPCS + k);
+            sprHide(OAM_NPCTOP + k);
             continue;
         }
         sx = npcX[k] - camX - 8;
         sy = npcY[k] - camY - 10;
-        if (sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
+        if (sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H + 16)
         {
-            sprHide((id) >> 2);
+            sprHide(OAM_NPCS + k);
+            sprHide(OAM_NPCTOP + k);
             continue;
         }
-        f = npcDir[k] == 0 ? 0 : npcDir[k] == 1 ? 1 : 2;
+        f = npcDir[k] == 0 ? 0 : npcDir[k] == 1 ? 3 : 6;
+        if ((npcVx[k] || npcVy[k]) && !boxState) f += walkFrame[(frameCount >> 3) & 3];
+        if (f != npcShown[k] && !npcPend)
+        {
+            npcShown[k] = f;
+            npcSrc = npcChr + k * NPC_BYTES + (u16)f * 256;
+            npcDst = VRAM_OBJ_NPC + k * 4 * 16;
+            npcPend = 1;
+        }
         flip = npcDir[k] == 2;
-        idx = k * 3 + f;
-        sprPut((id) >> 2, 1, sx, sy, 2, flip, 32 + (idx >> 3) * 32 + (idx & 7) * 2, k + 1);
+        sprPut(OAM_NPCTOP + k, 1, sx, sy - 16, 2, flip, 32 + k * 4, k + 1);
+        sprPut(OAM_NPCS + k, 1, sx, sy, 2, flip, 32 + k * 4 + 2, k + 1);
     }
 }
 
@@ -721,8 +758,6 @@ void heroVBlank(void)
     dmaCopyVram(heroSrc + 128, VRAM_OBJ_CHR + 16 * 16, 128);
     heroPend = 0;
 }
-
-static const u8 walkFrame[4] = {0, 1, 0, 2}; /* stand, step, stand, the other step */
 
 void drawHero(void)
 {
