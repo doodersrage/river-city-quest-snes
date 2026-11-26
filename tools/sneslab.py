@@ -117,14 +117,18 @@ class Lab:
 
     def steer_to(self, tx, ty, limit=400):
         """Walk to pixel (tx, ty), one axis at a time, using the live position."""
+        prefer_x = True
         for _ in range(limit):
             x, y = self.pos
             if abs(x - tx) <= 1 and abs(y - ty) <= 1:
                 return True
-            if abs(x - tx) > 1:
-                self.run('RIGHT' if tx > x else 'LEFT', 1)
-            else:
-                self.run('DOWN' if ty > y else 'UP', 1)
+            moves = []
+            if abs(x - tx) > 1: moves.append('RIGHT' if tx > x else 'LEFT')
+            if abs(y - ty) > 1: moves.append('DOWN' if ty > y else 'UP')
+            if not prefer_x: moves.reverse()
+            self.run(moves[0], 1)
+            if self.pos == (x, y):          # that axis is blocked: try the other one next time
+                prefer_x = not prefer_x
         return False
 
     def walk_to_cell(self, cx, cy):
@@ -163,10 +167,20 @@ class Lab:
                 d = ('RIGHT' if dx > 0 else 'LEFT') if abs(dx) >= abs(dy) else ('DOWN' if dy > 0 else 'UP')
                 self.run(d, 1)
                 self.press('A', 15)
-            elif abs(dx) > abs(dy) and abs(dy) > 3:
-                self.run('DOWN' if dy > 0 else 'UP', 1)
-            elif abs(dx) >= 8:
-                self.run('RIGHT' if dx > 0 else 'LEFT', 1)
             else:
-                self.run('DOWN' if dy > 0 else 'UP', 1)
+                if abs(dx) > abs(dy) and abs(dy) > 3:
+                    order = ['DOWN' if dy > 0 else 'UP', 'RIGHT' if dx > 0 else 'LEFT']
+                elif abs(dx) >= 8:
+                    order = ['RIGHT' if dx > 0 else 'LEFT', 'DOWN' if dy > 0 else 'UP']
+                else:
+                    order = ['DOWN' if dy > 0 else 'UP', 'RIGHT' if dx > 0 else 'LEFT']
+                self.run(order[0], 1)
+                if self.pos == (x, y):
+                    # blocked: sidestep a whole half-cell, whichever way is open
+                    side = [order[1]] + [d for d in ('UP', 'DOWN', 'LEFT', 'RIGHT') if d != order[1] and d != order[0]]
+                    for d in side:
+                        before = self.pos
+                        self.run(d, 8)
+                        if self.pos != before:
+                            break
         return None

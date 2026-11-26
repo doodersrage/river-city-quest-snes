@@ -213,13 +213,17 @@ for _ in range(6000):
             lab.press('A', 12)
         else:
             lab.run(('RIGHT' if dx > 0 else 'LEFT') if abs(dx) > abs(dy) else ('DOWN' if dy > 0 else 'UP'), 1)
-    elif abs(dx) > 3:
-        lab.run('RIGHT' if dx > 0 else 'LEFT', 1)
-    elif dy < 30 and y > 40:
-        lab.run('UP', 1)   # fight from above, away from where the stairs will appear
     else:
-        lab.run('DOWN', 1)
-        lab.press('B', 3)
+        # hook him from the side, keeping both of you in the middle of the hall
+        want_x = bx - 48 if bx > 128 else bx + 48
+        want_y = by - 8
+        if abs(y - want_y) > 4:
+            lab.run('DOWN' if want_y > y else 'UP', 1)
+        elif abs(x - want_x) > 6:
+            lab.run('RIGHT' if want_x > x else 'LEFT', 1)
+        else:
+            lab.run('RIGHT' if bx > x else 'LEFT', 1)
+            lab.press('B', 3)
 check(stunned, 'the hook rips the Foreman\'s chest plate loose')
 lab.run(None, 30)
 lab.screenshot(f'{out}/12-foreman-beaten.png')

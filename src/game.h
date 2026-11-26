@@ -67,6 +67,8 @@ extern u8 hasHook, hasPowder, powder, eqItem, keystones, roomReward, dentMap, ho
 extern u8 enemiesExisted;
 
 u8 solidAt(s16 x, s16 y);
+void sprHide(u8 slot);
+void sprPut(u8 slot, u8 large, s16 x, s16 y, u8 prio, u8 flip, u16 tile, u8 pal);
 u8 *chestRec(u8 k);
 void queuePatch(u8 tx, u8 ty, u8 *w, u8 now);
 void hurtHero(s16 sx, s16 sy);

@@ -21,6 +21,8 @@ s16 pkX[MAX_PK], pkY[MAX_PK];
 u16 pkLife[MAX_PK];
 
 u16 seed;
+u8 hudHp, hudMax; /* what the HUD last showed */
+u16 hudCoins;
 
 void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy);
 void collectPickup(u8 k);
@@ -65,6 +67,9 @@ void combatInit(void)
     dying = 0;
     seed = 0xACE1;
     enCount = 0;
+    hudHp = 255;
+    hudMax = 255;
+    hudCoins = 0xFFFF;
 }
 
 void combatLoad(u8 *ene)
@@ -515,11 +520,10 @@ void combatDraw(void)
     {
         sx = px - camX + paddleOx[a];
         sy = py - camY + paddleOy[a];
-        oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 3, 0, 0, paddleTile[a], PAL_HUD);
+        sprPut((id) >> 2, 1, sx, sy, 3, 0, paddleTile[a], PAL_HUD);
     }
     else
-        oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+        sprHide((id) >> 2);
 
     for (k = 0; k < MAX_EN; k++)
     {
@@ -528,13 +532,12 @@ void combatDraw(void)
         sy = (enY[k] >> 4) - camY - 9;
         if (!enAlive[k] || (enFlash[k] & 2) || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
         {
-            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
         tile = enemyTile[enType[k]];
         if (enType[k] == T_BAT && (frameCount & 8)) tile = BAT_TILE2;
-        oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 2, enFlip[k], 0, tile, enemyPal[enType[k]]);
+        sprPut((id) >> 2, 1, sx, sy, 2, enFlip[k], tile, enemyPal[enType[k]]);
     }
 
     for (k = 0; k < MAX_PK; k++)
@@ -544,19 +547,17 @@ void combatDraw(void)
         sy = pkY[k] - camY - 5;
         if (!pkKind[k] || (pkKind[k] < 3 && pkLife[k] < 120 && (frameCount & 4)) || sx < -8 || sx > SCREEN_W || sy < -8 || sy > SCREEN_H)
         {
-            oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
         if (pkKind[k] >= 3)
         {
             tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
-            oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-            oamSet(id, (sx - 4) & 0x1FF, (sy - 4) & 0xFF, 2, 0, 0, tile, PAL_ITEM);
+            sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, PAL_ITEM);
             continue;
         }
         tile = pkKind[k] == 1 ? HUD_COIN + ((frameCount >> 3) & 1) : HUD_HEART;
-        oamSetEx(id, OBJ_SMALL, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 2, 0, 0, tile, PAL_HUD);
+        sprPut((id) >> 2, 0, sx, sy, 2, 0, tile, PAL_HUD);
     }
 }
 
@@ -564,20 +565,23 @@ void hudDraw(void)
 {
     u8 i, d0, d1, d2;
     u16 id, tile;
+    /* the HUD only changes when health or coins do */
+    if (hp == hudHp && hpMax == hudMax && coins == hudCoins) return;
+    hudHp = hp;
+    hudMax = hpMax;
+    hudCoins = coins;
     for (i = 0; i < 10; i++)
     {
         id = (OAM_HEARTS + i) * 4;
         if (i * 2 >= hpMax)
         {
-            oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
         tile = hp >= i * 2 + 2 ? HUD_HEART : hp == i * 2 + 1 ? HUD_HALF : HUD_EMPTY;
-        oamSetEx(id, OBJ_SMALL, OBJ_SHOW);
-        oamSet(id, 8 + i * 9, 8, 3, 0, 0, tile, PAL_HUD);
+        sprPut((id) >> 2, 0, 8 + i * 9, 8, 3, 0, tile, PAL_HUD);
     }
-    oamSetEx(OAM_COIN * 4, OBJ_SMALL, OBJ_SHOW);
-    oamSet(OAM_COIN * 4, 216, 8, 3, 0, 0, HUD_COIN, PAL_HUD);
+    sprPut((OAM_COIN * 4) >> 2, 0, 216, 8, 3, 0, HUD_COIN, PAL_HUD);
     d2 = coins % 10;
     d1 = (coins / 10) % 10;
     d0 = coins / 100;
@@ -586,10 +590,9 @@ void hudDraw(void)
         id = (OAM_DIGITS + i) * 4;
         if ((i == 0 && !d0) || (i == 1 && !d0 && !d1))
         {
-            oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
-        oamSetEx(id, OBJ_SMALL, OBJ_SHOW);
-        oamSet(id, 226 + i * 8, 8, 3, 0, 0, HUD_DIGIT + (i == 0 ? d0 : i == 1 ? d1 : d2), PAL_HUD);
+        sprPut((id) >> 2, 0, 226 + i * 8, 8, 3, 0, HUD_DIGIT + (i == 0 ? d0 : i == 1 ? d1 : d2), PAL_HUD);
     }
 }

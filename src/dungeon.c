@@ -19,6 +19,7 @@ u8 keys[AREA_COUNT];
 u8 hasHook, hasPowder, powder, eqItem; /* eqItem: ITEM_HOOK or ITEM_POWDER */
 u8 keystones;  /* bit per keystone: granite, iron, brick, bronze */
 u8 roomReward; /* keystone this boss room gives (1-4), 0 none */
+u8 hudEq, hudPowder; /* what the item HUD last showed */
 u8 dentMap; /* dungeon entrance, for waking up after the fog takes you inside */
 
 /* the hook */
@@ -64,6 +65,8 @@ void dungeonInit(void)
     powder = 0;
     eqItem = 0;
     keystones = 0;
+    hudEq = 255;
+    hudPowder = 255;
     dentMap = 255;
     boomT = 0;
     for (i = 0; i < MAX_BOMB; i++) bombOn[i] = 0;
@@ -398,7 +401,7 @@ void drawBoss(void)
         id = (OAM_BOSS + k) * 4;
         if (!bossOn || (bossFlash & 2))
         {
-            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
         if (bossType == BOSS_TURTLE)
@@ -414,11 +417,10 @@ void drawBoss(void)
         sy = (bossY >> 4) - camY - 40 + (k / 3) * 16;
         if (!t || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
         {
-            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
-        oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 2, bossType == BOSS_TURTLE && bossFlip, 0, t, PAL_BOSS);
+        sprPut((id) >> 2, 1, sx, sy, 2, bossType == BOSS_TURTLE && bossFlip, t, PAL_BOSS);
     }
 }
 
@@ -504,24 +506,22 @@ void drawBombs(void)
         sy = bombY[i] - camY - 10;
         if (!bombOn[i] || (bombT[i] < 24 && (frameCount & 2)))
         {
-            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
-        oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 2, 0, 0, OBJ_I_KEG, PAL_ITEM);
+        sprPut((id) >> 2, 1, sx, sy, 2, 0, OBJ_I_KEG, PAL_ITEM);
     }
     for (k = 0; k < 4; k++)
     {
         id = (OAM_BOOM + k) * 4;
         if (!boomT)
         {
-            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
         sx = boomX - camX - 16 + (k & 1) * 16;
         sy = boomY - camY - 16 + (k >> 1) * 16;
-        oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 3, 0, 0, OBJ_I_BOOM + ((boomT < 8 ? 4 : 0) + k) * 2, PAL_ITEM);
+        sprPut((id) >> 2, 1, sx, sy, 3, 0, OBJ_I_BOOM + ((boomT < 8 ? 4 : 0) + k) * 2, PAL_ITEM);
     }
 }
 
@@ -563,26 +563,27 @@ void gotKeystone(u8 id)
 void drawItemHud(void)
 {
     u16 id = OAM_BICON * 4;
+    if (eqItem == hudEq && powder == hudPowder) return;
+    hudEq = eqItem;
+    hudPowder = powder;
     if (!eqItem)
     {
-        oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
-        oamSetEx((OAM_BICON + 1) * 4, OBJ_SMALL, OBJ_HIDE);
-        oamSetEx((OAM_BICON + 2) * 4, OBJ_SMALL, OBJ_HIDE);
+        sprHide((id) >> 2);
+        sprHide(((OAM_BICON + 1) * 4) >> 2);
+        sprHide(((OAM_BICON + 2) * 4) >> 2);
         return;
     }
-    oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-    oamSet(id, 120, 4, 3, 0, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : OBJ_I_KEG, PAL_ITEM);
+    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : OBJ_I_KEG, PAL_ITEM);
     if (eqItem == ITEM_POWDER)
     {
-        oamSetEx((OAM_BICON + 1) * 4, OBJ_SMALL, powder >= 10 ? OBJ_SHOW : OBJ_HIDE);
-        oamSet((OAM_BICON + 1) * 4, 137, 12, 3, 0, 0, HUD_DIGIT + powder / 10, PAL_HUD);
-        oamSetEx((OAM_BICON + 2) * 4, OBJ_SMALL, OBJ_SHOW);
-        oamSet((OAM_BICON + 2) * 4, 145, 12, 3, 0, 0, HUD_DIGIT + powder % 10, PAL_HUD);
+        if (powder >= 10) sprPut(OAM_BICON + 1, 0, 137, 12, 3, 0, HUD_DIGIT + powder / 10, PAL_HUD);
+        else sprHide(OAM_BICON + 1);
+        sprPut(((OAM_BICON + 2) * 4) >> 2, 0, 145, 12, 3, 0, HUD_DIGIT + powder % 10, PAL_HUD);
     }
     else
     {
-        oamSetEx((OAM_BICON + 1) * 4, OBJ_SMALL, OBJ_HIDE);
-        oamSetEx((OAM_BICON + 2) * 4, OBJ_SMALL, OBJ_HIDE);
+        sprHide(((OAM_BICON + 1) * 4) >> 2);
+        sprHide(((OAM_BICON + 2) * 4) >> 2);
     }
 }
 
@@ -680,7 +681,7 @@ void drawHook(void)
         id = (OAM_HOOK + k) * 4;
         if (!hookSt)
         {
-            oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
         if (k == 0)
@@ -703,15 +704,14 @@ void drawHook(void)
             {
                 if (d >= hookD)
                 {
-                    oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
+                    sprHide((id) >> 2);
                     continue;
                 }
                 sx = px + dirX[hookDir] * d - camX - 4;
                 sy = py - 4 + dirY[hookDir] * d - camY - 4;
             }
         }
-        oamSetEx(id, OBJ_SMALL, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 3, 0, 0, k ? OBJ_CHAIN : OBJ_HOOK, PAL_HUD);
+        sprPut((id) >> 2, 0, sx, sy, 3, 0, k ? OBJ_CHAIN : OBJ_HOOK, PAL_HUD);
     }
 }
 
@@ -727,11 +727,10 @@ void drawShots(void)
         sy = (shotY[i] >> 4) - camY - 4;
         if (!shotOn[i] || sx < -8 || sx > SCREEN_W || sy < -8 || sy > SCREEN_H)
         {
-            oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
-        oamSetEx(id, OBJ_SMALL, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 3, 0, 0, OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
+        sprPut((id) >> 2, 0, sx, sy, 3, 0, OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
     }
 }
 

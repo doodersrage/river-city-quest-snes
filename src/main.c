@@ -45,6 +45,26 @@ u8 npcCount;
 s16 npcX[MAX_NPCS], npcY[MAX_NPCS];
 u8 npcDir[MAX_NPCS], npcTalk[MAX_NPCS];
 
+/* ---------- sprites: only touch OAM entries that change ---------- */
+u8 oamShown[128]; /* 0 hidden, 1 shown small, 2 shown large */
+
+void sprHide(u8 slot)
+{
+    if (!oamShown[slot]) return;
+    oamSetEx(slot * 4, OBJ_SMALL, OBJ_HIDE);
+    oamShown[slot] = 0;
+}
+
+void sprPut(u8 slot, u8 large, s16 x, s16 y, u8 prio, u8 flip, u16 tile, u8 pal)
+{
+    if (oamShown[slot] != large + 1)
+    {
+        oamSetEx(slot * 4, large ? OBJ_LARGE : OBJ_SMALL, OBJ_SHOW);
+        oamShown[slot] = large + 1;
+    }
+    oamSet(slot * 4, x & 0x1FF, y & 0xFF, prio, flip, 0, tile, pal);
+}
+
 /* ---------- the text box ---------- */
 #define BOX_CLOSED 0
 #define BOX_TYPING 1
@@ -520,21 +540,20 @@ void drawNpcs(void)
         id = (OAM_NPCS + k) * 4;
         if (k >= npcCount)
         {
-            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
         sx = npcX[k] - camX - 8;
         sy = npcY[k] - camY - 10;
         if (sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
         {
-            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+            sprHide((id) >> 2);
             continue;
         }
         f = npcDir[k] == 0 ? 0 : npcDir[k] == 1 ? 1 : 2;
         flip = npcDir[k] == 2;
         idx = k * 3 + f;
-        oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 2, flip, 0, 32 + (idx >> 3) * 32 + (idx & 7) * 2, k + 1);
+        sprPut((id) >> 2, 1, sx, sy, 2, flip, 32 + (idx >> 3) * 32 + (idx & 7) * 2, k + 1);
     }
 }
 
@@ -577,11 +596,10 @@ void drawHero(void)
     }
     if (inv & 4)
     {
-        oamSetEx(OAM_HERO * 4, OBJ_LARGE, OBJ_HIDE); /* blink while invincible */
+        sprHide((OAM_HERO * 4) >> 2); /* blink while invincible */
         return;
     }
-    oamSetEx(OAM_HERO * 4, OBJ_LARGE, OBJ_SHOW);
-    oamSet(OAM_HERO * 4, (px - camX - 8) & 0x1FF, (py - camY - 10) & 0xFF, 3, flip, 0, tile, 0);
+    sprPut((OAM_HERO * 4) >> 2, 1, (px - camX - 8), (py - camY - 10), 3, flip, tile, 0);
 }
 
 /* Walking off an edge moves to the neighboring neighborhood, if there is one. */
@@ -774,7 +792,10 @@ int main(void)
     /* 8x8 small sprites for the HUD and pickups, 16x16 large for everyone else */
     oamInitGfxSet(&hero_chr, (&hero_chrend - &hero_chr), &hero_pal, (&hero_palend - &hero_pal), 0, VRAM_OBJ_CHR, OBJ_SIZE8_L16);
     for (i = 0; i < 128; i++)
-        oamSetEx(i * 4, OBJ_SMALL, OBJ_HIDE);
+    {
+        oamShown[i] = 1;
+        sprHide(i);
+    }
 
     /* RAM is not cleared at power-on: set every variable before use. */
     heroDir = 0;
