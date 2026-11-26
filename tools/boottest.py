@@ -1068,7 +1068,7 @@ lab.run('DOWN', 30); lab.run(None, 90)
 check(lab.ram('carX', 2, True, 1) != xs, 'it drives on once you are out of the way')
 # the Local on Broad Street wanders near home
 k = 1
-home = (lab.ram('npcX', 2, True, k), lab.ram('npcY', 2, True, k))
+home = (lab.ram('npcHx', 2, True, k), lab.ram('npcHy', 2, True, k))
 moved = False
 for _ in range(40):
     lab.run(None, 30)
@@ -1146,7 +1146,9 @@ def accept(k):
             if lab.ram('boxState') in (0, 6): break
             lab.press('A', 6)
         if lab.ram('boxState') == 6:
-            while lab.ram('askCur'): lab.press('UP', 4)
+            for _ in range(3):
+                if not lab.ram('askCur'): break
+                lab.press('UP', 4)
             lab.press('A', 10)
             return True
         close_box()
@@ -1205,7 +1207,7 @@ lab.run(None, 4)
 accept(1); close_box()
 c = CH.index('rats')
 spawned = sum(lab.ram('enChal', 1, False, k) for k in range(6))
-check(lab.ram('chalOn') == c + 1 and spawned >= 4, f'Market Rats: rats come out ({spawned} at once)')
+check(lab.ram('chalOn') == c + 1 and spawned >= 2, f'Market Rats: rats come out ({spawned} at once, more as you beat them)')
 lab.poke('inv', 255)
 for _ in range(40):
     if not lab.ram('chalOn'): break
@@ -1240,16 +1242,23 @@ close_box()
 travel(lab, N('Capitol Square'), close_box)
 lab.run(None, 4)
 n_read = sum(bin(lab.ram('loreRead', 1, False, i)).count('1') for i in range(9))
-check(n_read >= 3, f'markers read along the way are in the journal ({n_read} stories)')
+check(n_read >= 1, f'markers read along the way go in the journal ({n_read} so far)')
+accept(1)
+check(lab.ram('boxState') and lab.ram('askKind') == 0, 'the Tour Guide wants three stories first')
+close_box()
+for i in range(9): lab.poke('loreRead', 0xFF, i)   # (as if you'd read every marker in town)
+accept(1)
 allbut = ((1 << len(CH)) - 1) & ~(1 << CH.index('quiz'))   # every other pin, to see the gold paddle
 lab.poke('pins', allbut & 0xFF, 0); lab.poke('pins', allbut >> 8, 1)
-talk_to(1)
 for q in range(3):
     for _ in range(40):
         if lab.ram('boxState') == 6: break
         lab.press('A', 6)
+    if lab.ram('boxState') != 6: break
     if q == 0: lab.screenshot(f'{out}/61-quiz.png')
-    while lab.ram('askCur') < lab.ram('quizAns'): lab.press('DOWN', 4)
+    for _ in range(3):
+        if lab.ram('askCur') >= lab.ram('quizAns'): break
+        lab.press('DOWN', 4)
     lab.press('A', 10)
 lab.run(None, 20)
 lab.screenshot(f'{out}/62-gold-paddle.png')

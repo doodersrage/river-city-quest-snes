@@ -354,9 +354,9 @@ void chalDraw(void)
     hudSecs = s;
     hudGot = chalGot;
     /* 00 seconds, a gap, then got/need */
-    put8(OAM_CHAL, 100, HUD_DIGIT + s / 10);
-    put8(OAM_CHAL + 1, 108, HUD_DIGIT + s % 10);
-    x = 128;
+    put8(OAM_CHAL, 120, HUD_DIGIT + s / 10); /* clear of ten hearts */
+    put8(OAM_CHAL + 1, 128, HUD_DIGIT + s % 10);
+    x = 148;
     i = OAM_CHAL + 2;
     if (chalGot >= 10)
     {

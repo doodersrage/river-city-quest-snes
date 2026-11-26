@@ -705,7 +705,7 @@ void combatDraw(void)
                    pkKind[k] == 11 ? OBJ_I_PIECE : pkKind[k] == 12 ? OBJ_I_BIB : pkKind[k] == 13 ? OBJ_I_BALL : pkKind[k] == 14 ? OBJ_I_OAR :
                    pkKind[k] == PK_TOKEN ? (chalTok[chalOn - 1] == 255 ? OBJ_I_BALL : townTile[chalTok[chalOn - 1]]) :
                    pkKind[k] == PK_FLAG ? townTile[TOWN_FLAG + ((frameCount >> 3) & 1)] : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
-            sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, PAL_ITEM);
+            sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, pkKind[k] == PK_TOKEN ? chalPal[chalOn - 1] : PAL_ITEM);
             continue;
         }
         tile = pkKind[k] == 1 ? HUD_COIN + ((frameCount >> 3) & 1) : HUD_HEART;

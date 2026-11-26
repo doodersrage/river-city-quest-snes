@@ -439,6 +439,7 @@ extern char town_chr, town_chrend;
 #define TOWN_FLAG 16
 #define TOWN_BANG 18
 static const u16 townTile[19] = {384, 386, 388, 390, 392, 394, 396, 398, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452};  /* OBJ tile of each town cell */
+static const u8 chalPal[14] = {7, 7, 2, 7, 3, 7, 7, 7, 2, 7, 2, 7, 7, 7};  /* the token's sprite palette */
 extern char combat_chr, combat_chrend, combat_pal;
 
 /* Combat tables (generated). */

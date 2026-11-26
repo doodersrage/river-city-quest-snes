@@ -630,7 +630,7 @@ TOWN_CELLS = {'car': 0, 'bus': 6, 'sit': 9, 'fly': 10, 'tap': 12, 'melon': 13, '
 TOWN_N = 19   # car colour c at 2c; bus 3 cells; fly 2 frames; flag 2 colours; then challenge tokens and the '!'
 
 
-def convert_town(exp):
+def convert_town(exp, tok_pal={}):
     im0 = Image.open(os.path.join(exp, 'combat', 'town.png')).convert('RGBA')
     tok = Image.open(os.path.join(exp, 'combat', 'tokens.png')).convert('RGBA')
     im = Image.new('RGBA', (16 * TOWN_N, 16))
@@ -645,7 +645,7 @@ def convert_town(exp):
             for y in range(8):
                 for x in range(8):
                     p_ = im.getpixel((c * 16 + qx * 8 + x, qy * 8 + y))
-                    idx.append(nearest(c15(p_), pal) + 1 if p_[3] > 96 else 0)
+                    idx.append(nearest(c15(p_), tok_pal.get(c, pal)) + 1 if p_[3] > 96 else 0)
             sheet[t - first + qy * 16 + qx] = tile4bpp(idx)
     used = obj_tile_of_frame(0, BOSS_FIRST_CELL + TOWN_N - 1) - first + 18
     defs = [f'#define TOWN_{n.upper()} {c}' for n, c in TOWN_CELLS.items()]
@@ -1088,7 +1088,21 @@ def main():
     asm += ['.section ".items" superfree', 'items_chr:', '.incbin "data/items.chr"', 'items_chrend:',
             'block_pal:', '.incbin "data/block.pal"', '.ends', '']
     hdr += ['extern char items_chr, items_chrend, block_pal;']
-    town_chr, town_defs = convert_town(exp)
+    # A challenge token takes the colours of the person who set the challenge (their sprite palette, k + 1):
+    # palette 7 has no greens or blues for a melon or a lure.
+    boss_json_chal = {c['id']: c['ic'] for c in boss_json['chal']}
+    tok_pal, chal_pal = {}, []
+    for cid in CHAL_IDS:
+        pal_no = 7
+        for mi, m in enumerate(maps):
+            for k, n in enumerate(world[m['id']]['npcs'][:MAX_NPCS]):
+                if n.get('chal') == cid and boss_json_chal[cid] in TOWN_CELLS and boss_json_chal[cid] != 'flag':
+                    im = Image.open(os.path.join(exp, n['file'])).convert('RGBA')
+                    tok_pal[TOWN_CELLS[boss_json_chal[cid]]] = sorted({c15(q) for q in im.getdata() if q[3] > 0})[:15]
+                    pal_no = k + 1
+        chal_pal.append(pal_no)
+    town_chr, town_defs = convert_town(exp, tok_pal)
+    town_defs.append('static const u8 chalPal[%d] = {%s};  /* the token\'s sprite palette */' % (len(chal_pal), ', '.join(map(str, chal_pal))))
     open(os.path.join(out, 'town.chr'), 'wb').write(town_chr)
     asm += ['.section ".town" superfree', 'town_chr:', '.incbin "data/town.chr"', 'town_chrend:', '.ends', '']
     hdr += ['extern char town_chr, town_chrend;'] + town_defs
