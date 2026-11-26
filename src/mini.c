@@ -10,6 +10,7 @@
 
 extern u16 padSeen;
 extern void rcqLoadMini(u8 k);
+void flushText(void);
 
 u8 miniOn;
 u16 miniBest[8];              /* best score per game (higher is better) */
@@ -446,6 +447,7 @@ void runMini(u8 k)
     fadeTo(0);
     setBrightness(0);
     closeText();
+    flushText(); /* the question box off BG3 */
     for (i = 0; i < 128; i++) sprHide(i);
     miniOn = 1;
     rcqLoadMini(k - 1);

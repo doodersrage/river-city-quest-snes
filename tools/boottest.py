@@ -1264,4 +1264,61 @@ lab.run(None, 20)
 lab.screenshot(f'{out}/62-gold-paddle.png')
 check(lab.ram('pins', 2) == (1 << len(CH)) - 1 and lab.ram('goldPaddle'), 'three right answers: the last pin, and the paddle turns gold')
 close_box()
+
+# Stage 10, part 2: minigames.
+def play_mini(k, step, limit=4000):
+    """Accept person k's minigame and run step() each frame until it's over; True if it started."""
+    if not accept(k) or not lab.ram('miniOn'): return False
+    for f in range(limit):
+        if not lab.ram('miniOn'): break
+        step(f)
+    lab.run(None, 40)
+    return True
+# Batting practice: the Ballplayer, now that his pin is won. Swing on time.
+travel(lab, N("Scott's Addition"), close_box)
+coins = lab.ram('coins', 2)
+shot = set()
+def bat(f):
+    if lab.ram('mgBallOn') and not lab.ram('mgRes') and lab.ram('mgAge') + 1 == lab.ram('mgArr'):
+        lab.press('A', 1)
+        if 'swing' not in shot: lab.run(None, 6); lab.screenshot(f'{out}/63-batting.png'); shot.add('swing')
+    else: lab.run(None, 1)
+check(play_mini(1, bat) and lab.ram('mgKind') == 1, 'the Ballplayer pitches: batting practice')
+check(lab.ram('mgHits') == 10 and lab.ram('mgHr') == 10, f"swing on time: {lab.ram('mgHits')} hits, {lab.ram('mgHr')} home runs")
+check(lab.map == N("Scott's Addition") and lab.ram('boxState') and lab.ram('coins', 2) == min(999, coins + 70) and lab.ram('miniBest', 2, False, 1) == 20,
+      f"back on the street, 70 coins richer ({coins} -> {lab.ram('coins', 2)})")
+lab.screenshot(f'{out}/64-batting-result.png')
+close_box()
+# Tennis at the Ashe Center: follow the ball, swing as it arrives; then let three go by.
+travel(lab, N('Arthur Ashe Boulevard'), close_box)
+coins = lab.ram('coins', 2)
+def tennis(f):
+    if lab.ram('mgRet') >= 5 or not lab.ram('mgBallOn') or lab.ram('mgBallUp'):
+        lab.run(None, 1); return
+    bx, by, x = lab.ram('mgBx', 2, True) >> 6, lab.ram('mgBy', 2, True) >> 6, lab.ram('mgHx', 2, True) >> 4
+    if abs(by - 148) < 6 and abs(bx - x) < 14:
+        lab.press('A', 1)
+        if 'tennis' not in shot: lab.run(None, 4); lab.screenshot(f'{out}/65-tennis.png'); shot.add('tennis')
+    elif bx > x + 4: lab.run('RIGHT', 1)
+    elif bx < x - 4: lab.run('LEFT', 1)
+    else: lab.run(None, 1)
+check(play_mini(2, tennis), 'the Tennis Coach starts the ball machine')
+check(lab.ram('mgRet') == 5 and lab.ram('mgMiss') == 3, f"five returns, then three misses ({lab.ram('mgRet')}, {lab.ram('mgMiss')})")
+check(lab.ram('coins', 2) == min(999, coins + 5), f"five coins ({coins} -> {lab.ram('coins', 2)})")
+close_box()
+# Rams free throws in the Siegel Center: shoot when the needle is in the middle.
+travel(lab, N('VCU & Court End'), close_box)
+walk((7, 7)); lab.run('UP', 30); lab.run(None, 60); close_box()
+check(lab.map == N('The Siegel Center'), f'into the Siegel Center (map {lab.map})')
+coins = lab.ram('coins', 2)
+def hoops(f):
+    i = (lab.ram('mgPh', 2) >> 8) & 63
+    if not lab.ram('mgBallOn') and i in (0, 32):
+        lab.press('A', 1)
+        if 'hoops' not in shot: lab.run(None, 20); lab.screenshot(f'{out}/66-free-throw.png'); shot.add('hoops')
+    else: lab.run(None, 1)
+check(play_mini(0, hoops), 'the Rams Coach hands you the ball')
+check(lab.ram('mgMade') >= 8, f"{lab.ram('mgMade')} of 10 from the line")
+check(lab.ram('coins', 2) == min(999, coins + 2 * lab.ram('mgMade')), f"two coins a basket ({coins} -> {lab.ram('coins', 2)})")
+close_box()
 sys.exit(0 if ok else 1)
