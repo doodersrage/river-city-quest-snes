@@ -836,7 +836,8 @@ travel(lab, N('Carytown'), close_box)
 walk((6, 17)); lab.run('UP', 30); lab.run(None, 40)
 lab.poke('coins', 200); lab.poke('balls', 5)
 walk((8, 5)); lab.face('up'); lab.press('A', 10)
-for idx, what in ((9, 'Ginger Beer'), (10, '10 Baseballs'), (7, 'Big Satchel')):
+k0 = lab.ram('powder')
+for idx, what in ((9, 'Ginger Beer'), (10, '10 Baseballs'), (7, 'Big Satchel'), (11, '4 Powder Kegs'), (11, '4 Powder Kegs')):
     while lab.ram('shopCur') < idx: lab.press('DOWN', 3)
     while lab.ram('shopCur') > idx: lab.press('UP', 3)
     if idx == 10: lab.screenshot(f'{out}/40-shop-gear.png')
@@ -844,6 +845,7 @@ for idx, what in ((9, 'Ginger Beer'), (10, '10 Baseballs'), (7, 'Big Satchel')):
 lab.press('B', 10)
 check(lab.ram('bottleFull') and lab.ram('balls') == 15 and lab.ram('capBalls') == 50 and lab.ram('capPowder') == 16,
       'Carytown Goods refills the bottle, sells baseballs and the Big Satchel')
+check(lab.ram('powder') == min(16, k0 + 8), f"and powder kegs ({k0} -> {lab.ram('powder')})")
 walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
 check(lab.map == N('Carytown'), 'back out to Carytown')
 
