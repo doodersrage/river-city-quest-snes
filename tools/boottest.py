@@ -993,4 +993,31 @@ for _ in range(10):
 lab.run(None, 60)
 check(lab.map == 12 and lab.pos == (120, 136), f'wakes by the fountain in Capitol Square (map {lab.map}, {lab.pos})')
 check(lab.ram('hp') == lab.ram('hpMax'), 'with full hearts')
+
+# Stage 8: night, weather and dark rooms (last, so poking the clock and the sky can't change the run above).
+def set_clock(v):
+    lab.poke('dayClock', v & 0xFF, 0); lab.poke('dayClock', v >> 8, 1)
+def brightness():
+    return float(screen()[24:].mean())
+lab.poke('wx', 0); lab.poke('wxK', 0); lab.poke('wxNext', 255)
+set_clock(4500); lab.run(None, 4); day = brightness()
+set_clock(16 * 1500); lab.run(None, 4); night = brightness()
+lab.screenshot(f'{out}/48-night.png')
+check(lab.ram('darkLevel') == 4 and night < day * .75, f'night falls at 10pm ({day:.0f} -> {night:.0f} brightness)')
+check(lab.ram('lightR1') == 32, f"a circle of light around you ({lab.ram('lightR1')})")
+set_clock(12 * 1500 + 600); lab.run(None, 4)
+check(0 < lab.ram('darkLevel') < 4, f"dusk comes on gradually (level {lab.ram('darkLevel')})")
+set_clock(4500); lab.run(None, 4)
+lab.poke('wx', 1); lab.poke('wxK', 255); lab.run(None, 30)
+lab.screenshot(f'{out}/49-rain.png')
+check(lab.ram('oamShown', 1, False, 100) == 1 and brightness() < day, 'rain falls and the sky darkens')
+lab.poke('wx', 3); lab.run(None, 30)
+lab.screenshot(f'{out}/50-snow.png')
+check(lab.ram('oamShown', 1, False, 100) == 1 and brightness() > day, 'snow falls and washes the sky out')
+lab.poke('wx', 0); lab.poke('wxK', 0); lab.run(None, 4)
+travel(lab, N('Hollywood Cemetery'), close_box)
+walk((28, 17)); lab.run('UP', 30); lab.run(None, 60); close_box()
+lab.screenshot(f'{out}/51-dark-room.png')
+check(lab.ram('darkLevel') == 4 and lab.ram('lightR1') == (68 if lab.ram('hasLantern') else 38),
+      f"the Foundry Gate is dark but for your light (map {lab.map}, radius {lab.ram('lightR1')})")
 sys.exit(0 if ok else 1)
