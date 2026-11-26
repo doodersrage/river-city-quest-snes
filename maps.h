@@ -60,6 +60,7 @@ extern char sys_txt;
 #define TXT_LATER 223
 #define TXT_NOCOINS 302
 #define TXT_SOLDOUT 332
+#define TXT_NOTYET 343
 #define MAP_CAPITOL 12
 
 extern char shops_bin;

@@ -237,7 +237,7 @@ void shopBuy(void)
     shopReturn = 1;
     if (st)
     {
-        openTextAt((u8 *)&sys_txt + TXT_SOLDOUT);
+        openTextAt((u8 *)&sys_txt + (st == 1 ? TXT_SOLDOUT : TXT_NOTYET));
         return;
     }
     if (coins < price)

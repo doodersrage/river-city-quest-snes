@@ -608,7 +608,8 @@ def main():
                  ('CARKEY', '', ['The Carillon door is locked. The caretaker nearby might know where the key went.']),
                  ('LATER', '', ["The way in is dark. This part of Richmond isn't open yet in the SNES version."]),
                  ('NOCOINS', '', ["You don't have enough coins."]),
-                 ('SOLDOUT', '', ['Sold out.'])]
+                 ('SOLDOUT', '', ['Sold out.']),
+                 ('NOTYET', '', ["You can't buy that yet."])]
     blob, defs = b'', []
     for name, title, pages in sys_texts:
         defs.append(f'#define TXT_{name} {len(blob)}')
