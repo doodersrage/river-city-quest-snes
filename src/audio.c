@@ -4,14 +4,17 @@
 #include "game.h"
 #include "../data/audio/soundbank.h"
 
-extern char SOUNDBANK__;
+/* Over 32 KB, smconv splits the bank (banks 52 and 53) and names the halves __0 and __1;
+   SNESMOD wants them from the last one down. */
+extern char SOUNDBANK__0, SOUNDBANK__1;
 
 u8 curSong;
 
 void audioInit(void)
 {
     spcBoot();
-    spcSetBank(&SOUNDBANK__);
+    spcSetBank(&SOUNDBANK__1);
+    spcSetBank(&SOUNDBANK__0);
     curSong = 0;
 }
 
