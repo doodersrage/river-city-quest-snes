@@ -1036,6 +1036,9 @@ check(lab.ram('darkLevel') == 4 and lab.ram('lightR1') == (68 if lab.ram('hasLan
 def poke16k(name, k, v):
     lab.poke(name, v & 0xFF, 2 * k); lab.poke(name, (v >> 8) & 0xFF, 2 * k + 1)
 set_clock(4500)
+for _ in range(3):   # back out of the Foundry Gate the way we came
+    if lab.map == N('Hollywood Cemetery'): break
+    lab.run('DOWN', 40); lab.run(None, 40); close_box()
 travel(lab, N('Broad Street'), close_box)
 lab.run(None, 10)
 cars = [(lab.ram('carOn', 1, False, k), lab.ram('carBus', 1, False, k)) for k in range(2)]
