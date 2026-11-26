@@ -36,6 +36,9 @@ for (const f of files) {
   vm.runInContext(src, sb, { filename: f });
 }
 
+// The SNES edition's own look (tools/export/snes_style.js): shaded ramps in place of the web game's flat tiles.
+if (process.env.SNES_STYLE !== '0') vm.runInContext(fs.readFileSync(path.join(__dirname, 'snes_style.js'), 'utf8'), sb, { filename: 'snes_style.js' });
+
 // Top-level consts (SC, TS, g...) live in the context's shared script scope.
 // Scenes for the SNES port so far: the outdoor maps plus every single-room area (interiors, caves).
 vm.runInContext(`var SNES_AREAN={};for(const id in SC){const a=SC[id].area;SNES_AREAN[a]=(SNES_AREAN[a]||0)+1;}

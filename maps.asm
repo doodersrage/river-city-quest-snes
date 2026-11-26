@@ -1,9 +1,12 @@
 .include "hdr.asm"
 
-.section ".map0" superfree
+.section ".map0c" superfree
 m0_chr:
 .incbin "data/m0.chr"
 m0_chrend:
+.ends
+
+.section ".map0" superfree
 m0_map:
 .incbin "data/m0.map"
 m0_pal:
@@ -22,10 +25,13 @@ m0_xtr:
 .incbin "data/m0.xtr"
 .ends
 
-.section ".map1" superfree
+.section ".map1c" superfree
 m1_chr:
 .incbin "data/m1.chr"
 m1_chrend:
+.ends
+
+.section ".map1" superfree
 m1_map:
 .incbin "data/m1.map"
 m1_pal:
@@ -44,10 +50,13 @@ m1_xtr:
 .incbin "data/m1.xtr"
 .ends
 
-.section ".map2" superfree
+.section ".map2c" superfree
 m2_chr:
 .incbin "data/m2.chr"
 m2_chrend:
+.ends
+
+.section ".map2" superfree
 m2_map:
 .incbin "data/m2.map"
 m2_pal:
@@ -66,10 +75,13 @@ m2_xtr:
 .incbin "data/m2.xtr"
 .ends
 
-.section ".map3" superfree
+.section ".map3c" superfree
 m3_chr:
 .incbin "data/m3.chr"
 m3_chrend:
+.ends
+
+.section ".map3" superfree
 m3_map:
 .incbin "data/m3.map"
 m3_pal:
@@ -88,10 +100,13 @@ m3_xtr:
 .incbin "data/m3.xtr"
 .ends
 
-.section ".map4" superfree
+.section ".map4c" superfree
 m4_chr:
 .incbin "data/m4.chr"
 m4_chrend:
+.ends
+
+.section ".map4" superfree
 m4_map:
 .incbin "data/m4.map"
 m4_pal:
@@ -110,10 +125,13 @@ m4_xtr:
 .incbin "data/m4.xtr"
 .ends
 
-.section ".map5" superfree
+.section ".map5c" superfree
 m5_chr:
 .incbin "data/m5.chr"
 m5_chrend:
+.ends
+
+.section ".map5" superfree
 m5_map:
 .incbin "data/m5.map"
 m5_pal:
@@ -132,10 +150,13 @@ m5_xtr:
 .incbin "data/m5.xtr"
 .ends
 
-.section ".map6" superfree
+.section ".map6c" superfree
 m6_chr:
 .incbin "data/m6.chr"
 m6_chrend:
+.ends
+
+.section ".map6" superfree
 m6_map:
 .incbin "data/m6.map"
 m6_pal:
@@ -154,10 +175,13 @@ m6_xtr:
 .incbin "data/m6.xtr"
 .ends
 
-.section ".map7" superfree
+.section ".map7c" superfree
 m7_chr:
 .incbin "data/m7.chr"
 m7_chrend:
+.ends
+
+.section ".map7" superfree
 m7_map:
 .incbin "data/m7.map"
 m7_pal:
@@ -176,10 +200,13 @@ m7_xtr:
 .incbin "data/m7.xtr"
 .ends
 
-.section ".map8" superfree
+.section ".map8c" superfree
 m8_chr:
 .incbin "data/m8.chr"
 m8_chrend:
+.ends
+
+.section ".map8" superfree
 m8_map:
 .incbin "data/m8.map"
 m8_pal:
@@ -198,10 +225,13 @@ m8_xtr:
 .incbin "data/m8.xtr"
 .ends
 
-.section ".map9" superfree
+.section ".map9c" superfree
 m9_chr:
 .incbin "data/m9.chr"
 m9_chrend:
+.ends
+
+.section ".map9" superfree
 m9_map:
 .incbin "data/m9.map"
 m9_pal:
@@ -220,10 +250,13 @@ m9_xtr:
 .incbin "data/m9.xtr"
 .ends
 
-.section ".map10" superfree
+.section ".map10c" superfree
 m10_chr:
 .incbin "data/m10.chr"
 m10_chrend:
+.ends
+
+.section ".map10" superfree
 m10_map:
 .incbin "data/m10.map"
 m10_pal:
@@ -242,10 +275,13 @@ m10_xtr:
 .incbin "data/m10.xtr"
 .ends
 
-.section ".map11" superfree
+.section ".map11c" superfree
 m11_chr:
 .incbin "data/m11.chr"
 m11_chrend:
+.ends
+
+.section ".map11" superfree
 m11_map:
 .incbin "data/m11.map"
 m11_pal:
@@ -264,10 +300,13 @@ m11_xtr:
 .incbin "data/m11.xtr"
 .ends
 
-.section ".map12" superfree
+.section ".map12c" superfree
 m12_chr:
 .incbin "data/m12.chr"
 m12_chrend:
+.ends
+
+.section ".map12" superfree
 m12_map:
 .incbin "data/m12.map"
 m12_pal:
@@ -286,10 +325,13 @@ m12_xtr:
 .incbin "data/m12.xtr"
 .ends
 
-.section ".map13" superfree
+.section ".map13c" superfree
 m13_chr:
 .incbin "data/m13.chr"
 m13_chrend:
+.ends
+
+.section ".map13" superfree
 m13_map:
 .incbin "data/m13.map"
 m13_pal:
@@ -308,10 +350,13 @@ m13_xtr:
 .incbin "data/m13.xtr"
 .ends
 
-.section ".map14" superfree
+.section ".map14c" superfree
 m14_chr:
 .incbin "data/m14.chr"
 m14_chrend:
+.ends
+
+.section ".map14" superfree
 m14_map:
 .incbin "data/m14.map"
 m14_pal:
@@ -330,10 +375,13 @@ m14_xtr:
 .incbin "data/m14.xtr"
 .ends
 
-.section ".map15" superfree
+.section ".map15c" superfree
 m15_chr:
 .incbin "data/m15.chr"
 m15_chrend:
+.ends
+
+.section ".map15" superfree
 m15_map:
 .incbin "data/m15.map"
 m15_pal:
@@ -352,10 +400,13 @@ m15_xtr:
 .incbin "data/m15.xtr"
 .ends
 
-.section ".map16" superfree
+.section ".map16c" superfree
 m16_chr:
 .incbin "data/m16.chr"
 m16_chrend:
+.ends
+
+.section ".map16" superfree
 m16_map:
 .incbin "data/m16.map"
 m16_pal:
@@ -374,10 +425,13 @@ m16_xtr:
 .incbin "data/m16.xtr"
 .ends
 
-.section ".map17" superfree
+.section ".map17c" superfree
 m17_chr:
 .incbin "data/m17.chr"
 m17_chrend:
+.ends
+
+.section ".map17" superfree
 m17_map:
 .incbin "data/m17.map"
 m17_pal:
@@ -396,10 +450,13 @@ m17_xtr:
 .incbin "data/m17.xtr"
 .ends
 
-.section ".map18" superfree
+.section ".map18c" superfree
 m18_chr:
 .incbin "data/m18.chr"
 m18_chrend:
+.ends
+
+.section ".map18" superfree
 m18_map:
 .incbin "data/m18.map"
 m18_pal:
@@ -418,10 +475,13 @@ m18_xtr:
 .incbin "data/m18.xtr"
 .ends
 
-.section ".map19" superfree
+.section ".map19c" superfree
 m19_chr:
 .incbin "data/m19.chr"
 m19_chrend:
+.ends
+
+.section ".map19" superfree
 m19_map:
 .incbin "data/m19.map"
 m19_pal:
@@ -440,10 +500,13 @@ m19_xtr:
 .incbin "data/m19.xtr"
 .ends
 
-.section ".map20" superfree
+.section ".map20c" superfree
 m20_chr:
 .incbin "data/m20.chr"
 m20_chrend:
+.ends
+
+.section ".map20" superfree
 m20_map:
 .incbin "data/m20.map"
 m20_pal:
@@ -462,10 +525,13 @@ m20_xtr:
 .incbin "data/m20.xtr"
 .ends
 
-.section ".map21" superfree
+.section ".map21c" superfree
 m21_chr:
 .incbin "data/m21.chr"
 m21_chrend:
+.ends
+
+.section ".map21" superfree
 m21_map:
 .incbin "data/m21.map"
 m21_pal:
@@ -484,10 +550,13 @@ m21_xtr:
 .incbin "data/m21.xtr"
 .ends
 
-.section ".map22" superfree
+.section ".map22c" superfree
 m22_chr:
 .incbin "data/m22.chr"
 m22_chrend:
+.ends
+
+.section ".map22" superfree
 m22_map:
 .incbin "data/m22.map"
 m22_pal:
@@ -506,10 +575,13 @@ m22_xtr:
 .incbin "data/m22.xtr"
 .ends
 
-.section ".map23" superfree
+.section ".map23c" superfree
 m23_chr:
 .incbin "data/m23.chr"
 m23_chrend:
+.ends
+
+.section ".map23" superfree
 m23_map:
 .incbin "data/m23.map"
 m23_pal:
@@ -528,10 +600,13 @@ m23_xtr:
 .incbin "data/m23.xtr"
 .ends
 
-.section ".map24" superfree
+.section ".map24c" superfree
 m24_chr:
 .incbin "data/m24.chr"
 m24_chrend:
+.ends
+
+.section ".map24" superfree
 m24_map:
 .incbin "data/m24.map"
 m24_pal:
@@ -550,10 +625,13 @@ m24_xtr:
 .incbin "data/m24.xtr"
 .ends
 
-.section ".map25" superfree
+.section ".map25c" superfree
 m25_chr:
 .incbin "data/m25.chr"
 m25_chrend:
+.ends
+
+.section ".map25" superfree
 m25_map:
 .incbin "data/m25.map"
 m25_pal:
@@ -572,10 +650,13 @@ m25_xtr:
 .incbin "data/m25.xtr"
 .ends
 
-.section ".map26" superfree
+.section ".map26c" superfree
 m26_chr:
 .incbin "data/m26.chr"
 m26_chrend:
+.ends
+
+.section ".map26" superfree
 m26_map:
 .incbin "data/m26.map"
 m26_pal:
@@ -594,10 +675,13 @@ m26_xtr:
 .incbin "data/m26.xtr"
 .ends
 
-.section ".map27" superfree
+.section ".map27c" superfree
 m27_chr:
 .incbin "data/m27.chr"
 m27_chrend:
+.ends
+
+.section ".map27" superfree
 m27_map:
 .incbin "data/m27.map"
 m27_pal:
@@ -616,10 +700,13 @@ m27_xtr:
 .incbin "data/m27.xtr"
 .ends
 
-.section ".map28" superfree
+.section ".map28c" superfree
 m28_chr:
 .incbin "data/m28.chr"
 m28_chrend:
+.ends
+
+.section ".map28" superfree
 m28_map:
 .incbin "data/m28.map"
 m28_pal:
@@ -638,10 +725,13 @@ m28_xtr:
 .incbin "data/m28.xtr"
 .ends
 
-.section ".map29" superfree
+.section ".map29c" superfree
 m29_chr:
 .incbin "data/m29.chr"
 m29_chrend:
+.ends
+
+.section ".map29" superfree
 m29_map:
 .incbin "data/m29.map"
 m29_pal:
@@ -660,10 +750,13 @@ m29_xtr:
 .incbin "data/m29.xtr"
 .ends
 
-.section ".map30" superfree
+.section ".map30c" superfree
 m30_chr:
 .incbin "data/m30.chr"
 m30_chrend:
+.ends
+
+.section ".map30" superfree
 m30_map:
 .incbin "data/m30.map"
 m30_pal:
@@ -682,10 +775,13 @@ m30_xtr:
 .incbin "data/m30.xtr"
 .ends
 
-.section ".map31" superfree
+.section ".map31c" superfree
 m31_chr:
 .incbin "data/m31.chr"
 m31_chrend:
+.ends
+
+.section ".map31" superfree
 m31_map:
 .incbin "data/m31.map"
 m31_pal:
@@ -704,10 +800,13 @@ m31_xtr:
 .incbin "data/m31.xtr"
 .ends
 
-.section ".map32" superfree
+.section ".map32c" superfree
 m32_chr:
 .incbin "data/m32.chr"
 m32_chrend:
+.ends
+
+.section ".map32" superfree
 m32_map:
 .incbin "data/m32.map"
 m32_pal:
@@ -726,10 +825,13 @@ m32_xtr:
 .incbin "data/m32.xtr"
 .ends
 
-.section ".map33" superfree
+.section ".map33c" superfree
 m33_chr:
 .incbin "data/m33.chr"
 m33_chrend:
+.ends
+
+.section ".map33" superfree
 m33_map:
 .incbin "data/m33.map"
 m33_pal:
@@ -748,10 +850,13 @@ m33_xtr:
 .incbin "data/m33.xtr"
 .ends
 
-.section ".map34" superfree
+.section ".map34c" superfree
 m34_chr:
 .incbin "data/m34.chr"
 m34_chrend:
+.ends
+
+.section ".map34" superfree
 m34_map:
 .incbin "data/m34.map"
 m34_pal:
@@ -770,10 +875,13 @@ m34_xtr:
 .incbin "data/m34.xtr"
 .ends
 
-.section ".map35" superfree
+.section ".map35c" superfree
 m35_chr:
 .incbin "data/m35.chr"
 m35_chrend:
+.ends
+
+.section ".map35" superfree
 m35_map:
 .incbin "data/m35.map"
 m35_pal:
@@ -792,10 +900,13 @@ m35_xtr:
 .incbin "data/m35.xtr"
 .ends
 
-.section ".map36" superfree
+.section ".map36c" superfree
 m36_chr:
 .incbin "data/m36.chr"
 m36_chrend:
+.ends
+
+.section ".map36" superfree
 m36_map:
 .incbin "data/m36.map"
 m36_pal:
@@ -814,10 +925,13 @@ m36_xtr:
 .incbin "data/m36.xtr"
 .ends
 
-.section ".map37" superfree
+.section ".map37c" superfree
 m37_chr:
 .incbin "data/m37.chr"
 m37_chrend:
+.ends
+
+.section ".map37" superfree
 m37_map:
 .incbin "data/m37.map"
 m37_pal:
@@ -836,10 +950,13 @@ m37_xtr:
 .incbin "data/m37.xtr"
 .ends
 
-.section ".map38" superfree
+.section ".map38c" superfree
 m38_chr:
 .incbin "data/m38.chr"
 m38_chrend:
+.ends
+
+.section ".map38" superfree
 m38_map:
 .incbin "data/m38.map"
 m38_pal:
@@ -858,10 +975,13 @@ m38_xtr:
 .incbin "data/m38.xtr"
 .ends
 
-.section ".map39" superfree
+.section ".map39c" superfree
 m39_chr:
 .incbin "data/m39.chr"
 m39_chrend:
+.ends
+
+.section ".map39" superfree
 m39_map:
 .incbin "data/m39.map"
 m39_pal:
@@ -880,10 +1000,13 @@ m39_xtr:
 .incbin "data/m39.xtr"
 .ends
 
-.section ".map40" superfree
+.section ".map40c" superfree
 m40_chr:
 .incbin "data/m40.chr"
 m40_chrend:
+.ends
+
+.section ".map40" superfree
 m40_map:
 .incbin "data/m40.map"
 m40_pal:
@@ -902,10 +1025,13 @@ m40_xtr:
 .incbin "data/m40.xtr"
 .ends
 
-.section ".map41" superfree
+.section ".map41c" superfree
 m41_chr:
 .incbin "data/m41.chr"
 m41_chrend:
+.ends
+
+.section ".map41" superfree
 m41_map:
 .incbin "data/m41.map"
 m41_pal:
@@ -924,10 +1050,13 @@ m41_xtr:
 .incbin "data/m41.xtr"
 .ends
 
-.section ".map42" superfree
+.section ".map42c" superfree
 m42_chr:
 .incbin "data/m42.chr"
 m42_chrend:
+.ends
+
+.section ".map42" superfree
 m42_map:
 .incbin "data/m42.map"
 m42_pal:
@@ -946,10 +1075,13 @@ m42_xtr:
 .incbin "data/m42.xtr"
 .ends
 
-.section ".map43" superfree
+.section ".map43c" superfree
 m43_chr:
 .incbin "data/m43.chr"
 m43_chrend:
+.ends
+
+.section ".map43" superfree
 m43_map:
 .incbin "data/m43.map"
 m43_pal:
@@ -968,10 +1100,13 @@ m43_xtr:
 .incbin "data/m43.xtr"
 .ends
 
-.section ".map44" superfree
+.section ".map44c" superfree
 m44_chr:
 .incbin "data/m44.chr"
 m44_chrend:
+.ends
+
+.section ".map44" superfree
 m44_map:
 .incbin "data/m44.map"
 m44_pal:
@@ -990,10 +1125,13 @@ m44_xtr:
 .incbin "data/m44.xtr"
 .ends
 
-.section ".map45" superfree
+.section ".map45c" superfree
 m45_chr:
 .incbin "data/m45.chr"
 m45_chrend:
+.ends
+
+.section ".map45" superfree
 m45_map:
 .incbin "data/m45.map"
 m45_pal:
@@ -1012,10 +1150,13 @@ m45_xtr:
 .incbin "data/m45.xtr"
 .ends
 
-.section ".map46" superfree
+.section ".map46c" superfree
 m46_chr:
 .incbin "data/m46.chr"
 m46_chrend:
+.ends
+
+.section ".map46" superfree
 m46_map:
 .incbin "data/m46.map"
 m46_pal:
@@ -1034,10 +1175,13 @@ m46_xtr:
 .incbin "data/m46.xtr"
 .ends
 
-.section ".map47" superfree
+.section ".map47c" superfree
 m47_chr:
 .incbin "data/m47.chr"
 m47_chrend:
+.ends
+
+.section ".map47" superfree
 m47_map:
 .incbin "data/m47.map"
 m47_pal:
@@ -1056,10 +1200,13 @@ m47_xtr:
 .incbin "data/m47.xtr"
 .ends
 
-.section ".map48" superfree
+.section ".map48c" superfree
 m48_chr:
 .incbin "data/m48.chr"
 m48_chrend:
+.ends
+
+.section ".map48" superfree
 m48_map:
 .incbin "data/m48.map"
 m48_pal:
@@ -1078,10 +1225,13 @@ m48_xtr:
 .incbin "data/m48.xtr"
 .ends
 
-.section ".map49" superfree
+.section ".map49c" superfree
 m49_chr:
 .incbin "data/m49.chr"
 m49_chrend:
+.ends
+
+.section ".map49" superfree
 m49_map:
 .incbin "data/m49.map"
 m49_pal:
@@ -1100,10 +1250,13 @@ m49_xtr:
 .incbin "data/m49.xtr"
 .ends
 
-.section ".map50" superfree
+.section ".map50c" superfree
 m50_chr:
 .incbin "data/m50.chr"
 m50_chrend:
+.ends
+
+.section ".map50" superfree
 m50_map:
 .incbin "data/m50.map"
 m50_pal:
@@ -1122,10 +1275,13 @@ m50_xtr:
 .incbin "data/m50.xtr"
 .ends
 
-.section ".map51" superfree
+.section ".map51c" superfree
 m51_chr:
 .incbin "data/m51.chr"
 m51_chrend:
+.ends
+
+.section ".map51" superfree
 m51_map:
 .incbin "data/m51.map"
 m51_pal:
@@ -1144,10 +1300,13 @@ m51_xtr:
 .incbin "data/m51.xtr"
 .ends
 
-.section ".map52" superfree
+.section ".map52c" superfree
 m52_chr:
 .incbin "data/m52.chr"
 m52_chrend:
+.ends
+
+.section ".map52" superfree
 m52_map:
 .incbin "data/m52.map"
 m52_pal:
@@ -1166,10 +1325,13 @@ m52_xtr:
 .incbin "data/m52.xtr"
 .ends
 
-.section ".map53" superfree
+.section ".map53c" superfree
 m53_chr:
 .incbin "data/m53.chr"
 m53_chrend:
+.ends
+
+.section ".map53" superfree
 m53_map:
 .incbin "data/m53.map"
 m53_pal:
@@ -1188,10 +1350,13 @@ m53_xtr:
 .incbin "data/m53.xtr"
 .ends
 
-.section ".map54" superfree
+.section ".map54c" superfree
 m54_chr:
 .incbin "data/m54.chr"
 m54_chrend:
+.ends
+
+.section ".map54" superfree
 m54_map:
 .incbin "data/m54.map"
 m54_pal:
@@ -1210,10 +1375,13 @@ m54_xtr:
 .incbin "data/m54.xtr"
 .ends
 
-.section ".map55" superfree
+.section ".map55c" superfree
 m55_chr:
 .incbin "data/m55.chr"
 m55_chrend:
+.ends
+
+.section ".map55" superfree
 m55_map:
 .incbin "data/m55.map"
 m55_pal:
@@ -1232,10 +1400,13 @@ m55_xtr:
 .incbin "data/m55.xtr"
 .ends
 
-.section ".map56" superfree
+.section ".map56c" superfree
 m56_chr:
 .incbin "data/m56.chr"
 m56_chrend:
+.ends
+
+.section ".map56" superfree
 m56_map:
 .incbin "data/m56.map"
 m56_pal:
@@ -1254,10 +1425,13 @@ m56_xtr:
 .incbin "data/m56.xtr"
 .ends
 
-.section ".map57" superfree
+.section ".map57c" superfree
 m57_chr:
 .incbin "data/m57.chr"
 m57_chrend:
+.ends
+
+.section ".map57" superfree
 m57_map:
 .incbin "data/m57.map"
 m57_pal:
@@ -1276,10 +1450,13 @@ m57_xtr:
 .incbin "data/m57.xtr"
 .ends
 
-.section ".map58" superfree
+.section ".map58c" superfree
 m58_chr:
 .incbin "data/m58.chr"
 m58_chrend:
+.ends
+
+.section ".map58" superfree
 m58_map:
 .incbin "data/m58.map"
 m58_pal:
@@ -1298,10 +1475,13 @@ m58_xtr:
 .incbin "data/m58.xtr"
 .ends
 
-.section ".map59" superfree
+.section ".map59c" superfree
 m59_chr:
 .incbin "data/m59.chr"
 m59_chrend:
+.ends
+
+.section ".map59" superfree
 m59_map:
 .incbin "data/m59.map"
 m59_pal:
@@ -1320,10 +1500,13 @@ m59_xtr:
 .incbin "data/m59.xtr"
 .ends
 
-.section ".map60" superfree
+.section ".map60c" superfree
 m60_chr:
 .incbin "data/m60.chr"
 m60_chrend:
+.ends
+
+.section ".map60" superfree
 m60_map:
 .incbin "data/m60.map"
 m60_pal:
@@ -1342,10 +1525,13 @@ m60_xtr:
 .incbin "data/m60.xtr"
 .ends
 
-.section ".map61" superfree
+.section ".map61c" superfree
 m61_chr:
 .incbin "data/m61.chr"
 m61_chrend:
+.ends
+
+.section ".map61" superfree
 m61_map:
 .incbin "data/m61.map"
 m61_pal:
@@ -1364,10 +1550,13 @@ m61_xtr:
 .incbin "data/m61.xtr"
 .ends
 
-.section ".map62" superfree
+.section ".map62c" superfree
 m62_chr:
 .incbin "data/m62.chr"
 m62_chrend:
+.ends
+
+.section ".map62" superfree
 m62_map:
 .incbin "data/m62.map"
 m62_pal:
@@ -1386,10 +1575,13 @@ m62_xtr:
 .incbin "data/m62.xtr"
 .ends
 
-.section ".map63" superfree
+.section ".map63c" superfree
 m63_chr:
 .incbin "data/m63.chr"
 m63_chrend:
+.ends
+
+.section ".map63" superfree
 m63_map:
 .incbin "data/m63.map"
 m63_pal:
@@ -1408,10 +1600,13 @@ m63_xtr:
 .incbin "data/m63.xtr"
 .ends
 
-.section ".map64" superfree
+.section ".map64c" superfree
 m64_chr:
 .incbin "data/m64.chr"
 m64_chrend:
+.ends
+
+.section ".map64" superfree
 m64_map:
 .incbin "data/m64.map"
 m64_pal:
@@ -1430,10 +1625,13 @@ m64_xtr:
 .incbin "data/m64.xtr"
 .ends
 
-.section ".map65" superfree
+.section ".map65c" superfree
 m65_chr:
 .incbin "data/m65.chr"
 m65_chrend:
+.ends
+
+.section ".map65" superfree
 m65_map:
 .incbin "data/m65.map"
 m65_pal:
@@ -1452,10 +1650,13 @@ m65_xtr:
 .incbin "data/m65.xtr"
 .ends
 
-.section ".map66" superfree
+.section ".map66c" superfree
 m66_chr:
 .incbin "data/m66.chr"
 m66_chrend:
+.ends
+
+.section ".map66" superfree
 m66_map:
 .incbin "data/m66.map"
 m66_pal:
@@ -1474,10 +1675,13 @@ m66_xtr:
 .incbin "data/m66.xtr"
 .ends
 
-.section ".map67" superfree
+.section ".map67c" superfree
 m67_chr:
 .incbin "data/m67.chr"
 m67_chrend:
+.ends
+
+.section ".map67" superfree
 m67_map:
 .incbin "data/m67.map"
 m67_pal:
@@ -1496,10 +1700,13 @@ m67_xtr:
 .incbin "data/m67.xtr"
 .ends
 
-.section ".map68" superfree
+.section ".map68c" superfree
 m68_chr:
 .incbin "data/m68.chr"
 m68_chrend:
+.ends
+
+.section ".map68" superfree
 m68_map:
 .incbin "data/m68.map"
 m68_pal:
@@ -1518,10 +1725,13 @@ m68_xtr:
 .incbin "data/m68.xtr"
 .ends
 
-.section ".map69" superfree
+.section ".map69c" superfree
 m69_chr:
 .incbin "data/m69.chr"
 m69_chrend:
+.ends
+
+.section ".map69" superfree
 m69_map:
 .incbin "data/m69.map"
 m69_pal:
@@ -1540,10 +1750,13 @@ m69_xtr:
 .incbin "data/m69.xtr"
 .ends
 
-.section ".map70" superfree
+.section ".map70c" superfree
 m70_chr:
 .incbin "data/m70.chr"
 m70_chrend:
+.ends
+
+.section ".map70" superfree
 m70_map:
 .incbin "data/m70.map"
 m70_pal:
@@ -1562,10 +1775,13 @@ m70_xtr:
 .incbin "data/m70.xtr"
 .ends
 
-.section ".map71" superfree
+.section ".map71c" superfree
 m71_chr:
 .incbin "data/m71.chr"
 m71_chrend:
+.ends
+
+.section ".map71" superfree
 m71_map:
 .incbin "data/m71.map"
 m71_pal:
@@ -1584,10 +1800,13 @@ m71_xtr:
 .incbin "data/m71.xtr"
 .ends
 
-.section ".map72" superfree
+.section ".map72c" superfree
 m72_chr:
 .incbin "data/m72.chr"
 m72_chrend:
+.ends
+
+.section ".map72" superfree
 m72_map:
 .incbin "data/m72.map"
 m72_pal:
@@ -1606,10 +1825,13 @@ m72_xtr:
 .incbin "data/m72.xtr"
 .ends
 
-.section ".map73" superfree
+.section ".map73c" superfree
 m73_chr:
 .incbin "data/m73.chr"
 m73_chrend:
+.ends
+
+.section ".map73" superfree
 m73_map:
 .incbin "data/m73.map"
 m73_pal:
@@ -1628,10 +1850,13 @@ m73_xtr:
 .incbin "data/m73.xtr"
 .ends
 
-.section ".map74" superfree
+.section ".map74c" superfree
 m74_chr:
 .incbin "data/m74.chr"
 m74_chrend:
+.ends
+
+.section ".map74" superfree
 m74_map:
 .incbin "data/m74.map"
 m74_pal:
@@ -1650,10 +1875,13 @@ m74_xtr:
 .incbin "data/m74.xtr"
 .ends
 
-.section ".map75" superfree
+.section ".map75c" superfree
 m75_chr:
 .incbin "data/m75.chr"
 m75_chrend:
+.ends
+
+.section ".map75" superfree
 m75_map:
 .incbin "data/m75.map"
 m75_pal:
@@ -1672,10 +1900,13 @@ m75_xtr:
 .incbin "data/m75.xtr"
 .ends
 
-.section ".map76" superfree
+.section ".map76c" superfree
 m76_chr:
 .incbin "data/m76.chr"
 m76_chrend:
+.ends
+
+.section ".map76" superfree
 m76_map:
 .incbin "data/m76.map"
 m76_pal:
@@ -1694,10 +1925,13 @@ m76_xtr:
 .incbin "data/m76.xtr"
 .ends
 
-.section ".map77" superfree
+.section ".map77c" superfree
 m77_chr:
 .incbin "data/m77.chr"
 m77_chrend:
+.ends
+
+.section ".map77" superfree
 m77_map:
 .incbin "data/m77.map"
 m77_pal:
@@ -1716,10 +1950,13 @@ m77_xtr:
 .incbin "data/m77.xtr"
 .ends
 
-.section ".map78" superfree
+.section ".map78c" superfree
 m78_chr:
 .incbin "data/m78.chr"
 m78_chrend:
+.ends
+
+.section ".map78" superfree
 m78_map:
 .incbin "data/m78.map"
 m78_pal:

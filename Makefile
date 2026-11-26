@@ -2,11 +2,11 @@ ifeq ($(strip $(PVSNESLIB_HOME)),)
 $(error "Set PVSNESLIB_HOME to a built PVSnesLib checkout: https://github.com/alekmaul/pvsneslib/wiki/Installation")
 endif
 
-# 2 MB LoROM: the outdoor maps, interiors and caves now, the dungeons later.
+# 4 MB LoROM (stage 12: the shaded SNES art needs about twice the tiles).
 export ROMNAME := RiverCityQuest
 export ROMTITLE := RIVER CITY QUEST
-export ROMBANKS := 64
-export ROMSIZE := 0B
+export ROMBANKS := 128
+export ROMSIZE := 0C
 # FastROM: code and data in banks $80 and up run at 3.58 MHz instead of 2.68
 export FASTROM := 1
 # Battery-backed SRAM for the three save slots (stage 11): ROM + RAM + battery, 8 KB

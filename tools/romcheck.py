@@ -13,7 +13,7 @@ def check(cond, msg):
     ok &= bool(cond)
 
 
-check(len(rom) == 64 * 0x8000, f'size is 2 MB ({len(rom)} bytes)')
+check(len(rom) == 128 * 0x8000, f'size is 4 MB ({len(rom)} bytes)')
 h = rom[0x7FC0:0x7FE0]
 title = h[:21].decode('ascii', 'replace').strip(' \x00')
 check(title == 'RIVER CITY QUEST', f'title "{title}"')

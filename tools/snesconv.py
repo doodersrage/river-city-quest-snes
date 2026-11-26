@@ -1123,9 +1123,12 @@ def main():
         for ext, data in (('chr', chr_), ('map', tm), ('pal', pal), ('col', col), ('wld', wld), ('och', ochr), ('opl', opal), ('ene', ene), ('xtr', xtr)):
             open(os.path.join(out, f'm{i}.{ext}'), 'wb').write(data)
         size = sum(map(len, (chr_, tm, pal, col, wld, ochr, opal, ene, xtr)))
-        if size > 0x8000: raise SystemExit(f'{m["id"]}: {size} bytes, over one 32 KB bank')
-        asm += [f'.section ".map{i}" superfree',
-                f'm{i}_chr:', f'.incbin "data/m{i}.chr"', f'm{i}_chrend:',
+        # a map's tiles fill up to a whole bank by themselves (1,024 tiles is exactly 32 KB): they get their own
+        # section, so the linker can put them in a different bank from the rest of the map
+        if len(chr_) > 0x8000: raise SystemExit(f'{m["id"]}: {len(chr_)} bytes of tiles, over one 32 KB bank')
+        if size - len(chr_) > 0x8000: raise SystemExit(f'{m["id"]}: {size - len(chr_)} bytes of map data, over one 32 KB bank')
+        asm += [f'.section ".map{i}c" superfree', f'm{i}_chr:', f'.incbin "data/m{i}.chr"', f'm{i}_chrend:', '.ends', '',
+                f'.section ".map{i}" superfree',
                 f'm{i}_map:', f'.incbin "data/m{i}.map"',
                 f'm{i}_pal:', f'.incbin "data/m{i}.pal"',
                 f'm{i}_col:', f'.incbin "data/m{i}.col"',
