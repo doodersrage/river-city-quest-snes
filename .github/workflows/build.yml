@@ -40,7 +40,7 @@ jobs:
         run: |
           export PVSNESLIB_HOME="$PWD/pvsneslib"
           make || { cat RiverCityQuest.log 2>/dev/null | tail -80; exit 1; }
-          ls -l RiverCityQuest.sfc
+          ls -l RiverCityQuest.sfc || { ls *.log; tail -60 *.log; exit 1; }
 
       - name: Header check
         run: python3 tools/romcheck.py RiverCityQuest.sfc

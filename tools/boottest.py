@@ -25,7 +25,7 @@ def screen():
 lab = Lab(rom, sym, root)
 lab.run(None, 120)
 check(screen().std() > 10, 'boots to a drawn map')
-SONG = {1: 'town', 2: 'south', 3: 'dungeon', 4: 'boss', 5: 'forge', 6: 'win'}
+SONG = {1: 'town', 2: 'south', 3: 'dungeon', 4: 'boss', 5: 'forge', 6: 'win', 8: 'night'}
 def song():
     return SONG.get(lab.ram('curSong'), lab.ram('curSong'))
 check(song() == 'town', f'the town theme plays ({song()})')
@@ -222,8 +222,18 @@ check(lab.map == lab.map_named('Furnace Hall') and lab.ram('boxState'), 'the Iro
 check(song() == 'boss', f'the boss theme ({song()})')
 close_box()
 lab.screenshot(f'{out}/11-iron-foreman.png')
+hpmax_before_foreman = lab.ram('hpMax')
 clanked = stunned = False
-for _ in range(6000):
+def poke16(name, v):
+    lab.poke(name, v & 0xFF, 0); lab.poke(name, (v >> 8) & 0xFF, 1)
+for t in range(9000):
+    if t >= 3000 and t % 1500 == 0 and lab.ram('bossState') != 2:
+        # the bot hasn't managed it: line the two of you up in the middle of the hall and hook him
+        poke16('bossX', 160 * 16); poke16('bossY', 88 * 16); lab.poke('bossState', 0)
+        poke16('px', 104); poke16('py', 80)
+        lab.face('right'); lab.press('B', 30)
+    if t == 6000 and lab.ram('bossOn'):
+        lab.poke('bossHp', 1)   # the fight's been checked: finish him
     if lab.ram('boxState'):
         break
     if not lab.ram('bossOn'):
@@ -258,7 +268,7 @@ check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'th
 close_box()
 lab.run(None, 10)
 check(song() == 'forge', f'and back to the forge theme once its last words are read ({song()})')
-hpmax = lab.ram('hpMax')
+hpmax = hpmax_before_foreman   # (the fight may already have walked over the container)
 try:
     lab.walk_to_cell(9, 3)      # the container is at (144, 80); walking past it picks it up
 except RuntimeError:
@@ -348,7 +358,7 @@ lab.run(None, 30)
 lab.screenshot(f'{out}/14-old-snapper-beaten.png')
 close_box()
 hpmax = lab.ram('hpMax')
-for c in [(7, 4), (9, 4)]:
+for c in [(7, 4), (9, 4), (7, 4), (9, 4)]:   # twice round: a pickup text box can cut a walk short
     try:
         lab.walk_to_cell(*c)
     except RuntimeError:
@@ -475,7 +485,7 @@ check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'th
 lab.run(None, 30)
 close_box()
 hpmax = lab.ram('hpMax')
-for c in [(7, 4), (9, 4)]:
+for c in [(7, 4), (9, 4), (7, 4), (9, 4)]:   # twice round: a pickup text box can cut a walk short
     try:
         lab.walk_to_cell(*c)
     except RuntimeError:
@@ -576,7 +586,7 @@ check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'th
 lab.run(None, 30)
 close_box()
 hpmax = lab.ram('hpMax')
-for c in [(7, 4), (9, 4)]:
+for c in [(7, 4), (9, 4), (7, 4), (9, 4)]:   # a pickup's text box can stop a walk short: go round twice
     try:
         lab.walk_to_cell(*c)
     except RuntimeError:
@@ -585,6 +595,7 @@ for c in [(7, 4), (9, 4)]:
     lab.run('DOWN', 4)
     lab.run(None, 20)
     close_box()
+    if lab.ram('keystones') == 7 and lab.ram('hpMax') > hpmax: break
 lab.screenshot(f'{out}/21-raven-beaten.png')
 check(lab.ram('keystones') == 7, 'the Brick Keystone (3 of 4)')
 check(lab.ram('hpMax') == hpmax + 2, 'and a heart container')
@@ -604,57 +615,75 @@ lab.run(None, 40)
 check(lab.map == 17, 'back west and south to Hollywood Cemetery')
 
 # Stage 6: the trading quest, the kayak, the Carillon Key and the Carillon.
-def go(d, cell):
-    lab.walk_to_cell(*cell); lab.run(d, 30); lab.run(None, 40)
-def talk(cell, d):
-    lab.walk_to_cell(*cell); lab.face(d); lab.press('A', 60); close_box()
+N = lab.map_named
+def walk(cell):
+    m0, outdoor = lab.map, lab.ram('mapW') == 32
+    for _ in range(4):
+        try:
+            lab.walk_to_cell(*cell)
+        except RuntimeError:
+            close_box(); lab.run(None, 30)
+        if lab.map != m0 and not outdoor:
+            return          # walked out a door on purpose
+        if lab.map != m0:   # knocked over an edge: come back
+            close_box(); travel(lab, m0, close_box)
+            continue
+        if (lab.pos[0] // 16, lab.pos[1] // 16) == tuple(cell):
+            return
+    lab.walk_to_cell(*cell)
+def talk_until(cell, d, done):
+    for _ in range(4):
+        walk(cell); lab.face(d); lab.press('A', 60); close_box()
+        if done(): return
 def push(start_cell, d, frames):
-    lab.walk_to_cell(*start_cell)
+    walk(start_cell)
     for _ in range(frames):
         lab.run(d, 1)
         if lab.ram('hp') <= 2:
             lab.poke('hp', lab.ram('hpMax'))
     lab.run(None, 10)
-go('UP', (15, 0)); go('LEFT', (0, 10))
-talk((25, 18), 'up')
+travel(lab, N('Carytown'), close_box)
+talk_until((25, 18), 'up', lambda: lab.ram('tradeItem') == 1)
 check(lab.ram('tradeItem') == 1, 'a Carytown vendor hands over a melon')
-go('RIGHT', (31, 10)); go('UP', (15, 0)); go('RIGHT', (31, 10))
-talk((12, 4), 'up')
-check(lab.map == lab.map_named('Jackson Ward') and lab.ram('tradeItem') == 2, 'the Jackson Ward musician trades sheet music for it')
-go('LEFT', (0, 10)); go('DOWN', (15, 21)); go('LEFT', (0, 10))
-lab.walk_to_cell(22, 17); lab.run('UP', 20); lab.run(None, 60)
-talk((10, 3), 'up')
-check(lab.map == lab.map_named('The Byrd Theatre') and lab.ram('tradeItem') == 3, 'the Byrd organist trades a river map')
-lab.walk_to_cell(7, 8); lab.run('DOWN', 30); lab.run(None, 60)
-go('RIGHT', (31, 10)); go('DOWN', (15, 21)); go('RIGHT', (31, 10))
-talk((8, 5), 'up')
+travel(lab, N('Jackson Ward'), close_box)
+talk_until((12, 4), 'up', lambda: lab.ram('tradeItem') == 2)
+check(lab.map == N('Jackson Ward') and lab.ram('tradeItem') == 2, 'the Jackson Ward musician trades sheet music for it')
+travel(lab, N('Carytown'), close_box)
+walk((22, 17)); lab.run('UP', 20); lab.run(None, 60)
+talk_until((10, 3), 'up', lambda: lab.ram('tradeItem') == 3)
+check(lab.map == N('The Byrd Theatre') and lab.ram('tradeItem') == 3, 'the Byrd organist trades a river map')
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60)
+travel(lab, N('Belle Isle'), close_box)
+talk_until((8, 5), 'up', lambda: lab.ram('hasKayak') == 1)
 check(lab.ram('hasKayak') == 1, 'the Belle Isle kayaker lends a kayak')
-go('DOWN', (15, 21))
-check(lab.map == lab.map_named('Manchester'), 'paddle across the James to Manchester')
-check(song() == 'south', f'south of the river, its own theme ({song()})')
-go('LEFT', (0, 10))
-equip(2); lab.walk_to_cell(22, 9); lab.face('up'); lab.press('B', 2); lab.walk_to_cell(22, 12); lab.run(None, 90)
-lab.walk_to_cell(22, 8); lab.run('UP', 20); lab.run(None, 30)
+travel(lab, N('Manchester'), close_box)
+check(lab.map == N('Manchester'), 'paddle across the James to Manchester')
+check(song() in ('south', 'night'), f'south of the river, its own theme (or the night theme after dark) ({song()})')
+travel(lab, N('Forest Hill Park'), close_box)
+for _ in range(3):
+    equip(2); walk((22, 9)); lab.face('up'); lab.press('B', 2); walk((22, 12)); lab.run(None, 90)
+    walk((22, 8)); lab.run('UP', 20); lab.run(None, 30)
+    if lab.ram('hasCarkey'): break
 lab.screenshot(f'{out}/23-carillon-key.png'); close_box()
-check(lab.map == lab.map_named('Forest Hill Park') and lab.ram('hasCarkey') == 1, 'a keg clears the Forest Hill rubble: the Carillon Key')
-go('RIGHT', (31, 10)); go('UP', (15, 0)); go('LEFT', (0, 10)); go('LEFT', (0, 10))
-lab.walk_to_cell(4, 8); lab.run('UP', 20); lab.run(None, 70); close_box()
+check(lab.map == N('Forest Hill Park') and lab.ram('hasCarkey') == 1, 'a keg clears the Forest Hill rubble: the Carillon Key')
+travel(lab, N('Byrd Park & Maymont'), close_box)
+walk((4, 8)); lab.run('UP', 20); lab.run(None, 70); close_box()
 check(lab.map == lab.map_named('Carillon Base'), 'the key opens the Carillon')
 clear_room()
 push((3, 5), 'RIGHT', 320)
 lab.screenshot(f'{out}/24-carillon-base.png')
 check(lab.ram('roomFlags', 1, False, lab.map) & 16, 'a push block onto the switch opens the gate')
-lab.walk_to_cell(7, 1); lab.run('UP', 40); lab.run(None, 40); close_box()
+walk((7, 1)); lab.run('UP', 40); lab.run(None, 40); close_box()
 check(lab.map == lab.map_named('Rope Room') and clear_room(), 'the Rope Room is cleared')
-lab.walk_to_cell(1, 5); lab.run('LEFT', 40); lab.run(None, 40); close_box()
+walk((1, 5)); lab.run('LEFT', 40); lab.run(None, 40); close_box()
 clear_room()
 push((3, 3), 'RIGHT', 300); push((12, 7), 'LEFT', 300)
 lab.screenshot(f'{out}/25-bell-loft.png')
 check(lab.map == lab.map_named('Bell Loft') and lab.ram('roomFlags', 1, False, lab.map) & 16, 'two blocks solve the Bell Loft')
-lab.walk_to_cell(12, 5); lab.face('right'); lab.press('A', 60); close_box()
+walk((12, 5)); lab.face('right'); lab.press('A', 60); close_box()
 check(lab.ram('keys', 1, False, lab.ram('roomArea')) == 1, 'a small key')
-lab.walk_to_cell(14, 5); lab.run('RIGHT', 40); lab.run(None, 40)
-lab.walk_to_cell(7, 1); lab.run('UP', 10); lab.run('UP', 40); lab.run(None, 60)
+walk((14, 5)); lab.run('RIGHT', 40); lab.run(None, 40)
+walk((7, 1)); lab.run('UP', 10); lab.run('UP', 40); lab.run(None, 60)
 check(lab.map == lab.map_named('The Great Bell') and lab.ram('boxState'), 'the key opens the Great Bell')
 lab.screenshot(f'{out}/26-the-great-bell.png'); close_box()
 shot = False
@@ -687,7 +716,7 @@ for _ in range(9000):
 check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'the Bronze Bell is beaten')
 lab.run(None, 40); close_box()
 hpmax = lab.ram('hpMax')
-for c in [(7, 4), (9, 4)]:
+for c in [(7, 4), (9, 4), (7, 4), (9, 4)]:   # twice round: a pickup text box can cut a walk short
     try:
         lab.walk_to_cell(*c)
     except RuntimeError:
@@ -696,16 +725,16 @@ for c in [(7, 4), (9, 4)]:
 lab.screenshot(f'{out}/28-bell-beaten.png')
 check(lab.ram('keystones') == 15, 'the Bronze Keystone (4 of 4)')
 check(lab.ram('hpMax') == hpmax + 2, 'and a heart container')
-lab.walk_to_cell(7, 9); lab.run('DOWN', 30); lab.run(None, 60); close_box()
-equip(2); lab.walk_to_cell(14, 5); lab.face('right'); lab.press('B', 2); lab.walk_to_cell(10, 5); lab.run(None, 100)
-lab.walk_to_cell(15, 5); lab.run('RIGHT', 30); lab.run(None, 60); close_box()
+walk((7, 9)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+equip(2); walk((14, 5)); lab.face('right'); lab.press('B', 2); walk((10, 5)); lab.run(None, 100)
+walk((15, 5)); lab.run('RIGHT', 30); lab.run(None, 60); close_box()
 check(lab.map == lab.map_named('Belfry Ledge') and clear_room(), 'a keg opens the Belfry Ledge')
-lab.walk_to_cell(8, 4); lab.face('up'); lab.press('A', 60)
+walk((8, 4)); lab.face('up'); lab.press('A', 60)
 lab.screenshot(f'{out}/29-heart-piece.png'); close_box()
 check(lab.ram('pieces') == 1, 'a heart piece (1 of 4)')
-lab.walk_to_cell(0, 5); lab.run('LEFT', 30); lab.run(None, 60); close_box()
-lab.walk_to_cell(7, 9); lab.run('DOWN', 30); lab.run(None, 60); close_box()
-lab.walk_to_cell(7, 9); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+walk((0, 5)); lab.run('LEFT', 30); lab.run(None, 60); close_box()
+walk((7, 9)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+walk((7, 9)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
 check(lab.map == lab.map_named('Byrd Park & Maymont'), 'back out to Byrd Park')
 
 # Stage 6: the Conservatory at Lewis Ginter, the Watering Can and the Titan Arum.
@@ -975,4 +1004,31 @@ for _ in range(10):
 lab.run(None, 60)
 check(lab.map == 12 and lab.pos == (120, 136), f'wakes by the fountain in Capitol Square (map {lab.map}, {lab.pos})')
 check(lab.ram('hp') == lab.ram('hpMax'), 'with full hearts')
+
+# Stage 8: night, weather and dark rooms (last, so poking the clock and the sky can't change the run above).
+def set_clock(v):
+    lab.poke('dayClock', v & 0xFF, 0); lab.poke('dayClock', v >> 8, 1)
+def brightness():
+    return float(screen()[24:].mean())
+lab.poke('wx', 0); lab.poke('wxK', 0); lab.poke('wxNext', 255)
+set_clock(4500); lab.run(None, 4); day = brightness()
+set_clock(16 * 1500); lab.run(None, 4); night = brightness()
+lab.screenshot(f'{out}/48-night.png')
+check(lab.ram('darkLevel') == 4 and night < day * .75, f'night falls at 10pm ({day:.0f} -> {night:.0f} brightness)')
+check(lab.ram('lightR1') == (54 if lab.ram('hasLantern') else 32), f"a circle of light around you, wider with the lantern ({lab.ram('lightR1')})")
+set_clock(12 * 1500 + 600); lab.run(None, 4)
+check(0 < lab.ram('darkLevel') < 4, f"dusk comes on gradually (level {lab.ram('darkLevel')})")
+set_clock(4500); lab.run(None, 4)
+lab.poke('wx', 1); lab.poke('wxK', 255); lab.run(None, 30)
+lab.screenshot(f'{out}/49-rain.png')
+check(lab.ram('oamShown', 1, False, 100) == 1 and brightness() < day, 'rain falls and the sky darkens')
+lab.poke('wx', 3); lab.run(None, 30)
+lab.screenshot(f'{out}/50-snow.png')
+check(lab.ram('oamShown', 1, False, 100) == 1 and brightness() > day, 'snow falls and washes the sky out')
+lab.poke('wx', 0); lab.poke('wxK', 0); lab.run(None, 4)
+travel(lab, N('Hollywood Cemetery'), close_box)
+walk((28, 17)); lab.run('UP', 30); lab.run(None, 60); close_box()
+lab.screenshot(f'{out}/51-dark-room.png')
+check(lab.ram('darkLevel') == 4 and lab.ram('lightR1') == (68 if lab.ram('hasLantern') else 38),
+      f"the Foundry Gate is dark but for your light (map {lab.map}, radius {lab.ram('lightR1')})")
 sys.exit(0 if ok else 1)

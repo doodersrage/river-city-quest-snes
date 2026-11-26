@@ -11,6 +11,20 @@ void playSong(u8 song);
 void songForMap(void);
 void sfx(u8 id);
 void rcqVBlank(void);
+
+/* day, night and dark rooms (light.c) */
+extern u16 dayClock;
+extern u8 darkLevel;
+void lightInit(void);
+void lightFrame(void);
+void lightVBlank(void);
+u8 isNight(void);
+
+/* weather (weather.c) */
+extern u8 wx, wxK;
+void weatherInit(void);
+void weatherFrame(void);
+u8 weatherTint(void);
 extern u8 curSong;
 #ifndef RCQ_AUDIO_C
 #define WaitForVBlank() rcqVBlank()
@@ -152,6 +166,7 @@ void boxNum(u8 row, u8 right, u16 v);
 void closeText(void);
 void checkExits(void);
 void checkCells(void);
+void settle(void);
 extern u16 lastCell;
 void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy);
 extern s16 enX[], enY[];

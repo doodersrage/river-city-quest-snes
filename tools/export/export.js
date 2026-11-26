@@ -52,6 +52,9 @@ const dump = vm.runInContext(`(function(){
     let c; try{ c=renderMap(s,0); const old=g; g=c.getContext('2d');
       try{drawLandmarks(s,0);}catch(e){} try{drawDecor(s);}catch(e){} g=old; }
     catch(e){ out.push({id,err:String(e)}); continue; }
+    // Light sources for night and dark rooms (web drawNight/drawLight): wall torches, lit windows, street lamps; pixel centres
+    const lights={torches:(s.torches||[]).slice(),wins:Object.values(s.wins||{}).filter(w=>w[2]).map(w=>[w[0]+8,w[1]+9]),
+      lamps:(s.lamps||[]).map(([x,y])=>[x*16+8,y*16+4])};
     // Same map with every chest open, for the tiles the ROM swaps in when you open one.
     // Alternate renders for tiles the ROM swaps in at runtime:
     //  alt1: every locked door / gate / cracked wall open, every chest closed (including ones that
@@ -77,7 +80,7 @@ const dump = vm.runInContext(`(function(){
       s.g=keep;}
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
       grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,
-      solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],
+      solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],lights,lit:!!s.lit,
       pickups:(s.items||[]).filter(it=>['skey','carkey','piece','bib'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
       blocks:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='#'?[x,y]:null).filter(Boolean)),
       switches:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='^'?[x,y]:null).filter(Boolean)),
@@ -312,7 +315,7 @@ const bossArt = vm.runInContext(`(function(){
   bossArt.boom.forEach((c, i) => bx.drawImage(c, i * 32, 0));
   fs.writeFileSync(path.join(OUT, 'combat', 'boom.png'), bm.toBuffer('image/png'));
   // spark shot (2 blinks) and the hook head and chain link, 8x8 each, drawn like the web game
-  const sm = createCanvas(72, 8), q = sm.getContext('2d');
+  const sm = createCanvas(88, 8), q = sm.getContext('2d');
   const R2 = (X, Y, W, H, C) => { q.fillStyle = C; q.fillRect(X, Y, W, H); };
   for (const [i, c] of [[0, '#f8e060'], [1, '#f08020']]) { const X = i * 8 + 4, Y = 4;
     R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
@@ -321,6 +324,9 @@ const bossArt = vm.runInContext(`(function(){
   // orb (the Wraith's) and a reflected shot
   for (const [i, c] of [[4, '#e83048'], [5, '#fff2a8'], [6, '#4a4662'], [7, '#f0c070'], [8, '#84cc68']]) { const X = i * 8 + 4, Y = 4;
     R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
+  // weather (web drawRain, drawSnow): a slanted raindrop and a snowflake
+  R2(72 + 5, 0, 1, 2, '#d8dce4'); R2(72 + 4, 2, 1, 2, '#d8dce4'); R2(72 + 3, 4, 1, 3, '#d8dce4');  // grey: the HUD palette has no blue
+  R2(80 + 3, 3, 2, 2, '#ffffff'); R2(80 + 2, 4, 1, 1, '#e8eeff'); R2(80 + 5, 3, 1, 1, '#e8eeff');
   fs.writeFileSync(path.join(OUT, 'combat', 'small.png'), sm.toBuffer('image/png'));
   const intro = vm.runInContext("(function(){try{return Object.entries(BANNERS||{})}catch(e){return null}})()", sb);
   fs.writeFileSync(path.join(OUT, 'combat', 'boss.json'), JSON.stringify({ text: bossArt.text, keynames: bossArt.keynames }, null, 1));

@@ -232,6 +232,28 @@ def encode_text(title, pages):
 
 GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug', 'can', 'balls', 'shoes', 'bike', 'bottle']   # ITEM_* in the ROM, from 1
 NPC_REC = 12
+RADII = [15, 32, 38, 44, 46, 48, 54, 68]   # windows, night, dark room, brazier, torch, lamp, night+lantern, dark+lantern
+
+
+def light_tables(maps):
+    """Per map light sources (pixel x/2, y/2, kind 0 torch 1 lamp 2 window) and circle half-widths per radius."""
+    import math
+    out, data, offs = [], [], []
+    for m in maps:
+        offs.append(len(data) // 3)
+        L = m.get('lights') or {}
+        church = m['id'] == 'ow:3,0'          # web litLamp: Church Hill's lamps stay dark (the lamplighter challenge)
+        for kind, pts in ((0, L.get('torches', [])), (1, [] if church else L.get('lamps', [])), (2, L.get('wins', []))):
+            for x, y in pts:
+                data += [min(255, int(x) // 2), min(255, int(y) // 2), kind]
+    offs.append(len(data) // 3)
+    out.append('static const u16 lightOff[%d] = {%s};' % (len(offs), ', '.join(map(str, offs))))
+    out.append('static const u8 lightData[%d] = {%s};' % (max(1, len(data)), ', '.join(map(str, data or [0]))))
+    for r in RADII:
+        out.append('static const u8 hw%d[%d] = {%s};' % (r, r + 1, ', '.join(str(int(math.sqrt(r * r - d * d))) for d in range(r + 1))))
+    return out
+
+
 LIT_AREAS = {'bank', 'byrd', 'capitol', 'vmfa', 'taproom', 'tearoom', 'hippo', 'stjohn', 'shop', 'rowhouse', 'station',
              'mansion', 'boathouse', 'studio'}   # web maps with lit:true (the Conservatory is lit but plays the dungeon song)
 TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4, 'bib': 5, 'shoes': 6}
@@ -452,7 +474,7 @@ def convert_combat(exp):
         sheet[OBJ_HUD - 128 + i] = tile4bpp([ix(p) for r in t for p in r])
     # spark shot x2, hook head, chain link (nearest palette-7 colours)
     sm = Image.open(os.path.join(d, 'small.png')).convert('RGBA')
-    for i in range(9):
+    for i in range(11):
         idx = []
         for y in range(8):
             for x in range(8):
@@ -473,7 +495,7 @@ def convert_combat(exp):
               f'#define HUD_EMPTY {OBJ_HUD + HUD_EMPTY}', f'#define HUD_COIN {OBJ_HUD + HUD_COIN}',
               f'#define HUD_DIGIT {OBJ_HUD + HUD_DIGIT}', '#define PAL_HUD 7',
               f'#define OBJ_SPARK {OBJ_HUD + 15}', f'#define OBJ_HOOK {OBJ_HUD + 17}', f'#define OBJ_CHAIN {OBJ_HUD + 18}',
-              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}', f'#define OBJ_RING {OBJ_HUD + 22}', f'#define OBJ_SEED {OBJ_HUD + 23}',
+              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}', f'#define OBJ_RING {OBJ_HUD + 22}', f'#define OBJ_SEED {OBJ_HUD + 23}', f'#define OBJ_RAIN {OBJ_HUD + 24}', f'#define OBJ_SNOW {OBJ_HUD + 25}',
               f'#define ENEMY_TYPES {len(ENEMY_TYPES)}',
               '/* ' + ' '.join(f'{i}={t}' for i, t in enumerate(ENEMY_TYPES)) + ' */',
               f'static const u8 enemyHp[{len(ENEMY_TYPES)}] = {{{", ".join(map(str, ENEMY_HP))}}};',
@@ -885,6 +907,10 @@ def main():
             'static const u8 mapSong[MAP_COUNT] = {%s};' % ', '.join(str(
                 (2 if m['ay'] == 3 else 1) if m['ow'] else 5 if m['area'] == 'tredegar' else
                 1 if m['area'] in LIT_AREAS else 3) for m in maps),
+            # Lighting (stage 8, web drawNight/drawLight): 0 outdoors (dark at night), 1 a lit interior, 2 a dark room, 3 the tunnel
+            'static const u8 mapDark[MAP_COUNT] = {%s};' % ', '.join(str(
+                0 if m['ow'] else 1 if m.get('lit') and m['area'] != 'conserv' else 3 if m['area'] == 'tunnel' else 2) for m in maps),
+            *light_tables(maps),
             '#define RELIGHT_N %d' % len(relight),
             '#define MAP_WIN %d' % index_of['ow:3,0'],
             '#define WIN_X %d' % (win_door['ret'][0] * 16 + 8), '#define WIN_Y %d' % (win_door['ret'][1] * 16 + 8),
