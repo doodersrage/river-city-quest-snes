@@ -245,26 +245,23 @@ function shadeRect(x, y, w, h) {
   }
   g.putImageData(im, x, y);
 }
-/* cobbles, take two: rounded stones of uneven size, darker than the sidewalk */
+/* cobbles, take two: worn, rounded setts in soft greys, lit on top, with quiet joints (a road should sit back) */
 cobble = function (x, y, h) {
-  R(x, y, 16, 16, SST[0]);
+  R(x, y, 16, 16, SST[2]);
   for (let r = 0; r < 4; r++) {
-    let a = (r & 1) ? -2 : 0;
-    let k = 0;
+    let a = (r & 1) ? -3 : 0, k = 0;
     while (a < 16) {
-      const q = HH(h, r * 7 + k, 31), w = 4 + q % 3, b = y + r * 4, t = q >> 4;
+      const q = HH(h, r * 7 + k, 31), w = 6 + q % 3, b = y + r * 4, t = q >> 4;
       const x0 = Math.max(0, a), x1 = Math.min(16, a + w - 1);
       if (x1 - x0 >= 1) {
-        const base = t % 3 == 0 ? SST[3] : t % 3 == 1 ? SST[2] : SST[3];
-        R(x + x0, b, x1 - x0, 3, base);
-        R(x + x0 + 1, b, Math.max(0, x1 - x0 - 2), 1, SST[4]);        // lit top
-        R(x + x0, b + 2, x1 - x0, 1, SST[1]);                          // shaded bottom
-        if (a >= 0) R(x + x0, b, 1, 1, SST[0]);                        // rounded corners
-        if (a + w - 1 <= 16) R(x + x1 - 1, b, 1, 1, SST[0]);
-        if (t % 5 == 0) R(x + x0 + 1, b + 1, 1, 1, SST[5]);           // a glint
+        R(x + x0, b, x1 - x0, 3, t % 4 == 0 ? SST[4] : SST[3]);
+        R(x + x0 + 1, b, Math.max(0, x1 - x0 - 2), 1, t % 4 == 0 ? SST[5] : SST[4]);
+        if (a >= 0) R(x + x0, b + 2, 1, 1, SST[2]);
+        if (t % 6 == 1) R(x + x0 + 2, b + 1, 2, 1, SST[2]);
       }
       a += w; k++;
     }
+    R(x, y + r * 4 + 3, 16, 1, SST[1]);
   }
 };
 const ROOFED = s => s.roof != 'tin' && s.hs != 'glass';

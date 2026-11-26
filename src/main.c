@@ -700,24 +700,42 @@ void enterMap(u8 i)
     dungeonEntered();
 }
 
+/* Stage 12: the hero is 16x32, two 16x16 sprites (the head in OAM_HEROTOP). Only the frame on show is in VRAM,
+   OBJ tiles 0-3 and 16-19: when it changes, heroVBlank copies the new one from ROM at the start of the next VBlank. */
+u8 heroShown, heroPend;
+u8 *heroSrc;
+
+void heroFrame(u8 f)
+{
+    if (f == heroShown) return;
+    heroShown = f;
+    heroSrc = (u8 *)&hero_chr + (u16)f * 256;
+    heroPend = 1;
+}
+
+/* from rcqVBlank (only scalars and pointers here: the data bank is not ours) */
+void heroVBlank(void)
+{
+    if (!heroPend) return;
+    dmaCopyVram(heroSrc, VRAM_OBJ_CHR, 128);
+    dmaCopyVram(heroSrc + 128, VRAM_OBJ_CHR + 16 * 16, 128);
+    heroPend = 0;
+}
+
+static const u8 walkFrame[4] = {0, 1, 0, 2}; /* stand, step, stand, the other step */
+
 void drawHero(void)
 {
-    u16 tile;
-    u8 flip = 0;
-    u8 f = (step >> 3) & 1;
-    if (heroDir == 0) tile = 0 + f * 2;
-    else if (heroDir == 1) tile = 4 + f * 2;
-    else
-    {
-        tile = 8 + f * 2;
-        if (heroDir == 2) flip = 1; /* the side frames face right */
-    }
+    u8 flip = heroDir == 2; /* the side frames face right */
+    heroFrame((heroDir == 0 ? 0 : heroDir == 1 ? 3 : 6) + walkFrame[(step >> 3) & 3]);
     if (inv & 4)
     {
-        sprHide((OAM_HERO * 4) >> 2); /* blink while invincible */
+        sprHide(OAM_HERO); /* blink while invincible */
+        sprHide(OAM_HEROTOP);
         return;
     }
-    sprPut((OAM_HERO * 4) >> 2, 1, (px - camX - 8), (py - camY - 10), 3, flip, tile, 0);
+    sprPut(OAM_HEROTOP, 1, px - camX - 8, py - camY - 26, 3, flip, 0, 0);
+    sprPut(OAM_HERO, 1, px - camX - 8, py - camY - 10, 3, flip, 2, 0);
 }
 
 /* Walking off an edge moves to the neighboring neighborhood, if there is one. */
@@ -1031,7 +1049,10 @@ int main(void)
     bgSetDisable(1);
 
     /* 8x8 small sprites for the HUD and pickups, 16x16 large for everyone else */
-    oamInitGfxSet(&hero_chr, (&hero_chrend - &hero_chr), &hero_pal, (&hero_palend - &hero_pal), 0, VRAM_OBJ_CHR, OBJ_SIZE8_L16);
+    /* the hero's first frame goes in with his palette; heroFrame streams the rest */
+    oamInitGfxSet(&hero_chr, 128, &hero_pal, (&hero_palend - &hero_pal), 0, VRAM_OBJ_CHR, OBJ_SIZE8_L16);
+    heroShown = 255;
+    heroPend = 0;
     for (i = 0; i < 128; i++)
     {
         oamShown[i] = 1;

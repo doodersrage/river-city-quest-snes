@@ -45,6 +45,7 @@ void sfx(u8 id)
 void rcqVBlank(void)
 {
     WaitForVBlank();
+    heroVBlank();  /* a new frame of the hero, if he changed */
     lightVBlank();
     if (miniOn) miniVBlank(); /* its score line, while still in VBlank */
     spcProcess();

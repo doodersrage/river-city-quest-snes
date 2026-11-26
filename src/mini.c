@@ -382,7 +382,9 @@ static void tennisDraw(void)
     s16 x = mgHx >> 4;
     if (mgBallOn) put8(0, (mgBx >> 6) - 2, (mgBy >> 6) - 2 + MY, MT_TBALL, 1);
     else sprHide(OAM_M);
-    sprPut(OAM_HERO, 1, x - 8, 142 + MY, 2, 0, 4, 0); /* the hero from behind */
+    heroFrame(3); /* the hero from behind */
+    sprPut(OAM_HEROTOP, 1, x - 8, 126 + MY, 2, 0, 0, 0);
+    sprPut(OAM_HERO, 1, x - 8, 142 + MY, 2, 0, 2, 0);
     stick(1, x + 4, 150 + MY, tenA[mgSwing], 4, 13, 9, MT_RACKET, MT_RACKETHEAD);
 }
 

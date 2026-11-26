@@ -197,6 +197,27 @@ def convert_sprite_strip(path):
     return b''.join(sheet), pal
 
 
+def convert_hero32(path):
+    """Stage 12: the 16x32 hero, streamed a frame at a time. Each frame is two 128-byte chunks, laid out for OBJ
+    tiles 0-3 (the top and bottom sprites' upper rows) and 16-19 (their lower rows): the ROM copies the chunks to
+    those two places when the frame changes. Returns (chr, pal, frames)."""
+    im = Image.open(path).convert('RGBA')
+    px = im.load()
+    colors = sorted({c15(px[x, y]) for x in range(im.width) for y in range(im.height) if px[x, y][3] > 0})
+    if len(colors) > 15:
+        raise SystemExit(f'{path}: {len(colors)} colours, over 15')
+    def t(f, x0, y0):
+        return tile4bpp([colors.index(c15(px[f * 16 + x0 + x, y0 + y])) + 1 if px[f * 16 + x0 + x, y0 + y][3] > 0 else 0
+                         for y in range(8) for x in range(8)])
+    out = b''
+    frames = im.width // 16
+    for f in range(frames):
+        out += t(f, 0, 0) + t(f, 8, 0) + t(f, 0, 16) + t(f, 8, 16)     # chunk A: tiles 0-3
+        out += t(f, 0, 8) + t(f, 8, 8) + t(f, 0, 24) + t(f, 8, 24)     # chunk B: tiles 16-19
+    pal = bgr555((0, 0, 0)) + b''.join(bgr555(c) for c in colors) + bgr555((0, 0, 0)) * (15 - len(colors))
+    return out, pal, frames
+
+
 # ---------- Stage 2: text, signs, NPCs, font ----------
 BOX_COLS, BOX_LINES = 28, 4
 WLD_GRID, WLD_NNPC, WLD_NTXT, WLD_NPCS, MAX_NPCS = 0, 704, 705, 706, 4
@@ -1145,7 +1166,7 @@ def main():
             else: nb[k].append(255)
         report.append(f'{i:2} {m["id"]:14} {m["name"]:32} tiles {nt:4}  palettes {npal}  npcs {len(npcs)}  bytes {size}')
 
-    hero_chr, hero_pal = convert_sprite_strip(os.path.join(exp, 'hero.png'))
+    hero_chr, hero_pal, hero_frames = convert_hero32(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'art', 'hero32.png'))
     open(os.path.join(out, 'hero.chr'), 'wb').write(hero_chr)
     open(os.path.join(out, 'hero.pal'), 'wb').write(hero_pal)
     asm += ['.section ".hero" superfree', 'hero_chr:', '.incbin "data/hero.chr"', 'hero_chrend:',
