@@ -18,7 +18,13 @@ u8 roomBraz[MAP_COUNT]; /* lit braziers, a bit each */
 u8 roomFlags[MAP_COUNT]; /* ROOM_* bits */
 u8 linkOpen[(LINK_COUNT + 7) / 8];
 u8 keys[AREA_COUNT];
-u8 hasHook, hasPowder, hasLantern, hasShield, powder, eqItem; /* eqItem: ITEM_HOOK or ITEM_POWDER */
+u8 hasHook, hasPowder, hasLantern, hasShield, hasBug, powder, eqItem;
+u8 *pickPtr;   /* count, then pickups lying in the room: x (2 bytes), y, kind, id */
+u8 pickupGot[(PICKUP_COUNT + 7) / 8];
+
+/* the Gold-Bug (web updBug), in pixels */
+u8 bugOn, bugRet, bugT, bugCarry, bugHit;
+s16 bugX, bugY, bugVX, bugVY; /* eqItem: ITEM_HOOK or ITEM_POWDER */
 u8 keystones;  /* bit per keystone: granite, iron, brick, bronze */
 u8 roomReward; /* keystone this boss room gives (1-4), 0 none */
 u8 hudEq, hudPowder; /* what the item HUD last showed */
@@ -55,6 +61,7 @@ const u16 *bossTiles;
 #define BOSS_FOREMAN 1
 #define BOSS_TURTLE 2
 #define BOSS_WRAITH 3
+#define BOSS_RAVEN 4
 #define SRC_PADDLE 0
 #define SRC_BOMB 1
 #define SRC_REFL 2
@@ -72,6 +79,9 @@ void dungeonInit(void)
     }
     hasLantern = 0;
     hasShield = 0;
+    hasBug = 0;
+    bugOn = 0;
+    for (i = 0; i < sizeof(pickupGot); i++) pickupGot[i] = 0;
     for (i = 0; i < sizeof(linkOpen); i++) linkOpen[i] = 0;
     for (i = 0; i < AREA_COUNT; i++) keys[i] = 0;
     hasHook = 0;
@@ -332,6 +342,13 @@ void bossLoad(void)
         bossX = (8 * 16 + 8) * 16;
         bossY = (3 * 16 + 8) * 16;
     }
+    else if (bossType == BOSS_RAVEN)
+    {
+        bossTiles = boss4Tile;
+        bossHp = 7;
+        bossX = (8 * 16 + 8) * 16;
+        bossY = (2 * 16 + 8) * 16;
+    }
     else
     {
         bossTiles = boss1Tile;
@@ -478,6 +495,43 @@ void updTurtle(s16 dx, s16 dy)
     }
 }
 
+/* The Raven (web updEnemy 'raven'): hangs above you, throws a feather, then dives. */
+void updRaven(s16 dx, s16 dy, s16 d)
+{
+    s16 tx, ty, l;
+    u8 ph;
+    bossT++;
+    ph = bossT % 120;
+    if (ph < 70)
+    {
+        ty = py - 50;
+        if (ty < 20) ty = 20;
+        tx = px - (bossX >> 4);
+        ty = ty - (bossY >> 4);
+        l = ABS(tx) > ABS(ty) ? ABS(tx) + (ABS(ty) >> 1) : ABS(ty) + (ABS(tx) >> 1);
+        if (l > 2)
+        {
+            bossX += tx * 11 / l;
+            bossY += ty * 11 / l;
+        }
+        if (ph == 35) shoot(bossX, bossY, dx * 26 / d, dy * 26 / d, 2);
+    }
+    else
+    {
+        if (ph == 70)
+        {
+            bossVX = dx * 35 / d;
+            bossVY = dy * 35 / d;
+        }
+        bossX += bossVX;
+        bossY += bossVY;
+    }
+    if (bossX < 12 * 16) bossX = 12 * 16;
+    if (bossY < 14 * 16) bossY = 14 * 16;
+    if (bossX > (MAP_PX_W - 12) * 16) bossX = (MAP_PX_W - 12) * 16;
+    if (bossY > (MAP_PX_H - 12) * 16) bossY = (MAP_PX_H - 12) * 16;
+}
+
 /* The Wraith (web updEnemy 'wraith'): drifts above you, throws orbs, calls ghosts. */
 void updWraith(s16 dx, s16 dy, s16 d)
 {
@@ -526,10 +580,11 @@ void updBoss(void)
     }
     if (bossType == BOSS_TURTLE) updTurtle(dx, dy);
     else if (bossType == BOSS_WRAITH) updWraith(dx, dy, d);
+    else if (bossType == BOSS_RAVEN) updRaven(dx, dy, d);
     else updForeman(dx, dy, d);
     bx = bossX >> 4;
     by = bossY >> 4;
-    if (ABS(bx - px) < (bossType == BOSS_WRAITH ? 11 : 13) && ABS(by - py) < (bossType == BOSS_WRAITH ? 11 : 13) && !dying)
+    if (ABS(bx - px) < (bossType >= BOSS_WRAITH ? 11 : 13) && ABS(by - py) < (bossType >= BOSS_WRAITH ? 11 : 13) && !dying)
         hurtHeroBy(bx, by, bossState == B_CHARGE ? 2 : 1);
 }
 
@@ -549,15 +604,17 @@ void drawBoss(void)
         }
         if (bossType == BOSS_WRAITH)
             f = (bossVis ? 0 : 2) + ((frameCount >> 3) & 1);
+        else if (bossType == BOSS_RAVEN)
+            f = (frameCount >> 3) & 1;
         else if (bossType == BOSS_TURTLE)
             f = bossState == B_STUN ? 2 + ((frameCount >> 2) & 1) : (frameCount >> (bossState == B_CHARGE ? 1 : 3)) & 1;
         else
-            f = bossState == B_STUN ? 3 + ((frameCount >> 2) & 1) : bossState == B_WIND ? 2 : (bossT >> 3) & 1;
+            f = bossState == B_STUN ? 3 : bossState == B_WIND ? 2 : (bossT >> 3) & 1;
         t = bossTiles[f * 9 + k];
         sh = bossState == B_WIND ? ((frameCount >> 1) & 1) * 2 - 1 : 0;
-        /* the turtle's frames face right: mirror the 3x3 grid to face left */
+        /* the turtle's and the Raven's frames face right: mirror the 3x3 grid to face left */
         col = k % 3;
-        if (bossType == BOSS_TURTLE && bossFlip) col = 2 - col;
+        if ((bossType == BOSS_TURTLE || bossType == BOSS_RAVEN) && bossFlip) col = 2 - col;
         sx = (bossX >> 4) - camX - 24 + col * 16 + sh;
         sy = (bossY >> 4) - camY - 40 + (k / 3) * 16;
         if (!t || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
@@ -565,7 +622,7 @@ void drawBoss(void)
             sprHide((id) >> 2);
             continue;
         }
-        sprPut((id) >> 2, 1, sx, sy, 2, bossType == BOSS_TURTLE && bossFlip, t, PAL_BOSS);
+        sprPut((id) >> 2, 1, sx, sy, 2, (bossType == BOSS_TURTLE || bossType == BOSS_RAVEN) && bossFlip, t, PAL_BOSS);
     }
 }
 
@@ -670,6 +727,85 @@ void drawBombs(void)
     }
 }
 
+/* ---------- the Gold-Bug (web updBug) ---------- */
+
+void throwBug(void)
+{
+    if (bugOn) return;
+    bugOn = 1;
+    bugRet = 0;
+    bugT = 0;
+    bugCarry = 255;
+    bugHit = 0;
+    bugX = px;
+    bugY = py - 4;
+    bugVX = dirX[heroDir] * 4;
+    bugVY = dirY[heroDir] * 4;
+}
+
+/* water and pits don't stop it; walls do */
+u8 bugBlocked(s16 x, s16 y)
+{
+    u8 c;
+    if (x < 0 || y < 0 || x >= MAP_PX_W || y >= MAP_PX_H) return 1;
+    c = colGrid[(y >> 4) * COL_STRIDE + (x >> 4)];
+    return c == CELL_SOLID || c == CELL_LOCK || c == CELL_COUNTER || c == CELL_BUSH || c == CELL_POST || c == CELL_BRAZIER;
+}
+
+void updBug(void)
+{
+    s16 dx, dy, d;
+    u8 k;
+    if (!bugOn) return;
+    bugT++;
+    if (!bugRet)
+    {
+        bugX += bugVX;
+        bugY += bugVY;
+        if (bugT >= 24 || bugBlocked(bugX, bugY)) bugRet = 1;
+    }
+    else
+    {
+        dx = px - bugX;
+        dy = py - 4 - bugY;
+        d = ABS(dx) > ABS(dy) ? ABS(dx) + (ABS(dy) >> 1) : ABS(dy) + (ABS(dx) >> 1);
+        if (d < 6)
+        {
+            bugOn = 0;
+            if (bugCarry != 255) collectPickup(bugCarry);
+            return;
+        }
+        bugX += dx * 4 / d;
+        bugY += dy * 4 / d;
+    }
+    if (bugCarry == 255)
+    {
+        k = pickupAt(bugX, bugY);
+        if (k != 255)
+        {
+            bugCarry = k;
+            bugRet = 1;
+        }
+    }
+    else
+        movePickup(bugCarry, bugX, bugY + 6);
+    if (!bugHit && bugStunsEnemy(bugX, bugY))
+    {
+        bugHit = 1;
+        bugRet = 1;
+    }
+}
+
+void drawBug(void)
+{
+    if (!bugOn)
+    {
+        sprHide(OAM_BUG);
+        return;
+    }
+    sprPut(OAM_BUG, 1, bugX - camX - 8, bugY - camY - 8, 3, 0, OBJ_I_BUG, PAL_ITEM);
+}
+
 /* ---------- items on B ---------- */
 
 /* The Gas Lantern lights a cold brazier in front of you (web useItem 'lantern', lightAt). */
@@ -701,6 +837,7 @@ void useItem(void)
     if (eqItem == ITEM_HOOK) fireHook();
     else if (eqItem == ITEM_POWDER) dropBomb();
     else if (eqItem == ITEM_LANTERN) useLantern();
+    else if (eqItem == ITEM_BUG) throwBug();
 }
 
 u8 hasItem(u8 item)
@@ -709,6 +846,7 @@ u8 hasItem(u8 item)
     if (item == ITEM_POWDER) return hasPowder;
     if (item == ITEM_LANTERN) return hasLantern;
     if (item == ITEM_SHIELD) return hasShield;
+    if (item == ITEM_BUG) return hasBug;
     return 0;
 }
 
@@ -716,10 +854,10 @@ u8 hasItem(u8 item)
 void nextItem(void)
 {
     u8 i, it = eqItem;
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 5; i++)
     {
-        it = it >= ITEM_LANTERN ? ITEM_HOOK : it + 1;
-        if (hasItem(it))
+        it = it >= ITEM_BUG ? ITEM_HOOK : it + 1;
+        if (it != ITEM_SHIELD && hasItem(it))
         {
             eqItem = it;
             return;
@@ -736,6 +874,7 @@ void gotItem(u8 item)
         if (powder < 8) powder = 8; /* web give('powder') */
     }
     if (item == ITEM_LANTERN) hasLantern = 1;
+    if (item == ITEM_BUG) hasBug = 1;
     if (item == ITEM_SHIELD)
     {
         hasShield = 1; /* works on its own: not a B item */
@@ -766,7 +905,7 @@ void drawItemHud(void)
         sprHide(((OAM_BICON + 2) * 4) >> 2);
         return;
     }
-    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : OBJ_I_KEG, PAL_ITEM);
+    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : eqItem == ITEM_BUG ? OBJ_I_BUG : OBJ_I_KEG, PAL_ITEM);
     if (eqItem == ITEM_POWDER)
     {
         if (powder >= 10) sprPut(OAM_BICON + 1, 0, 137, 12, 3, 0, HUD_DIGIT + powder / 10, PAL_HUD);
@@ -923,13 +1062,14 @@ void drawShots(void)
             sprHide((id) >> 2);
             continue;
         }
-        sprPut((id) >> 2, 0, sx, sy, 3, 0, shotRefl[i] ? OBJ_REFL : shotKind[i] ? OBJ_ORB : OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
+        sprPut((id) >> 2, 0, sx, sy, 3, 0, shotRefl[i] ? OBJ_REFL : shotKind[i] == 2 ? OBJ_FEATHER : shotKind[i] ? OBJ_ORB : OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
     }
 }
 
 void dungeonUpdate(void)
 {
     updHook();
+    updBug();
     updBombs();
     updBoss();
     updShots();
@@ -939,6 +1079,7 @@ void dungeonUpdate(void)
 void dungeonDraw(void)
 {
     drawBoss();
+    drawBug();
     drawBombs();
     drawItemHud();
     drawHook();
@@ -949,7 +1090,9 @@ void dungeonDraw(void)
 void dungeonLoad(void)
 {
     u8 i;
+    u8 *r;
     hookSt = 0;
+    bugOn = 0;
     boomT = 0;
     for (i = 0; i < MAX_SHOT; i++) shotOn[i] = 0;
     for (i = 0; i < MAX_BOMB; i++) bombOn[i] = 0;
@@ -957,19 +1100,31 @@ void dungeonLoad(void)
     bossLoad();
     if (roomBoss == BOSS_FOREMAN)
     {
-        /* boss art into the second OBJ name table after the items (tile 320), palette 1 */
-        dmaCopyVram(&boss1_chr, VRAM_OBJ_CHR + 0x1000 + 64 * 16, (&boss1_chrend - &boss1_chr));
+        /* boss art into the second OBJ name table after the items, palette 1 */
+        dmaCopyVram(&boss1_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss1_chrend - &boss1_chr));
         dmaCopyCGram(&boss1_pal, 128 + 16, 16 * 2);
     }
     else if (roomBoss == BOSS_TURTLE)
     {
-        dmaCopyVram(&boss2_chr, VRAM_OBJ_CHR + 0x1000 + 64 * 16, (&boss2_chrend - &boss2_chr));
+        dmaCopyVram(&boss2_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss2_chrend - &boss2_chr));
         dmaCopyCGram(&boss2_pal, 128 + 16, 16 * 2);
     }
     else if (roomBoss == BOSS_WRAITH)
     {
-        dmaCopyVram(&boss3_chr, VRAM_OBJ_CHR + 0x1000 + 64 * 16, (&boss3_chrend - &boss3_chr));
+        dmaCopyVram(&boss3_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss3_chrend - &boss3_chr));
         dmaCopyCGram(&boss3_pal, 128 + 16, 16 * 2);
+    }
+    else if (roomBoss == BOSS_RAVEN)
+    {
+        dmaCopyVram(&boss4_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss4_chrend - &boss4_chr));
+        dmaCopyCGram(&boss4_pal, 128 + 16, 16 * 2);
+    }
+    /* pickups lying in the room, unless already taken */
+    for (i = 0; i < pickPtr[0]; i++)
+    {
+        r = pickPtr + 1 + i * 5;
+        if (!(pickupGot[r[4] >> 3] & (1 << (r[4] & 7))))
+            dropPickup(r[0] | (r[1] << 8), r[2], r[3], r[4]);
     }
 }
 

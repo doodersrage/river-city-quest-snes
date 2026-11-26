@@ -16,11 +16,13 @@ u8 enemiesExisted;
 s16 enX[MAX_EN], enY[MAX_EN], enVX[MAX_EN], enVY[MAX_EN], enKX[MAX_EN], enKY[MAX_EN];
 u16 enT[MAX_EN];
 
-u8 pkKind[MAX_PK]; /* 0 none, 1 coin, 2 heart, 3 heart container, 4 powder keg, 5-8 keystones */
+u8 pkKind[MAX_PK]; /* 0 none, 1 coin, 2 heart, 3 heart container, 4 powder keg, 5-8 keystones, 9 small key */
+u8 pkId[MAX_PK];   /* for pickups placed in a room: their id, else 255 */
 s16 pkX[MAX_PK], pkY[MAX_PK];
 u16 pkLife[MAX_PK];
 
 u16 seed;
+extern u8 bugOn, bugCarry;
 u8 hudHp, hudMax; /* what the HUD last showed */
 u16 hudCoins;
 
@@ -151,12 +153,56 @@ void pickRandomDir(u8 k, s16 speed)
     enVY[k] = dirY[a] * speed;
 }
 
+void dropPickup(s16 x, s16 y, u8 kind, u8 id)
+{
+    u8 i;
+    for (i = 0; i < MAX_PK; i++)
+        if (!pkKind[i])
+        {
+            pkKind[i] = kind;
+            pkX[i] = x;
+            pkY[i] = y;
+            pkLife[i] = 600;
+            pkId[i] = id;
+            return;
+        }
+}
+
+u8 pickupAt(s16 x, s16 y)
+{
+    u8 k;
+    for (k = 0; k < MAX_PK; k++)
+        if (pkKind[k] && ABS(pkX[k] - x) < 9 && ABS(pkY[k] - y) < 9) return k;
+    return 255;
+}
+
+void movePickup(u8 k, s16 x, s16 y)
+{
+    pkX[k] = x;
+    pkY[k] = y;
+}
+
+/* The Gold-Bug stuns what it touches, and finishes off anything with 1 hit point left. */
+u8 bugStunsEnemy(s16 x, s16 y)
+{
+    u8 k;
+    for (k = 0; k < MAX_EN; k++)
+        if (enAlive[k] && ABS((enX[k] >> 4) - x) < 10 && ABS((enY[k] >> 4) - y) < 10)
+        {
+            if (enHp[k] <= 1) hitEnemy(k, 1, 0, 0);
+            else enStun[k] = 80;
+            return 1;
+        }
+    return 0;
+}
+
 void dropKind(s16 x, s16 y, u8 kind)
 {
     u8 i;
     for (i = 0; i < MAX_PK; i++)
         if (!pkKind[i])
         {
+            pkId[i] = 255;
             pkKind[i] = kind;
             pkX[i] = x;
             pkY[i] = y;
@@ -266,7 +312,13 @@ void collectPickup(u8 k)
         openTextAt((u8 *)&sys_txt + TXT_CONTAINER);
     }
     else if (kind == 4) { if (powder < 10) powder++; }
+    else if (kind == 9)
+    {
+        keys[roomArea]++;
+        openTextAt((u8 *)&sys_txt + TXT_SKEY);
+    }
     else gotKeystone(kind - 5);
+    if (pkId[k] != 255) pickupGot[pkId[k] >> 3] |= 1 << (pkId[k] & 7);
 }
 
 void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy)
@@ -528,7 +580,7 @@ void combatUpdate(u16 pad, u16 pressed)
                 pkKind[k] = 0;
                 continue;
             }
-            if (ABS(pkX[k] - px) < 10 && ABS(pkY[k] - py) < 10)
+            if (ABS(pkX[k] - px) < 10 && ABS(pkY[k] - py) < 10 && !(bugOn && bugCarry == k))
                 collectPickup(k);
         }
 }
@@ -584,7 +636,7 @@ void combatDraw(void)
         }
         if (pkKind[k] >= 3)
         {
-            tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
+            tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : pkKind[k] == 9 ? OBJ_I_KEY : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
             sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, PAL_ITEM);
             continue;
         }

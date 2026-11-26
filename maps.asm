@@ -1320,6 +1320,138 @@ m59_xtr:
 .incbin "data/m59.xtr"
 .ends
 
+.section ".map60" superfree
+m60_chr:
+.incbin "data/m60.chr"
+m60_chrend:
+m60_map:
+.incbin "data/m60.map"
+m60_pal:
+.incbin "data/m60.pal"
+m60_col:
+.incbin "data/m60.col"
+m60_wld:
+.incbin "data/m60.wld"
+m60_och:
+.incbin "data/m60.och"
+m60_opl:
+.incbin "data/m60.opl"
+m60_ene:
+.incbin "data/m60.ene"
+m60_xtr:
+.incbin "data/m60.xtr"
+.ends
+
+.section ".map61" superfree
+m61_chr:
+.incbin "data/m61.chr"
+m61_chrend:
+m61_map:
+.incbin "data/m61.map"
+m61_pal:
+.incbin "data/m61.pal"
+m61_col:
+.incbin "data/m61.col"
+m61_wld:
+.incbin "data/m61.wld"
+m61_och:
+.incbin "data/m61.och"
+m61_opl:
+.incbin "data/m61.opl"
+m61_ene:
+.incbin "data/m61.ene"
+m61_xtr:
+.incbin "data/m61.xtr"
+.ends
+
+.section ".map62" superfree
+m62_chr:
+.incbin "data/m62.chr"
+m62_chrend:
+m62_map:
+.incbin "data/m62.map"
+m62_pal:
+.incbin "data/m62.pal"
+m62_col:
+.incbin "data/m62.col"
+m62_wld:
+.incbin "data/m62.wld"
+m62_och:
+.incbin "data/m62.och"
+m62_opl:
+.incbin "data/m62.opl"
+m62_ene:
+.incbin "data/m62.ene"
+m62_xtr:
+.incbin "data/m62.xtr"
+.ends
+
+.section ".map63" superfree
+m63_chr:
+.incbin "data/m63.chr"
+m63_chrend:
+m63_map:
+.incbin "data/m63.map"
+m63_pal:
+.incbin "data/m63.pal"
+m63_col:
+.incbin "data/m63.col"
+m63_wld:
+.incbin "data/m63.wld"
+m63_och:
+.incbin "data/m63.och"
+m63_opl:
+.incbin "data/m63.opl"
+m63_ene:
+.incbin "data/m63.ene"
+m63_xtr:
+.incbin "data/m63.xtr"
+.ends
+
+.section ".map64" superfree
+m64_chr:
+.incbin "data/m64.chr"
+m64_chrend:
+m64_map:
+.incbin "data/m64.map"
+m64_pal:
+.incbin "data/m64.pal"
+m64_col:
+.incbin "data/m64.col"
+m64_wld:
+.incbin "data/m64.wld"
+m64_och:
+.incbin "data/m64.och"
+m64_opl:
+.incbin "data/m64.opl"
+m64_ene:
+.incbin "data/m64.ene"
+m64_xtr:
+.incbin "data/m64.xtr"
+.ends
+
+.section ".map65" superfree
+m65_chr:
+.incbin "data/m65.chr"
+m65_chrend:
+m65_map:
+.incbin "data/m65.map"
+m65_pal:
+.incbin "data/m65.pal"
+m65_col:
+.incbin "data/m65.col"
+m65_wld:
+.incbin "data/m65.wld"
+m65_och:
+.incbin "data/m65.och"
+m65_opl:
+.incbin "data/m65.opl"
+m65_ene:
+.incbin "data/m65.ene"
+m65_xtr:
+.incbin "data/m65.xtr"
+.ends
+
 .section ".hero" superfree
 hero_chr:
 .incbin "data/hero.chr"
@@ -1361,6 +1493,14 @@ boss3_chr:
 boss3_chrend:
 boss3_pal:
 .incbin "data/boss3.pal"
+.ends
+
+.section ".boss4" superfree
+boss4_chr:
+.incbin "data/boss4.chr"
+boss4_chrend:
+boss4_pal:
+.incbin "data/boss4.pal"
 .ends
 
 .section ".combat" superfree

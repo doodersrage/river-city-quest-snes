@@ -230,7 +230,7 @@ def encode_text(title, pages):
     return bytes(out)
 
 
-GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield']   # same numbering as ITEM_* in the ROM
+GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug']   # same numbering as ITEM_* in the ROM
 NPC_REC = 8
 
 
@@ -438,7 +438,7 @@ def convert_combat(exp):
         sheet[OBJ_HUD - 128 + i] = tile4bpp([ix(p) for r in t for p in r])
     # spark shot x2, hook head, chain link (nearest palette-7 colours)
     sm = Image.open(os.path.join(d, 'small.png')).convert('RGBA')
-    for i in range(6):
+    for i in range(7):
         idx = []
         for y in range(8):
             for x in range(8):
@@ -459,7 +459,7 @@ def convert_combat(exp):
               f'#define HUD_EMPTY {OBJ_HUD + HUD_EMPTY}', f'#define HUD_COIN {OBJ_HUD + HUD_COIN}',
               f'#define HUD_DIGIT {OBJ_HUD + HUD_DIGIT}', '#define PAL_HUD 7',
               f'#define OBJ_SPARK {OBJ_HUD + 15}', f'#define OBJ_HOOK {OBJ_HUD + 17}', f'#define OBJ_CHAIN {OBJ_HUD + 18}',
-              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}',
+              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}',
               f'#define ENEMY_TYPES {len(ENEMY_TYPES)}',
               '/* ' + ' '.join(f'{i}={t}' for i, t in enumerate(ENEMY_TYPES)) + ' */',
               f'static const u8 enemyHp[{len(ENEMY_TYPES)}] = {{{", ".join(map(str, ENEMY_HP))}}};',
@@ -485,11 +485,14 @@ def convert_combat(exp):
 
 
 # ---------- Stages 5-6: the second OBJ name table (tiles 256-511) ----------
-# Tiles 256-319 (16 cells) hold items, loaded once: keg, hook, 4 keystones, heart container,
-# explosion (2 frames x 4 cells). Tiles 320+ hold the current boss, loaded in its room.
-ITEM_CELLS = {'keg': 0, 'hook': 1, 'granite': 2, 'iron': 3, 'brick': 4, 'bronze': 5, 'container': 6, 'lantern': 7, 'boom': 8}
-BOSS_FIRST_CELL = 16
-BOSSES = ['foreman', 'turtle', 'wraith']          # boss type 1, 2, ...
+# Tiles 256-351 (24 cells) hold items, loaded once: keg, hook, 4 keystones, heart container,
+# lantern, explosion (2 frames x 4 cells), Gold-Bug, small key. Tiles 352+ hold the current boss,
+# loaded in its room; only its non-empty cells take space.
+ITEM_CELLS = {'keg': 0, 'hook': 1, 'granite': 2, 'iron': 3, 'brick': 4, 'bronze': 5, 'container': 6, 'lantern': 7,
+              'boom': 8, 'bug': 16, 'key': 17}
+ITEM_SHEET_CELLS = 24
+BOSS_FIRST_CELL = 24
+BOSSES = ['foreman', 'turtle', 'wraith', 'raven']          # boss type 1, 2, ...
 
 
 def item_palette(p7):
@@ -499,7 +502,7 @@ def item_palette(p7):
 
 def convert_items(exp, pal):
     d = os.path.join(exp, 'combat')
-    sheet = [bytes(32)] * 64
+    sheet = [bytes(32)] * (ITEM_SHEET_CELLS * 4)
     def put(cell, im, x0, y0):
         t = obj_tile_of_frame(0, cell)
         for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
@@ -510,7 +513,7 @@ def convert_items(exp, pal):
                     idx.append(nearest(c15(p_), pal) + 1 if p_[3] > 96 else 0)
             sheet[t + qy * 16 + qx] = tile4bpp(idx)
     icons = Image.open(os.path.join(d, 'icons.png')).convert('RGBA')
-    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern']):
+    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern', 'bug', 'key']):
         put(ITEM_CELLS[name], icons, i * 16, 0)
     put(ITEM_CELLS['container'], Image.open(os.path.join(d, 'container.png')).convert('RGBA'), 0, 0)
     boom = Image.open(os.path.join(d, 'boom.png')).convert('RGBA')
@@ -530,25 +533,29 @@ def convert_bosses(exp):
         nframes = im.width // 48
         pal = sorted({c15(p) for p in im.getdata() if p[3]})
         if len(pal) > 15: raise SystemExit(f'{name}: {len(pal)} colours')
-        sheet = [bytes(32)] * (256 - 64)
+        first = BOSS_FIRST_CELL * 4      # tile offset of the boss area within the second table
+        sheet = [bytes(32)] * (256 - first)
         tiles = []
+        cell = BOSS_FIRST_CELL
         for f in range(nframes):
             for k in range(9):
                 x0, y0 = f * 48 + (k % 3) * 16, (k // 3) * 16
                 px_ = [im.getpixel((x0 + x, y0 + y)) for y in range(16) for x in range(16)]
                 if not any(p[3] for p in px_):
                     tiles.append(0); continue
-                cell = BOSS_FIRST_CELL + f * 9 + k
                 t = obj_tile_of_frame(0, cell)
+                cell += 1
+                if t + 17 >= 256: raise SystemExit(f'{name}: too many sprite cells')
                 for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
-                    sheet[t - 64 + qy * 16 + qx] = tile4bpp([pal.index(c15(p)) + 1 if p[3] else 0
+                    sheet[t - first + qy * 16 + qx] = tile4bpp([pal.index(c15(p)) + 1 if p[3] else 0
                         for p in (px_[(qy * 8 + y) * 16 + qx * 8 + x] for y in range(8) for x in range(8))])
                 tiles.append(256 + t)
-        used = max((t - 256 - 64 for t in tiles if t), default=0) + 18
+        used = max((t - 256 - first for t in tiles if t), default=0) + 18
         blobs.append(b''.join(sheet[:used]))
         pals.append(sprite_palette(pal))
         defs.append('static const u16 boss%dTile[%d] = {%s};  /* %s: frame*9 + cell, 0 = empty */'
                     % (bi + 1, nframes * 9, ', '.join(map(str, tiles)), name))
+    defs.append(f'#define VRAM_BOSS_OFS {BOSS_FIRST_CELL * 4 * 16}  /* words into the second OBJ table */')
     return blobs, pals, defs
 
 
@@ -616,7 +623,8 @@ def main():
     dungeon_areas = sorted({m['area'] for m in maps if not m['ow'] and sum(1 for q in maps if q['area'] == m['area']) > 1})
     area_id = {a: i + 1 for i, a in enumerate(dungeon_areas)}   # 0 = not a dungeon
     link_flag = {}
-    items_list = ['hook', 'powder', 'lantern', 'shield']
+    pickup_gid = {}
+    items_list = ['hook', 'powder', 'lantern', 'shield', 'bug']
 
     asm = ['.include "hdr.asm"', '']
     hdr = ['/* Generated by tools/snesconv.py. Do not edit. */', '#ifndef MAPS_H', '#define MAPS_H', '',
@@ -717,6 +725,13 @@ def main():
         for c in braz:
             xtr += bytes(c) + words(base)
             base += 1
+        # Pickups lying in the room (the key on the Enchanted Garden island): x, y, kind, id.
+        pk = m.get('pickups') or []
+        xtr.append(len(pk))
+        for it in pk:
+            gid = pickup_gid.setdefault(m['id'] + ':' + it['id'], len(pickup_gid))
+            kind = {'skey': 9}[it['kind']]
+            xtr += bytes((it['x'] & 0xFF, it['x'] >> 8, it['y'], kind, gid))
         ochr, opal = convert_npcs(exp, npcs)
         for ext, data in (('chr', chr_), ('map', tm), ('pal', pal), ('col', col), ('wld', wld), ('och', ochr), ('opl', opal), ('ene', ene), ('xtr', xtr)):
             open(os.path.join(out, f'm{i}.{ext}'), 'wb').write(data)
@@ -766,6 +781,9 @@ def main():
                  ('TURTLE_OUT', 'Quarry Pond', boss_text['turtle']),
                  ('WRAITH_IN', 'Heart of the Pyramid', boss_text['wraithIntro']),
                  ('WRAITH_OUT', 'Heart of the Pyramid', boss_text['wraith']),
+                 ('RAVEN_IN', "The Raven's Roost", boss_text['ravenIntro']),
+                 ('RAVEN_OUT', "The Raven's Roost", boss_text['raven']),
+                 ('SKEY', '', ['The Gold-Bug brought back a small key!']),
                  ('NOPOWDER', '', ['Out of blasting powder.'])]
     # "You found the Granite Keystone! (1 of 4)" for every keystone and count (web collect())
     for k, kname in enumerate(['granite', 'iron', 'brick', 'bronze']):
@@ -780,8 +798,8 @@ def main():
     asm += ['.section ".systext" superfree', 'sys_txt:', '.incbin "data/sys.txt"', '.ends', '']
     hdr += ['extern char sys_txt;'] + defs + [f'#define MAP_CAPITOL {pos[(2, 1)]}',
             'static const u16 keystoneTxt[16] = {%s};' % ', '.join(f'TXT_KEY{k}_{n}' for k in range(4) for n in range(1, 5)),
-            'static const u16 bossInTxt[4] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN};',
-            'static const u16 bossOutTxt[4] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT};', '']
+            'static const u16 bossInTxt[5] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN};',
+            'static const u16 bossOutTxt[5] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT, TXT_RAVEN_OUT};', '']
     shops, shop_defs = convert_shops(extra)
     open(os.path.join(out, 'shops.bin'), 'wb').write(shops)
     asm += ['.section ".shops" superfree', 'shops_bin:', '.incbin "data/shops.bin"', '.ends', '']
@@ -797,8 +815,8 @@ def main():
         hdr.append(f'extern char boss{i + 1}_chr, boss{i + 1}_chrend, boss{i + 1}_pal;')
     hdr += bdefs + ['#define PAL_BOSS 1', '#define PAL_ITEM 7',
             f'#define AREA_COUNT {len(dungeon_areas) + 1}', f'#define LINK_COUNT {max(1, len(link_flag))}',
-            '#define ITEM_HOOK 1', '#define ITEM_POWDER 2', '#define ITEM_LANTERN 3', '#define ITEM_SHIELD 4',
-            '#define EFFECT_KEY 3', '#define EFFECT_ITEM 4', '']
+            '#define ITEM_HOOK 1', '#define ITEM_POWDER 2', '#define ITEM_LANTERN 3', '#define ITEM_SHIELD 4', '#define ITEM_BUG 5',
+            '#define EFFECT_KEY 3', '#define EFFECT_ITEM 4', f'#define PICKUP_COUNT {max(1, len(pickup_gid))}', '']
     cobj, cpal, ctables = convert_combat(exp)
     open(os.path.join(out, 'combat.chr'), 'wb').write(cobj)
     open(os.path.join(out, 'combat.pal'), 'wb').write(cpal)

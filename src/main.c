@@ -460,6 +460,7 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
         rec += 4 + rec[2] * 10;
     stairsPtr = rec;
     brazPtr = stairsPtr + 1 + stairsPtr[0] * 10;
+    pickPtr = brazPtr + 1 + brazPtr[0] * 10;
     for (n = 0; n < COL_STRIDE * 22; n++)
         colRam[n] = col[n];
     colGrid = colRam;
