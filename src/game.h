@@ -41,7 +41,7 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 /* OAM slots (lower slots draw on top). pvsneslib ids are slot * 4. */
 #define OAM_HEARTS 0  /* 10 */
 #define OAM_COIN 10
-#define OAM_DIGITS 11 /* 3 */
+#define OAM_DIGITS 60 /* 3 (stage 12: moved up, the hero's head takes 13) */
 #define OAM_HERO 14
 #define OAM_PADDLE 15
 #define OAM_NPCS 16   /* MAX_NPCS */
@@ -58,7 +58,7 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define OAM_BALLS 94  /* 3 */
 #define OAM_BIKE 97
 #define OAM_NPCTOP 36  /* 4: their heads (stage 12) */
-#define OAM_HEROTOP 99 /* the hero's head (stage 12: 16x32) */
+#define OAM_HEROTOP 13 /* the hero's head (stage 12: 16x32), just above his body */
 #define MAX_EN 6
 #define MAX_PK 10 /* room for a challenge's eight tokens */
 #define PK_TOKEN 15
