@@ -14,15 +14,15 @@ extern void rcqLoadMini(u8 k);
 u8 miniOn;
 u16 miniBest[8];              /* best score per game (higher is better) */
 
-static u8 kind, done, quit;
+u8 mgKind, mgDone, mgQuit;
 static u16 t;
 /* shared game state */
-static u8 n, hits, hr, made, ret, miss, wait, swing, res;
-static u8 ballOn, ballUp, age, arr;
-static s16 bx, by, bvx, bvy;  /* ball, 1/64 px */
-static s16 hx;                /* the tennis player, 1/16 px */
-static u16 ph;                /* free-throw needle phase */
-static u8 sx0, sx1, bt;       /* free-throw flight: start/end x, frames */
+u8 mgN, mgHits, mgHr, mgMade, mgRet, mgMiss, mgWait, mgSwing, mgRes;
+u8 mgBallOn, mgBallUp, mgAge, mgArr;
+s16 mgBx, mgBy, mgBvx, mgBvy;  /* ball, 1/64 px */
+s16 mgHx;                /* the tennis player, 1/16 px */
+u16 mgPh;                /* free-throw needle phase */
+u8 mgSx0, mgSx1, mgBt;       /* free-throw flight: start/end x, frames */
 static char msg[33], top[33];
 static u8 msgDirty, topDirty;
 static u16 row[32];
@@ -85,11 +85,11 @@ static const u8 batA[13] = {40, 17, 13, 10, 6, 3, 63, 59, 56, 52, 49, 45, 42}; /
 static void batTop(void)
 {
     char *d = putStr(top, "Pitch ");
-    d = putNum(d, n < 10 ? n + 1 : 10);
+    d = putNum(d, mgN < 10 ? mgN + 1 : 10);
     d = putStr(d, "/10   Hits ");
-    d = putNum(d, hits);
+    d = putNum(d, mgHits);
     d = putStr(d, "   HR ");
-    putNum(d, hr);
+    putNum(d, mgHr);
     topDirty = 1;
 }
 
@@ -97,63 +97,63 @@ static void batUpdate(u16 pressed)
 {
     s16 d;
     u8 ad;
-    if (swing) swing--;
-    if (!ballOn)
+    if (mgSwing) mgSwing--;
+    if (!mgBallOn)
     {
-        if (n >= 10)
+        if (mgN >= 10)
         {
-            done = 1;
+            mgDone = 1;
             return;
         }
-        if (!--wait)
+        if (!--mgWait)
         {
             /* the pitch: 1.6-3.2 px a frame, a little curve */
-            bvy = 102 + (rnd() & 63);
-            bvx = (s16)(rnd() & 31) - 16;
-            bx = 128 << 6;
-            by = 58 << 6;
-            arr = ((PLATE - 58) << 6) / bvy;
-            age = 0;
-            res = 0;
-            ballOn = 1;
+            mgBvy = 102 + (rnd() & 63);
+            mgBvx = (s16)(rnd() & 31) - 16;
+            mgBx = 128 << 6;
+            mgBy = 58 << 6;
+            mgArr = ((PLATE - 58) << 6) / mgBvy;
+            mgAge = 0;
+            mgRes = 0;
+            mgBallOn = 1;
             sfx(SFX_SHOT);
             batTop();
         }
         return;
     }
-    age++;
-    if (!res)
+    mgAge++;
+    if (!mgRes)
     {
-        bx += bvx;
-        by += bvy;
-        if ((pressed & KEY_A) && !swing)
+        mgBx += mgBvx;
+        mgBy += mgBvy;
+        if ((pressed & KEY_A) && !mgSwing)
         {
-            swing = 12;
+            mgSwing = 12;
             sfx(SFX_SWING);
-            d = (s16)age - arr;
+            d = (s16)mgAge - mgArr;
             ad = ABS(d);
-            res = ad <= 2 ? 1 : ad <= 5 ? 2 : ad <= 8 ? 3 : 4; /* home run, hit, foul, miss */
-            if (res == 1)
+            mgRes = ad <= 2 ? 1 : ad <= 5 ? 2 : ad <= 8 ? 3 : 4; /* home run, hit, foul, miss */
+            if (mgRes == 1)
             {
-                hr++;
-                hits++;
-                bvy = -384;
-                bvx = (s16)(rnd() & 127) - 64;
+                mgHr++;
+                mgHits++;
+                mgBvy = -384;
+                mgBvx = (s16)(rnd() & 127) - 64;
                 sfx(SFX_JING);
                 setMsg("HOME RUN!");
             }
-            else if (res == 2)
+            else if (mgRes == 2)
             {
-                hits++;
-                bvy = -256;
-                bvx = (d < 0 ? -1 : 1) * (96 + (rnd() & 127));
+                mgHits++;
+                mgBvy = -256;
+                mgBvx = (d < 0 ? -1 : 1) * (96 + (rnd() & 127));
                 sfx(SFX_HIT);
                 setMsg("Base hit!");
             }
-            else if (res == 3)
+            else if (mgRes == 3)
             {
-                bvy = -160;
-                bvx = d < 0 ? -192 : 192;
+                mgBvy = -160;
+                mgBvx = d < 0 ? -192 : 192;
                 sfx(SFX_CLANK);
                 setMsg(d < 0 ? "Foul, too early" : "Foul, too late");
             }
@@ -161,23 +161,23 @@ static void batUpdate(u16 pressed)
                 setMsg(d < 0 ? "Swing and a miss! Too early." : "Swing and a miss! Too late.");
             batTop();
         }
-        if ((by >> 6) > PLATE + 18 && !res)
+        if ((mgBy >> 6) > PLATE + 18 && !mgRes)
         {
-            res = 4;
+            mgRes = 4;
             setMsg("Strike! You watched it go by.");
         }
     }
     else
     {
-        bx += bvx;
-        by += bvy;
-        if (res != 4) bvy += 3;
+        mgBx += mgBvx;
+        mgBy += mgBvy;
+        if (mgRes != 4) mgBvy += 3;
     }
-    if (res && ((by >> 6) < -10 || (by >> 6) > 210 || age > arr + 70))
+    if (mgRes && ((mgBy >> 6) < -10 || (mgBy >> 6) > 210 || mgAge > mgArr + 70))
     {
-        ballOn = 0;
-        n++;
-        wait = 50;
+        mgBallOn = 0;
+        mgN++;
+        mgWait = 50;
         batTop();
     }
 }
@@ -186,73 +186,73 @@ static void batDraw(void)
 {
     u8 s;
     s16 y;
-    if (ballOn)
+    if (mgBallOn)
     {
-        y = by >> 6;
+        y = mgBy >> 6;
         s = y < 0 ? 2 : 2 + (y + 30) / 60;
         if (s > 5) s = 5;
-        put8(0, (bx >> 6) - (s >> 1), y - (s >> 1) + MY, MT_BALL2 + s - 2, 1);
+        put8(0, (mgBx >> 6) - (s >> 1), y - (s >> 1) + MY, MT_BALL2 + s - 2, 1);
     }
     else sprHide(OAM_M);
-    stick(1, 150 - 4, PLATE - 6 + MY, batA[swing], 4, 16, 13, MT_BAT, MT_BATTIP);
+    stick(1, 150 - 4, PLATE - 6 + MY, batA[mgSwing], 4, 16, 13, MT_BAT, MT_BATTIP);
 }
 
 /* ---------- Rams free throws (web MINI.hoops) ---------- */
 static void hoopsTop(void)
 {
     char *d = putStr(top, "Shot ");
-    d = putNum(d, n < 10 ? n + 1 : 10);
+    d = putNum(d, mgN < 10 ? mgN + 1 : 10);
     d = putStr(d, "/10   Made ");
-    putNum(d, made);
+    putNum(d, mgMade);
     topDirty = 1;
 }
 
 static s16 needle(void)
 {
-    return (sinTab[(ph >> 8) & 63] * 50) >> 6;
+    return (sinTab[(mgPh >> 8) & 63] * 50) >> 6;
 }
 
 static void hoopsUpdate(u16 pressed)
 {
     s16 off;
     u8 ad;
-    if (ballOn)
+    if (mgBallOn)
     {
-        bt++;
-        if (bt == 40)
+        mgBt++;
+        if (mgBt == 40)
         {
-            if (res != 3)
+            if (mgRes != 3)
             {
-                made++;
+                mgMade++;
                 sfx(SFX_JING);
             }
             else sfx(SFX_CLANK);
-            setMsg(res == 1 ? "Swish!" : res == 2 ? "In off the rim!" : "Clank. Missed.");
+            setMsg(mgRes == 1 ? "Swish!" : mgRes == 2 ? "In off the rim!" : "Clank. Missed.");
             hoopsTop();
         }
-        if (bt > 70)
+        if (mgBt > 70)
         {
-            ballOn = 0;
-            n++;
+            mgBallOn = 0;
+            mgN++;
             hoopsTop();
         }
         return;
     }
-    if (n >= 10)
+    if (mgN >= 10)
     {
-        done = 1;
+        mgDone = 1;
         return;
     }
-    ph += 130 + n * 21; /* web sp .05 + n * .008 a frame */
+    mgPh += 130 + mgN * 21; /* web sp .05 + n * .008 a frame */
     if (pressed & KEY_A)
     {
         off = needle();
         ad = ABS(off);
-        res = ad < 7 ? 1 : ad < 15 ? ((rnd() % 10) < 6 ? 2 : 3) : 3; /* swish, rim, miss */
-        sx0 = 128;
-        sx1 = 128 + (res == 3 ? (off < 0 ? -14 : 14) : 0);
-        bt = 0;
-        ballOn = 1;
+        mgRes = ad < 7 ? 1 : ad < 15 ? ((rnd() % 10) < 6 ? 2 : 3) : 3; /* swish, rim, miss */
+        mgSx0 = 128;
+        mgSx1 = 128 + (mgRes == 3 ? (off < 0 ? -14 : 14) : 0);
+        mgBt = 0;
+        mgBallOn = 1;
         sfx(SFX_SHOT);
     }
 }
@@ -260,11 +260,11 @@ static void hoopsUpdate(u16 pressed)
 static void hoopsDraw(void)
 {
     s16 x, y;
-    if (ballOn)
+    if (mgBallOn)
     {
-        x = sx0 + ((sx1 - sx0) * (s16)(bt > 40 ? 40 : bt)) / 40;
-        y = 150 + ((56 - 150) * (s16)(bt > 40 ? 40 : bt)) / 40 - ((sinTab[((bt > 40 ? 40 : bt) * 32 / 40) & 63] * 70) >> 6);
-        if (bt > 40) y += (bt - 40) * 2; /* drops through */
+        x = mgSx0 + ((mgSx1 - mgSx0) * (s16)(mgBt > 40 ? 40 : mgBt)) / 40;
+        y = 150 + ((56 - 150) * (s16)(mgBt > 40 ? 40 : mgBt)) / 40 - ((sinTab[((mgBt > 40 ? 40 : mgBt) * 32 / 40) & 63] * 70) >> 6);
+        if (mgBt > 40) y += (mgBt - 40) * 2; /* drops through */
         put8(0, x - 3, y - 3 + MY, MT_BBALL, 1);
         sprHide(OAM_M + 1);
         sprHide(OAM_M + 2);
@@ -284,9 +284,9 @@ static const u8 tenA[15] = {42, 13, 10, 7, 4, 1, 62, 59, 56, 53, 50, 47, 44, 41,
 static void tennisTop(void)
 {
     char *d = putStr(top, "Returns ");
-    d = putNum(d, ret);
+    d = putNum(d, mgRet);
     d = putStr(d, "   Misses ");
-    d = putNum(d, miss);
+    d = putNum(d, mgMiss);
     putStr(d, "/3");
     topDirty = 1;
 }
@@ -294,71 +294,71 @@ static void tennisTop(void)
 static void tennisUpdate(u16 pad, u16 pressed)
 {
     s16 x, y, sp, tx;
-    if (pad & KEY_LEFT) hx -= 35;
-    if (pad & KEY_RIGHT) hx += 35;
-    if (hx < 40 * 16) hx = 40 * 16;
-    if (hx > 216 * 16) hx = 216 * 16;
-    if (swing) swing--;
-    if ((pressed & KEY_A) && !swing)
+    if (pad & KEY_LEFT) mgHx -= 35;
+    if (pad & KEY_RIGHT) mgHx += 35;
+    if (mgHx < 40 * 16) mgHx = 40 * 16;
+    if (mgHx > 216 * 16) mgHx = 216 * 16;
+    if (mgSwing) mgSwing--;
+    if ((pressed & KEY_A) && !mgSwing)
     {
-        swing = 14;
+        mgSwing = 14;
         sfx(SFX_SWING);
     }
-    if (miss >= 3)
+    if (mgMiss >= 3)
     {
-        done = 1;
+        mgDone = 1;
         return;
     }
-    if (!ballOn)
+    if (!mgBallOn)
     {
-        if (!--wait)
+        if (!--mgWait)
         {
-            sp = 102 + (ret * 6 > 141 ? 141 : ret * 6); /* 1.6 + min(2.2, ret * .09) px a frame */
+            sp = 102 + (mgRet * 6 > 141 ? 141 : mgRet * 6); /* 1.6 + min(2.2, ret * .09) px a frame */
             tx = 50 + rnd() % 156;
-            bx = 128 << 6;
-            by = 40 << 6;
-            bvx = ((tx - 128) * sp) / 110;
-            bvy = sp;
-            ballUp = 0;
-            ballOn = 1;
+            mgBx = 128 << 6;
+            mgBy = 40 << 6;
+            mgBvx = ((tx - 128) * sp) / 110;
+            mgBvy = sp;
+            mgBallUp = 0;
+            mgBallOn = 1;
             sfx(SFX_SHOT);
         }
         return;
     }
-    bx += bvx;
-    by += bvy;
-    x = bx >> 6;
-    y = by >> 6;
-    if (x < 30 || x > 226) bvx = -bvx;
-    if (!ballUp && swing > 6 && ABS(y - 150) < 12 && ABS(x - (hx >> 4)) < 18)
+    mgBx += mgBvx;
+    mgBy += mgBvy;
+    x = mgBx >> 6;
+    y = mgBy >> 6;
+    if (x < 30 || x > 226) mgBvx = -mgBvx;
+    if (!mgBallUp && mgSwing > 6 && ABS(y - 150) < 12 && ABS(x - (mgHx >> 4)) < 18)
     {
-        ballUp = 1;
-        bvy = -205;
-        bvx = (x - (hx >> 4)) * 8;
-        ret++;
+        mgBallUp = 1;
+        mgBvy = -205;
+        mgBvx = (x - (mgHx >> 4)) * 8;
+        mgRet++;
         sfx(SFX_HIT);
         {
             char *d = putStr(msg, "Return ");
-            d = putNum(d, ret);
+            d = putNum(d, mgRet);
             putStr(d, "!");
             msgDirty = 1;
         }
         tennisTop();
     }
-    if (ballUp && y < 34)
+    if (mgBallUp && y < 34)
     {
-        ballOn = 0;
-        wait = 30;
+        mgBallOn = 0;
+        mgWait = 30;
     }
-    if (!ballUp && y > 180)
+    if (!mgBallUp && y > 180)
     {
-        ballOn = 0;
-        wait = 50;
-        miss++;
+        mgBallOn = 0;
+        mgWait = 50;
+        mgMiss++;
         sfx(SFX_HURT);
         {
             char *d = putStr(msg, "Missed! (");
-            d = putNum(d, 3 - miss);
+            d = putNum(d, 3 - mgMiss);
             putStr(d, " left)");
             msgDirty = 1;
         }
@@ -368,11 +368,11 @@ static void tennisUpdate(u16 pad, u16 pressed)
 
 static void tennisDraw(void)
 {
-    s16 x = hx >> 4;
-    if (ballOn) put8(0, (bx >> 6) - 2, (by >> 6) - 2 + MY, MT_TBALL, 1);
+    s16 x = mgHx >> 4;
+    if (mgBallOn) put8(0, (mgBx >> 6) - 2, (mgBy >> 6) - 2 + MY, MT_TBALL, 1);
     else sprHide(OAM_M);
     sprPut(OAM_HERO, 1, x - 8, 142 + MY, 2, 0, 4, 0); /* the hero from behind */
-    stick(1, x + 4, 150 + MY, tenA[swing], 4, 13, 9, MT_RACKET, MT_RACKETHEAD);
+    stick(1, x + 4, 150 + MY, tenA[mgSwing], 4, 13, 9, MT_RACKET, MT_RACKETHEAD);
 }
 
 /* ---------- the frame around them ---------- */
@@ -394,44 +394,44 @@ static void endText(void)
 {
     char *d = (char *)endTxt;
     u16 coinsWon = 0, score = 0;
-    d = putStr(d, miniName[kind]) + 1;
-    if (quit)
+    d = putStr(d, miniName[mgKind]) + 1;
+    if (mgQuit)
         d = putStr(d, "You walk away from the game.");
-    else if (kind == MINI_BAT)
+    else if (mgKind == MINI_BAT)
     {
-        coinsWon = hits * 2 + hr * 5;
-        score = hits + hr;
+        coinsWon = mgHits * 2 + mgHr * 5;
+        score = mgHits + mgHr;
         d = putStr(d, "Ten pitches: ");
-        d = putNum(d, hits);
+        d = putNum(d, mgHits);
         d = putStr(d, " hits,\n");
-        d = putNum(d, hr);
+        d = putNum(d, mgHr);
         d = putStr(d, " home runs.\fThe coach slips you\n");
         d = putNum(d, coinsWon);
         d = putStr(d, " coins.");
     }
-    else if (kind == MINI_HOOPS)
+    else if (mgKind == MINI_HOOPS)
     {
-        coinsWon = made * 2;
-        score = made;
-        d = putNum(d, made);
+        coinsWon = mgMade * 2;
+        score = mgMade;
+        d = putNum(d, mgMade);
         d = putStr(d, " of 10 from the line.\fThe coach tosses you\n");
         d = putNum(d, coinsWon);
         d = putStr(d, " coins.");
-        if (made >= 8) d = putStr(d, "\nThat's Havoc!");
+        if (mgMade >= 8) d = putStr(d, "\nThat's Havoc!");
     }
     else
     {
-        coinsWon = ret;
-        score = ret;
-        d = putNum(d, ret);
+        coinsWon = mgRet;
+        score = mgRet;
+        d = putNum(d, mgRet);
         d = putStr(d, " returns before\nthree misses.\fThe coach hands you\n");
         d = putNum(d, coinsWon);
         d = putStr(d, " coins.");
-        if (ret >= 15) d = putStr(d, "\nArthur Ashe would be proud.");
+        if (mgRet >= 15) d = putStr(d, "\nArthur Ashe would be proud.");
     }
-    if (!quit && score > miniBest[kind])
+    if (!mgQuit && score > miniBest[mgKind])
     {
-        miniBest[kind] = score;
+        miniBest[mgKind] = score;
         d = putStr(d, "\nYour best yet!");
     }
     coins = coins + coinsWon > 999 ? 999 : coins + coinsWon;
@@ -442,7 +442,7 @@ void runMini(u8 k)
 {
     u16 pad, pressed, lastPad = 0xFFFF;
     u8 i;
-    kind = k;
+    mgKind = k;
     fadeTo(0);
     setBrightness(0);
     closeText();
@@ -454,11 +454,11 @@ void runMini(u8 k)
     bgSetScroll(0, 0, 0);
     REG_HDMAEN = 0; /* no night or weather over the game */
     REG_CGADSUB = 0;
-    done = quit = 0;
-    n = hits = hr = made = ret = miss = swing = ballOn = 0;
-    wait = 60;
-    ph = 0;
-    hx = 128 * 16;
+    mgDone = mgQuit = 0;
+    mgN = mgHits = mgHr = mgMade = mgRet = mgMiss = mgSwing = mgBallOn = 0;
+    mgWait = 60;
+    mgPh = 0;
+    mgHx = 128 * 16;
     msg[0] = 0;
     if (k == MINI_BAT)
     {
@@ -480,7 +480,7 @@ void runMini(u8 k)
     bg3Row(27, msg, FONT_WHITE);
     fadeTo(1);
     padSeen = 0;
-    while (!done)
+    while (!mgDone)
     {
         pad = padsCurrent(0);
         pressed = (pad | padSeen) & ~lastPad;
@@ -488,15 +488,15 @@ void runMini(u8 k)
         lastPad = pad;
         if (pressed & KEY_START)
         {
-            quit = 1;
+            mgQuit = 1;
             break;
         }
-        if (kind == MINI_BAT)
+        if (mgKind == MINI_BAT)
         {
             batUpdate(pressed);
             batDraw();
         }
-        else if (kind == MINI_HOOPS)
+        else if (mgKind == MINI_HOOPS)
         {
             hoopsUpdate(pressed);
             hoopsDraw();
