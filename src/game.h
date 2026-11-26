@@ -68,6 +68,7 @@ extern u8 roomFlags[];
 extern u8 keys[];
 extern u8 hasHook, hasPowder, hasLantern, hasShield, powder, eqItem, keystones, roomReward, dentMap, hookSt, bossOn;
 extern u8 enemiesExisted;
+extern u8 enCount, enAlive[];
 
 u8 solidAt(s16 x, s16 y);
 void sprHide(u8 slot);

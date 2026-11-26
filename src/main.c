@@ -488,7 +488,7 @@ u8 solidAt(s16 x, s16 y)
     ty = y >> 4;
     tx = colGrid[ty * COL_STRIDE + tx];
     if (tx == CELL_RIVER) return !hasKayak; /* the kayak paddles the James */
-    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_LOCK || tx == CELL_BRAZIER;
+    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_LOCK || tx == CELL_BRAZIER || tx == CELL_SPROUT;
 }
 
 u8 blocked(s16 x, s16 y)
