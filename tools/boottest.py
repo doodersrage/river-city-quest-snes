@@ -357,7 +357,7 @@ lab.run(None, 30)
 lab.screenshot(f'{out}/14-old-snapper-beaten.png')
 close_box()
 hpmax = lab.ram('hpMax')
-for c in [(7, 4), (9, 4)]:
+for c in [(7, 4), (9, 4), (7, 4), (9, 4)]:   # twice round: a pickup text box can cut a walk short
     try:
         lab.walk_to_cell(*c)
     except RuntimeError:
@@ -484,7 +484,7 @@ check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'th
 lab.run(None, 30)
 close_box()
 hpmax = lab.ram('hpMax')
-for c in [(7, 4), (9, 4)]:
+for c in [(7, 4), (9, 4), (7, 4), (9, 4)]:   # twice round: a pickup text box can cut a walk short
     try:
         lab.walk_to_cell(*c)
     except RuntimeError:
@@ -585,7 +585,7 @@ check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'th
 lab.run(None, 30)
 close_box()
 hpmax = lab.ram('hpMax')
-for c in [(7, 4), (9, 4)]:
+for c in [(7, 4), (9, 4), (7, 4), (9, 4)]:   # a pickup's text box can stop a walk short: go round twice
     try:
         lab.walk_to_cell(*c)
     except RuntimeError:
@@ -594,6 +594,7 @@ for c in [(7, 4), (9, 4)]:
     lab.run('DOWN', 4)
     lab.run(None, 20)
     close_box()
+    if lab.ram('keystones') == 7 and lab.ram('hpMax') > hpmax: break
 lab.screenshot(f'{out}/21-raven-beaten.png')
 check(lab.ram('keystones') == 7, 'the Brick Keystone (3 of 4)')
 check(lab.ram('hpMax') == hpmax + 2, 'and a heart container')
@@ -714,7 +715,7 @@ for _ in range(9000):
 check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'the Bronze Bell is beaten')
 lab.run(None, 40); close_box()
 hpmax = lab.ram('hpMax')
-for c in [(7, 4), (9, 4)]:
+for c in [(7, 4), (9, 4), (7, 4), (9, 4)]:   # twice round: a pickup text box can cut a walk short
     try:
         lab.walk_to_cell(*c)
     except RuntimeError:
