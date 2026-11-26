@@ -604,41 +604,59 @@ lab.run(None, 40)
 check(lab.map == 17, 'back west and south to Hollywood Cemetery')
 
 # Stage 6: the trading quest, the kayak, the Carillon Key and the Carillon.
-def go(d, cell):
-    lab.walk_to_cell(*cell); lab.run(d, 30); lab.run(None, 40)
-def talk(cell, d):
-    lab.walk_to_cell(*cell); lab.face(d); lab.press('A', 60); close_box()
+N = lab.map_named
+def walk(cell):
+    m0, outdoor = lab.map, lab.ram('mapW') == 32
+    for _ in range(4):
+        try:
+            lab.walk_to_cell(*cell)
+        except RuntimeError:
+            close_box(); lab.run(None, 30)
+        if lab.map != m0 and not outdoor:
+            return          # walked out a door on purpose
+        if lab.map != m0:   # knocked over an edge: come back
+            close_box(); travel(lab, m0, close_box)
+            continue
+        if (lab.pos[0] // 16, lab.pos[1] // 16) == tuple(cell):
+            return
+    lab.walk_to_cell(*cell)
+def talk_until(cell, d, done):
+    for _ in range(4):
+        walk(cell); lab.face(d); lab.press('A', 60); close_box()
+        if done(): return
 def push(start_cell, d, frames):
-    lab.walk_to_cell(*start_cell)
+    walk(start_cell)
     for _ in range(frames):
         lab.run(d, 1)
         if lab.ram('hp') <= 2:
             lab.poke('hp', lab.ram('hpMax'))
     lab.run(None, 10)
-go('UP', (15, 0)); go('LEFT', (0, 10))
-talk((25, 18), 'up')
+travel(lab, N('Carytown'), close_box)
+talk_until((25, 18), 'up', lambda: lab.ram('tradeItem') == 1)
 check(lab.ram('tradeItem') == 1, 'a Carytown vendor hands over a melon')
-go('RIGHT', (31, 10)); go('UP', (15, 0)); go('RIGHT', (31, 10))
-talk((12, 4), 'up')
-check(lab.map == lab.map_named('Jackson Ward') and lab.ram('tradeItem') == 2, 'the Jackson Ward musician trades sheet music for it')
-go('LEFT', (0, 10)); go('DOWN', (15, 21)); go('LEFT', (0, 10))
-lab.walk_to_cell(22, 17); lab.run('UP', 20); lab.run(None, 60)
-talk((10, 3), 'up')
-check(lab.map == lab.map_named('The Byrd Theatre') and lab.ram('tradeItem') == 3, 'the Byrd organist trades a river map')
-lab.walk_to_cell(7, 8); lab.run('DOWN', 30); lab.run(None, 60)
-go('RIGHT', (31, 10)); go('DOWN', (15, 21)); go('RIGHT', (31, 10))
-talk((8, 5), 'up')
+travel(lab, N('Jackson Ward'), close_box)
+talk_until((12, 4), 'up', lambda: lab.ram('tradeItem') == 2)
+check(lab.map == N('Jackson Ward') and lab.ram('tradeItem') == 2, 'the Jackson Ward musician trades sheet music for it')
+travel(lab, N('Carytown'), close_box)
+walk((22, 17)); lab.run('UP', 20); lab.run(None, 60)
+talk_until((10, 3), 'up', lambda: lab.ram('tradeItem') == 3)
+check(lab.map == N('The Byrd Theatre') and lab.ram('tradeItem') == 3, 'the Byrd organist trades a river map')
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60)
+travel(lab, N('Belle Isle'), close_box)
+talk_until((8, 5), 'up', lambda: lab.ram('hasKayak') == 1)
 check(lab.ram('hasKayak') == 1, 'the Belle Isle kayaker lends a kayak')
-go('DOWN', (15, 21))
-check(lab.map == lab.map_named('Manchester'), 'paddle across the James to Manchester')
+travel(lab, N('Manchester'), close_box)
+check(lab.map == N('Manchester'), 'paddle across the James to Manchester')
 check(song() in ('south', 'night'), f'south of the river, its own theme (or the night theme after dark) ({song()})')
-go('LEFT', (0, 10))
-equip(2); lab.walk_to_cell(22, 9); lab.face('up'); lab.press('B', 2); lab.walk_to_cell(22, 12); lab.run(None, 90)
-lab.walk_to_cell(22, 8); lab.run('UP', 20); lab.run(None, 30)
+travel(lab, N('Forest Hill Park'), close_box)
+for _ in range(3):
+    equip(2); walk((22, 9)); lab.face('up'); lab.press('B', 2); walk((22, 12)); lab.run(None, 90)
+    walk((22, 8)); lab.run('UP', 20); lab.run(None, 30)
+    if lab.ram('hasCarkey'): break
 lab.screenshot(f'{out}/23-carillon-key.png'); close_box()
-check(lab.map == lab.map_named('Forest Hill Park') and lab.ram('hasCarkey') == 1, 'a keg clears the Forest Hill rubble: the Carillon Key')
-go('RIGHT', (31, 10)); go('UP', (15, 0)); go('LEFT', (0, 10)); go('LEFT', (0, 10))
-lab.walk_to_cell(4, 8); lab.run('UP', 20); lab.run(None, 70); close_box()
+check(lab.map == N('Forest Hill Park') and lab.ram('hasCarkey') == 1, 'a keg clears the Forest Hill rubble: the Carillon Key')
+travel(lab, N('Byrd Park & Maymont'), close_box)
+walk((4, 8)); lab.run('UP', 20); lab.run(None, 70); close_box()
 check(lab.map == lab.map_named('Carillon Base'), 'the key opens the Carillon')
 clear_room()
 push((3, 5), 'RIGHT', 320)
