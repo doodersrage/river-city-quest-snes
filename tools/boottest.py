@@ -64,7 +64,10 @@ target = min(alive, key=lambda k: abs(lab.enemy(k)['x'] - lab.pos[0]) + abs(lab.
 used = lab.fight(target)
 check(used is not None, f'the paddle beats a {["rat","squirrel","goose","scooter","crab","bat","ghost"][lab.enemy(target)["type"]]} ({used} frames)')
 lab.screenshot(f'{out}/4-fight.png')
-lab.run('A', 1); lab.run('A', 70)
+for _ in range(4):                     # a rat bumping you cancels the charge: try again
+    lab.run('A', 1); lab.run('A', 70)
+    if lab.ram('charging') == 1 and lab.ram('charge') >= 40: break
+    lab.run(None, 30)
 check(lab.ram('charging') == 1 and lab.ram('charge') >= 40, 'holding A charges a spin')
 lab.run(None, 3)
 check(lab.ram('spin') > 0, 'letting go spins')
@@ -789,7 +792,9 @@ def menu_pick(item):
     return lab.ram('eqItem') == item and not lab.ram('boxState')
 N = lab.map_named
 travel(lab, N("Scott's Addition"), close_box)
-talk2((13, 9), 'up')
+for _ in range(4):
+    talk2((13, 9), 'up')
+    if lab.ram('hasBalls'): break
 check(lab.ram('hasBalls') and lab.ram('balls') == 15, 'the Ballplayer in Scott\'s Addition gives you Baseballs')
 walk((23, 5)); lab.run('UP', 20); lab.run(None, 60); close_box()
 lab.poke('hp', 2)
