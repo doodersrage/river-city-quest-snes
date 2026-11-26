@@ -825,10 +825,17 @@ check(lab.map == N('Carytown'), 'back out to Carytown')
 
 # Stage 3: let an enemy take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)
-for _ in range(1500):
+for _ in range(3000):
     if lab.ram('dying'):
         break
-    lab.run(None, 1)
+    alive = [k for k in range(lab.ram('enCount')) if lab.enemy(k)['alive']]
+    if not alive:
+        lab.run(None, 1)
+        continue
+    x, y = lab.pos
+    e = min((lab.enemy(k) for k in alive), key=lambda e: abs(e['x'] - x) + abs(e['y'] - y))
+    dx, dy = e['x'] - x, e['y'] - y
+    lab.run(('RIGHT' if dx > 0 else 'LEFT') if abs(dx) > abs(dy) else ('DOWN' if dy > 0 else 'UP'), 1)
 check(lab.ram('dying') == 1, 'an enemy takes the last heart')
 lab.run(None, 60)
 lab.screenshot(f'{out}/22-fog-takes-you.png')
