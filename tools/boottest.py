@@ -841,6 +841,79 @@ check(lab.ram('bottleFull') and lab.ram('balls') == 15 and lab.ram('capBalls') =
 walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
 check(lab.map == N('Carytown'), 'back out to Carytown')
 
+# Stage 6: the finale. The four keystones open the Church Hill Tunnel; the Richmond Vampire; the ending.
+def equip(item):
+    for _ in range(12):
+        if lab.ram('eqItem') == item: return True
+        lab.press('SELECT', 2)
+    return lab.ram('eqItem') == item
+travel(lab, N('Church Hill'), close_box)
+walk((4, 5)); lab.steer_to(72, 90); lab.run('UP', 40); lab.run(None, 70); close_box()
+check(lab.map == N('Church Hill Tunnel'), 'the four keystones open the Church Hill Tunnel')
+lab.screenshot(f'{out}/41-church-hill-tunnel.png')
+clear_room()
+equip(2); walk((14, 5)); lab.face('right'); lab.press('B', 2); walk((10, 5)); lab.run(None, 100)
+walk((15, 5)); lab.run('RIGHT', 30); lab.run(None, 60); close_box()
+check(lab.map == N('Flooded Siding') and clear_room(), 'a keg opens the Flooded Siding')
+equip(5); walk((7, 5)); lab.face('right'); lab.press('B', 8); lab.run(None, 60); close_box()
+check(lab.ram('keys', 1, False, lab.ram('roomArea')) == 1, 'the Gold-Bug fetches the key from the island')
+walk((7, 1)); lab.run('UP', 10); lab.run('UP', 40); lab.run(None, 60); close_box()
+check(lab.map == N('Signal Room') and clear_room(), 'the key opens the Signal Room')
+equip(3)
+for cx, cy, d in [(3, 3, 'up'), (12, 3, 'up'), (3, 7, 'down'), (12, 7, 'down')]:
+    walk((cx, cy)); lab.face(d); lab.press('B', 4)
+lab.run(None, 20)
+check(lab.ram('roomFlags', 1, False, lab.map) & 16, 'four signal lamps lit')
+lab.screenshot(f'{out}/42-signal-room.png')
+walk((0, 5)); lab.run('LEFT', 30); lab.run(None, 70)
+check(lab.map == N('Engine 231') and lab.ram('boxState'), 'the gate opens on Engine 231')
+close_box()
+shot = set()
+for _ in range(20000):
+    if not lab.ram('bossOn') or lab.map != N('Engine 231'):
+        break
+    if lab.ram('boxState'):
+        close_box(); continue
+    if lab.ram('hp') <= 4:
+        lab.poke('hp', lab.ram('hpMax'))
+    bats = [k for k in range(6) if lab.enemy(k)['alive']]
+    if lab.ram('vampSwarm') or (lab.ram('vampGone') and bats):
+        if 'swarm' not in shot and lab.ram('vampSwarm'):
+            lab.screenshot(f'{out}/44-swarm.png'); shot.add('swarm')
+        if bats:
+            x, y = lab.pos
+            lab.fight(min(bats, key=lambda k: abs(lab.enemy(k)['x'] - x) + abs(lab.enemy(k)['y'] - y)), 200)
+        else:
+            lab.run(None, 1)
+        continue
+    if lab.ram('vampGone'):
+        lab.run(None, 1); continue
+    bx, by = lab.ram('bossX', 2, True) >> 4, lab.ram('bossY', 2, True) >> 4
+    x, y = lab.pos
+    dx, dy = bx - x, (by - 4) - y
+    if 'vamp' not in shot and abs(dx) < 50 and abs(dy) < 50:
+        lab.screenshot(f'{out}/43-richmond-vampire.png'); shot.add('vamp')
+    if abs(dx) < 12 and abs(dy) < 20:
+        lab.run('UP' if dy < 0 else 'DOWN', 1); lab.press('A', 8)
+    elif abs(dx) < 20 and abs(dy) < 12:
+        lab.run('RIGHT' if dx > 0 else 'LEFT', 1); lab.press('A', 8)
+    else:
+        lab.run_safe(('RIGHT' if dx > 0 else 'LEFT') if abs(dx) > abs(dy) else ('DOWN' if dy > 0 else 'UP'), 1)
+check(not lab.ram('bossOn') and lab.ram('gameWon'), 'the Richmond Vampire is beaten')
+lab.run(None, 60)
+lab.screenshot(f'{out}/45-the-fog-lifts.png')
+for _ in range(60):
+    if not lab.ram('boxState'): break
+    lab.press('A', 8)
+lab.run(None, 200)
+lab.screenshot(f'{out}/46-lamps-come-back-on.png')
+for t in range(200):
+    lab.run(None, 20)
+    if t == 60: lab.screenshot(f'{out}/47-credits.png')
+    if lab.map == N('Church Hill') and t > 40: break
+lab.run(None, 30)
+check(lab.map == N('Church Hill') and lab.pos == (72, 72), 'the lamps come back on, the credits roll, and you are back on Church Hill')
+
 # Stage 3: let an enemy take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)
 # put a rat right on top of the hero (wherever the gear run ended, there may be none nearby)
