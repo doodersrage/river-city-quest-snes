@@ -1070,7 +1070,10 @@ lab.screenshot(f'{out}/53-car-stops.png')
 lab.run('RIGHT', 30)
 edge = (lab.ram('carX', 2, True, 1) >> 4) - 13
 check(lab.pos[0] < edge, f"and you can't walk through it (you {lab.pos[0]}, its back bumper {edge})")
-lab.run('DOWN', 30); lab.run(None, 90)
+lab.run('DOWN', 30)
+for _ in range(12):
+    if lab.ram('carX', 2, True, 1) != xs: break
+    lab.run('DOWN', 10); lab.run(None, 20)
 check(lab.ram('carX', 2, True, 1) != xs, 'it drives on once you are out of the way')
 # the Local on Broad Street wanders near home
 k = 1
