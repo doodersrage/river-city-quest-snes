@@ -5,7 +5,7 @@
    doesn't light (dungeons, caves, museums) are always dark. Darkness is colour math: the
    screen's BG1, sprites in palettes 4-7 and the backdrop get a fixed colour subtracted (and
    halved at full dark), except inside two windows, each a circle of light from an HDMA table
-   built by lightCircle (light.asm): one around the hero, bigger with the Gas Lantern, and one
+   built by lightCircle (lightcircle.asm): one around the hero, bigger with the Gas Lantern, and one
    on the nearest lit brazier, wall torch, street lamp or lit window. Text (BG3) and the
    hero and townsfolk (sprite palettes 0-3) stay bright, as do the HUD rows. */
 #include "game.h"
