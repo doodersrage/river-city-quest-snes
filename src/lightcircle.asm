@@ -16,6 +16,7 @@
 .RAMSECTION ".lightram" BANK $7E SLOT 2
 lightTab1 DSB 451
 lightTab2 DSB 451
+lightPrev DSB 8       ; cy, r of the circle on each table
 .ENDS
 
 .SECTION ".light_text" SUPERFREE
@@ -53,29 +54,65 @@ lcP1:
     sta.l lightTab1+450,x
     rep #$20
 
-    ; every line empty
-    ldy #112
-    lda #$00FF
-lcM2:
-    sta.l lightTab1+1,x
-    sta.l lightTab1+226,x
-    inx
-    inx
-    dey
-    bne lcM2
-
-    ; table 1 keeps the HUD rows (0-23) lit
+    ; empty the lines the previous circle on this table covered (lightPrev: cy, r per table)
     lda 19
-    bne lcP4
-    ldx #0
-    lda #$FF00
-lcM3:
-    sta.l lightTab1+1,x
+    asl a
+    asl a
+    tax
+    lda.l lightPrev,x       ; previous cy
+    sec
+    sbc.l lightPrev+2,x     ; - previous r
+    bpl lcC0
+    lda #0
+lcC0:
+    sta 5                   ; first line to clear
+    lda.l lightPrev,x
+    clc
+    adc.l lightPrev+2,x
+    bpl lcC4
+    lda #0                  ; all of it above the screen: nothing to clear
+    sta 5
+    inc 5
+    bra lcC1
+lcC4:
+    cmp #224
+    bcc lcC1
+    lda #223
+lcC1:
+    sta 3                   ; last line to clear
+    lda 23
+    sta.l lightPrev,x       ; remember this circle for next time
+    lda 25
+    sta.l lightPrev+2,x
+
+lcCLoop:
+    lda 5
+    cmp 3
+    beq lcCLine
+    bcs lcCDone
+lcCLine:
+    asl a
+    clc
+    adc 1
+    inc a
+    tax                     ; base + 1 + 2 * line
+    lda 5
+    cmp #112
+    bcc lcC2
     inx
-    inx
-    cpx #48
-    bne lcM3
-lcP4:
+lcC2:
+    lda #$00FF              ; empty: left 255, right 0
+    ldy 19
+    bne lcC3
+    ldy 5
+    cpy #24
+    bcs lcC3
+    lda #$FF00              ; table 1's HUD rows stay lit: left 0, right 255
+lcC3:
+    sta.l lightTab1,x
+    inc 5
+    bra lcCLoop
+lcCDone:
 
     lda 25
     beq lcDone

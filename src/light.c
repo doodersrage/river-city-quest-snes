@@ -11,6 +11,7 @@
 #include "game.h"
 
 extern u8 lightTab1[], lightTab2[];
+extern u16 lightPrev[4];
 void lightCircle(const u8 *hw, u16 which, s16 cx, s16 cy, u16 r);
 extern u8 *brazPtr;
 extern u8 roomBraz[];
@@ -37,6 +38,8 @@ u8 darkLevel;           /* 0 light .. 4 full dark */
 u8 lightR1, lightR2;    /* radii drawn (0 none) */
 s16 lightX1, lightY1, lightX2, lightY2;
 u8 lightDirty;
+u8 srcMap, srcR;     /* the light chosen for window 2, in map pixels */
+s16 srcX, srcY;
 
 static const u8 *hwFor(u8 r)
 {
@@ -74,8 +77,10 @@ void lightInit(void)
     REG_A1TL(5) = a & 255;
     REG_A1TH(5) = a >> 8;
     REG_A1B(5) = 0x7E;
+    lightPrev[0] = lightPrev[1] = lightPrev[2] = lightPrev[3] = 112; /* first call clears every line */
     lightCircle(hw15, 0, 0, 0, 0);
     lightCircle(hw15, 1, 0, 0, 0);
+    srcMap = 255;
 }
 
 /* web dark(): 1 from 8pm to 5am, ramping over 5-8pm and 5-7am; here in steps 0..4 */
@@ -92,7 +97,7 @@ static u8 nightLevel(void)
 /* once a game frame: the clock, how dark it is, and where the light falls */
 void lightFrame(void)
 {
-    u8 kind = mapDark[curMap], r1, r2, k, n, lit;
+    u8 kind = mapDark[curMap], r1, r2, k;
     u16 i, best, d;
     s16 hx, hy, x, y, bx, by;
     u8 *b;
@@ -105,48 +110,59 @@ void lightFrame(void)
     if (darkLevel)
     {
         r1 = kind >= 2 ? (hasLantern ? 68 : 38) : (hasLantern ? 54 : 32);
-        /* the nearest light on screen: lit braziers, then the map's torches, lamps and lit windows */
-        best = 0xFFFF;
-        if (kind >= 2 && brazPtr)
-            for (k = 0; k < brazPtr[0]; k++)
-                if (roomBraz[curMap] & (1 << k))
-                {
-                    b = brazPtr + 1 + k * 10;
-                    x = b[0] * 16 + 8 - camX;
-                    y = b[1] * 16 + 6 - camY;
-                    d = ABS(x - hx) + ABS(y - hy);
-                    if (d < best)
-                    {
-                        best = d;
-                        bx = x;
-                        by = y;
-                        r2 = 44;
-                    }
-                }
-        for (i = lightOff[curMap]; i < lightOff[curMap + 1]; i++)
+        /* every 8 frames (or on a new map) look for the nearest light: lit braziers, then the map's
+           torches, lamps and lit windows; in between it just follows the camera */
+        if (srcMap != curMap || !(frameCount & 7))
         {
-            b = (u8 *)lightData + i * 3;
-            x = (b[0] << 1) - camX;
-            y = (b[1] << 1) - camY;
-            if (x < -48 || x > 304 || y < -48 || y > 272) continue;
-            d = ABS(x - hx) + ABS(y - hy);
-            if (d < best)
+            srcMap = curMap;
+            srcR = 0;
+            best = 0xFFFF;
+            if (kind >= 2 && brazPtr)
+                for (k = 0; k < brazPtr[0]; k++)
+                    if (roomBraz[curMap] & (1 << k))
+                    {
+                        b = brazPtr + 1 + k * 10;
+                        x = b[0] * 16 + 8;
+                        y = b[1] * 16 + 6;
+                        d = ABS(x - px) + ABS(y - py);
+                        if (d < best)
+                        {
+                            best = d;
+                            srcX = x;
+                            srcY = y;
+                            srcR = 44;
+                        }
+                    }
+            for (i = lightOff[curMap]; i < lightOff[curMap + 1]; i++)
             {
-                best = d;
-                bx = x;
-                by = y;
-                r2 = b[2] == 0 ? 46 : b[2] == 1 ? 48 : 15;
+                b = (u8 *)lightData + i * 3;
+                x = b[0] << 1;
+                y = b[1] << 1;
+                d = ABS(x - px) + ABS(y - py);
+                if (d < best && d < 300)
+                {
+                    best = d;
+                    srcX = x;
+                    srcY = y;
+                    srcR = b[2] == 0 ? 46 : b[2] == 1 ? 48 : 15;
+                }
             }
         }
+        if (srcR)
+        {
+            r2 = srcR;
+            bx = srcX - camX;
+            by = srcY - camY;
+        }
     }
-    if (r1 != lightR1 || hx != lightX1 || hy != lightY1)
+    if (r1 != lightR1 || (r1 && (hx != lightX1 || hy != lightY1)))
     {
         lightR1 = r1;
         lightX1 = hx;
         lightY1 = hy;
         lightCircle(hwFor(r1), 0, hx, hy, r1);
     }
-    if (r2 != lightR2 || bx != lightX2 || by != lightY2)
+    if (r2 != lightR2 || (r2 && (bx != lightX2 || by != lightY2)))
     {
         lightR2 = r2;
         lightX2 = bx;
