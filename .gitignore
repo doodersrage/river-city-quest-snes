@@ -12,3 +12,4 @@ hdr.asm
 src/*.ps
 src/*.asp
 screenshots-ci/
+__pycache__/
