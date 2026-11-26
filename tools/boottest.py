@@ -793,9 +793,12 @@ lab.screenshot(f'{out}/36-item-menu.png')
 check(lab.ram('boxState') == 5 and lab.ram('menuN') >= 7, f"START opens the item menu ({lab.ram('menuN')} items)")
 lab.press('START', 6)
 check(menu_pick(7), 'the menu puts Baseballs on B')
-b0 = lab.ram('balls'); lab.face('down'); lab.press('B', 4)
+b0 = lab.ram('balls'); lab.face('down')
+for _ in range(4):
+    close_box(); lab.run(None, 20); lab.press('B', 4)
+    if lab.ram('balls') < b0: break
 lab.screenshot(f'{out}/37-baseball.png')
-check(lab.ram('balls') == b0 - 1, 'B throws a baseball')
+check(lab.ram('balls') == b0 - 1, f"B throws a baseball ({b0} -> {lab.ram('balls')}, box {lab.ram('boxState')})")
 travel(lab, N('Byrd Park & Maymont'), close_box)
 try:
     lab.walk_to_cell(12, 17)
