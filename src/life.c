@@ -136,7 +136,7 @@ void lifeLoad(void)
     chalLoad();
     lifeAny = carAny || birdSt[0] != 255 || birdSt[1] != 255;
     /* their art goes where a boss would load: outdoor maps never have one */
-    if (!roomBoss && !mapDark[curMap])   /* outdoors: also the challenge tokens and the '!' */
+    if (!roomBoss)   /* anywhere without a boss: also the challenge tokens, the '!' and the camera icon */
         dmaCopyVram(&town_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&town_chrend - &town_chr));
 }
 

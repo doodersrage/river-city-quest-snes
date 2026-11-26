@@ -1934,6 +1934,16 @@ pinlit_pal:
 .incbin "data/pinlit.pal"
 .ends
 
+.section ".album" superfree
+album_chr:
+.incbin "data/album.chr"
+album_chrend:
+album_map:
+.incbin "data/album.map"
+album_pal:
+.incbin "data/album.pal"
+.ends
+
 .section ".minispr" superfree
 minispr_chr:
 .incbin "data/minispr.chr"

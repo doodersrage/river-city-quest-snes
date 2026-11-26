@@ -306,6 +306,10 @@ void shopBuy(void)
     case EFFECT_CARD:
         gotPackCard(); /* says which card */
         return;
+    case EFFECT_CAMERA:
+        hasCamera = 1;
+        if (!eqItem) eqItem = ITEM_CAMERA;
+        break;
     }
     mo = it[SHOP_NAME + SHOP_LOCK + 4] | (it[SHOP_NAME + SHOP_LOCK + 5] << 8);
     openTextAt((u8 *)&shops_bin + SHOP_MSGS + mo);

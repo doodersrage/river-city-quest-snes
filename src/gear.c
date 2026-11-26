@@ -194,12 +194,13 @@ void hudCount(u8 n)
 
 /* ---------- the item menu (START): pick what B does ---------- */
 
-static const char *const itemName[12] = {"", "Grappling Hook", "Blasting Powder", "Gas Lantern", "Cast-Iron Shield", "The Gold-Bug",
-                                          "Watering Can", "Baseballs", "Running Shoes", "Bicycle", "Ginger Beer", "Fishing Rod"};
-#define MENU_CARDS 99 /* the last line of the menu: your landmark cards */
+static const char *const itemName[13] = {"", "Grappling Hook", "Blasting Powder", "Gas Lantern", "Cast-Iron Shield", "The Gold-Bug",
+                                          "Watering Can", "Baseballs", "Running Shoes", "Bicycle", "Ginger Beer", "Fishing Rod", "Camera"};
+#define MENU_CARDS 99 /* the last lines of the menu: your landmark cards, your photos */
+#define MENU_ALBUM 98
 /* the web game's menu order */
-static const u8 menuOrder[10] = {ITEM_LANTERN, ITEM_BALLS, ITEM_POWDER, ITEM_BUG, ITEM_SHOES, ITEM_HOOK, ITEM_CAN, ITEM_BIKE, ITEM_BOTTLE, ITEM_ROD};
-u8 menuList[11], menuN, menuCur, menuTop;
+static const u8 menuOrder[11] = {ITEM_LANTERN, ITEM_BALLS, ITEM_POWDER, ITEM_BUG, ITEM_SHOES, ITEM_HOOK, ITEM_CAN, ITEM_BIKE, ITEM_BOTTLE, ITEM_ROD, ITEM_CAMERA};
+u8 menuList[13], menuN, menuCur, menuTop;
 
 void drawMenu(void)
 {
@@ -212,6 +213,14 @@ void drawMenu(void)
         if (j >= menuN) break;
         it = menuList[j];
         boxPut(2 + r, 2, j == menuCur ? FONT_GOLD + '>' - 32 : FILL);
+        if (it == MENU_ALBUM)
+        {
+            boxText(2 + r, 3, (u8 *)"Photo Album", FONT_WHITE);
+            boxNum(2 + r, 29, PHOTO_COUNT);
+            boxPut(2 + r, 27, FONT_GOLD + '/' - 32);
+            boxNum(2 + r, 26, photoCount());
+            continue;
+        }
         if (it == MENU_CARDS)
         {
             boxText(2 + r, 3, (u8 *)"Landmark Cards", FONT_WHITE);
@@ -234,13 +243,14 @@ void openMenu(void)
     u8 i;
     menuN = 0;
     menuCur = 0;
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 11; i++)
         if (hasItem(menuOrder[i]))
         {
             if (menuOrder[i] == eqItem) menuCur = menuN;
             menuList[menuN++] = menuOrder[i];
         }
     menuList[menuN++] = MENU_CARDS;
+    if (hasCamera) menuList[menuN++] = MENU_ALBUM;
     menuTop = menuCur > 3 ? menuCur - 3 : 0;
     boxTop = (py - camY > 120) ? 0 : 20;
     drawMenu();
@@ -264,6 +274,8 @@ void updateMenu(u16 pressed)
     }
     else if ((pressed & KEY_A) && menuList[menuCur] == MENU_CARDS)
         openCards();
+    else if ((pressed & KEY_A) && menuList[menuCur] == MENU_ALBUM)
+        runAlbum();
     else if (pressed & KEY_A)
     {
         eqItem = menuList[menuCur];
