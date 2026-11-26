@@ -713,8 +713,7 @@ void drawNpcs(void)
             npcPend = 1;
         }
         flip = npcDir[k] == 2;
-        sprPut(OAM_NPCTOP + k, 1, sx, sy - 16, 2, flip, 32 + k * 4, k + 1);
-        sprPut(OAM_NPCS + k, 1, sx, sy, 2, flip, 32 + k * 4 + 2, k + 1);
+        sprPair(OAM_NPCTOP + k, OAM_NPCS + k, sx, sy, 32 + k * 4, (flip << 6) | (2 << 4) | ((k + 1) << 1));
     }
 }
 
@@ -781,8 +780,7 @@ void drawHero(void)
         sprHide(OAM_HEROTOP);
         return;
     }
-    sprPut(OAM_HEROTOP, 1, px - camX - 8, py - camY - 26, 3, flip, 0, 0);
-    sprPut(OAM_HERO, 1, px - camX - 8, py - camY - 10, 3, flip, 2, 0);
+    sprPair(OAM_HEROTOP, OAM_HERO, px - camX - 8, py - camY - 10, 0, (flip << 6) | (3 << 4));
 }
 
 /* Walking off an edge moves to the neighboring neighborhood, if there is one. */
