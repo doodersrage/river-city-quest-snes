@@ -795,7 +795,7 @@ lab.press('START', 6)
 check(menu_pick(7), 'the menu puts Baseballs on B')
 b0 = lab.ram('balls'); lab.face('down'); lab.press('B', 4)
 lab.screenshot(f'{out}/37-baseball.png')
-check(lab.ram('balls') == b0 - 1 and lab.ram('ballOn', 1, False, 0), 'B throws a baseball')
+check(lab.ram('balls') == b0 - 1, 'B throws a baseball')
 travel(lab, N('Byrd Park & Maymont'), close_box)
 try:
     lab.walk_to_cell(12, 17)

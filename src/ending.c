@@ -3,7 +3,7 @@
    back to Church Hill outside the tunnel. */
 #include "game.h"
 
-extern u8 boxDirty;
+extern u8 boxDirty, retMap;
 extern u16 boxMap[];
 void rcqLoadMap(u8 i);
 void settle(void);
@@ -108,6 +108,8 @@ void runEnding(void)
     boxDirty = 0;
     bgSetEnable(0);
     curMap = MAP_WIN;
+    retMap = 255;   /* outside now: no dungeon to come back to */
+    dentMap = 255;
     rcqLoadMap(curMap);
     px = WIN_X;
     py = WIN_Y;
