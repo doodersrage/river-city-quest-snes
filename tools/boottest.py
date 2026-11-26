@@ -69,7 +69,7 @@ lab.run(None, 30)
 
 # Stage 4: cut the bush hiding the Fan's chest, open it.
 def close_box():
-    for _ in range(15):
+    for _ in range(60):
         if not lab.ram('boxState'):
             return
         lab.press('A', 6)
@@ -339,6 +339,130 @@ lab.run('LEFT', 30)
 lab.run(None, 40)
 check(lab.map == 17, 'west again to Hollywood Cemetery')
 
+# Stage 6: the Gas Lantern from the Archivist in Capitol Square.
+def equip(item):
+    for _ in range(4):
+        if lab.ram('eqItem') == item:
+            return True
+        lab.press('SELECT', 2)
+    return lab.ram('eqItem') == item
+
+lab.walk_to_cell(15, 0)
+lab.run('UP', 30)
+lab.run(None, 40)
+lab.walk_to_cell(31, 10)
+lab.run('RIGHT', 30)
+lab.run(None, 40)
+check(lab.map == 12, 'north to the Fan, east to Capitol Square')
+lab.walk_to_cell(7, 8)
+lab.face('up')
+lab.press('A', 60)
+lab.screenshot(f'{out}/15-archivist.png')
+close_box()
+check(lab.ram('hasLantern') == 1 and lab.ram('eqItem') == 3, 'the Archivist hands over the Gas Lantern')
+lab.walk_to_cell(0, 10)
+lab.run('LEFT', 30)
+lab.run(None, 40)
+lab.walk_to_cell(15, 21)
+lab.run('DOWN', 30)
+lab.run(None, 40)
+check(lab.map == 17, 'back to Hollywood Cemetery')
+
+# Stage 6: blast the rubble off the pyramid door; the Pyramid and the Wraith.
+check(equip(2), 'SELECT switches B to the powder')
+lab.walk_to_cell(21, 7)
+lab.face('up')
+lab.press('B', 2)
+lab.walk_to_cell(21, 10)
+lab.run(None, 90)
+check(lab.ram('colRam', 1, False, 5 * 32 + 21) == 2, 'a keg clears the rubble from the pyramid door')
+lab.walk_to_cell(21, 6)
+lab.run('UP', 20)
+lab.run(None, 70)
+check(lab.map == lab.map_named('Hall of Lamps'), 'into the pyramid: the Hall of Lamps')
+equip(3)
+for cx, cy, d in [(3, 3, 'up'), (12, 3, 'up'), (12, 6, 'down'), (3, 6, 'down')]:
+    lab.walk_to_cell(cx, cy)
+    lab.face(d)
+    lab.press('B', 4)
+    if lab.ram('hp') <= 2:
+        lab.poke('hp', lab.ram('hpMax'))
+check(lab.ram('roomBraz', 1, False, lab.map) == 15, 'the lantern lights all four braziers')
+check(lab.ram('colRam', 1, False, 7) == 0, 'and the gate opens')
+lab.screenshot(f'{out}/16-hall-of-lamps.png')
+lab.walk_to_cell(7, 1)
+lab.run('UP', 40)
+lab.run(None, 40)
+check(lab.map == lab.map_named('Burial Vault') and clear_room(), 'the Burial Vault is cleared')
+lab.walk_to_cell(8, 3)
+lab.face('up')
+lab.press('A', 60)
+close_box()
+check(lab.ram('hasShield') == 1, 'a chest appears with the Cast-Iron Shield')
+lab.walk_to_cell(14, 5)
+lab.run('RIGHT', 40)
+lab.run(None, 40)
+check(lab.map == lab.map_named('Ossuary') and clear_room(), 'east, the Ossuary is cleared')
+lab.walk_to_cell(12, 3)
+lab.face('up')
+lab.press('A', 60)
+close_box()
+lab.walk_to_cell(7, 9)
+lab.run('DOWN', 10)
+lab.run('DOWN', 40)
+lab.run(None, 60)
+check(lab.map == lab.map_named('Heart of the Pyramid') and lab.ram('boxState'), 'its key opens the Heart of the Pyramid')
+close_box()
+lab.walk_to_cell(8, 7)
+vis_seen = refl_seen = False
+for _ in range(9000):
+    if lab.ram('boxState') or not lab.ram('bossOn'):
+        break
+    if lab.ram('hp') <= 2:
+        lab.poke('hp', lab.ram('hpMax'))
+    bx, by = lab.ram('bossX', 2, True) >> 4, lab.ram('bossY', 2, True) >> 4
+    x, y = lab.pos
+    if any(lab.ram('shotRefl', 1, False, k) and lab.ram('shotOn', 1, False, k) for k in range(10)):
+        refl_seen = True
+    if lab.ram('bossVis'):
+        vis_seen = True
+        dx, dy = bx - x, (by - 4) - y
+        if abs(dx) < 10 and abs(dy) < 22:
+            lab.run('UP' if dy < 0 else 'DOWN', 1)
+            lab.press('A', 10)
+        else:
+            lab.run(('RIGHT' if dx > 0 else 'LEFT') if abs(dx) >= 10 else ('UP' if dy < 0 else 'DOWN'), 1)
+    elif y < 120:
+        lab.run('DOWN', 1)
+    elif abs(x - 128) > 4:
+        lab.run('RIGHT' if x < 128 else 'LEFT', 1)
+    elif lab.ram('heroDir') != 1:
+        lab.face('up')         # stand facing it: the shield turns its orbs back
+    else:
+        lab.run(None, 1)
+check(refl_seen, 'the shield sends an orb back at the Wraith')
+check(vis_seen, 'its own orb makes the Wraith solid')
+check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'the Wraith is beaten')
+lab.run(None, 30)
+close_box()
+hpmax = lab.ram('hpMax')
+for c in [(7, 4), (9, 4)]:
+    try:
+        lab.walk_to_cell(*c)
+    except RuntimeError:
+        pass
+    close_box()
+    lab.run('DOWN', 4)
+    lab.run(None, 20)
+    close_box()
+lab.screenshot(f'{out}/17-wraith-beaten.png')
+check(lab.ram('keystones') == 3, 'the Iron Keystone (2 of 4)')
+check(lab.ram('hpMax') == hpmax + 2, 'and a heart container')
+lab.walk_to_cell(7, 7)
+lab.run('DOWN', 30)
+lab.run(None, 60)
+check(lab.map == 17, 'the stairs lead back out to Hollywood Cemetery')
+
 # Stage 3: let a ghost take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)
 for _ in range(1500):
@@ -347,7 +471,7 @@ for _ in range(1500):
     lab.run(None, 1)
 check(lab.ram('dying') == 1, 'a ghost takes the last heart')
 lab.run(None, 60)
-lab.screenshot(f'{out}/15-fog-takes-you.png')
+lab.screenshot(f'{out}/18-fog-takes-you.png')
 for _ in range(10):
     if not lab.ram('boxState'):
         break
