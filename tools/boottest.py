@@ -226,7 +226,7 @@ clanked = stunned = False
 def poke16(name, v):
     lab.poke(name, v & 0xFF, 0); lab.poke(name, (v >> 8) & 0xFF, 1)
 for t in range(9000):
-    if t == 3000 and not stunned:
+    if t >= 3000 and t % 1500 == 0 and lab.ram('bossState') != 2:
         # the bot hasn't managed it: line the two of you up in the middle of the hall and hook him
         poke16('bossX', 160 * 16); poke16('bossY', 88 * 16); lab.poke('bossState', 0)
         poke16('px', 104); poke16('py', 80)
