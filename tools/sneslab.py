@@ -90,9 +90,20 @@ class Lab:
                  for x in range(MAP_W)] for y in range(MAP_H)]
         for k in range(self.ram('blkN')):
             grid[self.ram('blkTY', 1, False, k)][self.ram('blkTX', 1, False, k)] = 1
+        def mark(x0, y0, x1, y1):
+            for cy in range(max(0, y0 // 16), min(MAP_H - 1, y1 // 16) + 1):
+                for cx in range(max(0, x0 // 16), min(MAP_W - 1, x1 // 16) + 1):
+                    grid[cy][cx] = 1
+        # townspeople (some wander, so take every cell they touch)
         for k in range(self.ram('npcCount')):
             nx, ny = self.ram('npcX', 2, True, k), self.ram('npcY', 2, True, k)
-            grid[ny // 16][nx // 16] = 1
+            mark(nx - 6, ny - 6, nx + 6, ny + 6)
+        # cars and the bus, with room to spare: they stop for you, so walking into one never ends
+        for k in range(2):
+            if 'carOn' in self.sym and self.ram('carOn', 1, False, k):
+                cx, cy = self.ram('carX', 2, True, k) >> 4, self.ram('carY', 2, True, k)
+                half = 20 if self.ram('carBus', 1, False, k) else 13
+                mark(cx - half - 6, cy - 4, cx + half + 6, cy + 4)
         return grid
 
     def path(self, goal):
@@ -135,10 +146,32 @@ class Lab:
         return False
 
     def walk_to_cell(self, cx, cy):
-        for c in self.path((cx, cy))[1:]:
-            if not self.steer_to(c[0] * 16 + 8, c[1] * 16 + 8):
-                raise RuntimeError(f'stuck near {self.pos} heading for cell {c}')
-        self.run(None, 2)
+        # People wander and cars drive, so a blocked step means: look again and take a new route.
+        for attempt in range(8):
+            ok = True
+            try:
+                route = self.path((cx, cy))
+            except RuntimeError:
+                if attempt == 7: raise
+                self.run(None, 30)
+                continue
+            for c in route[1:]:
+                if not self.steer_to(c[0] * 16 + 8, c[1] * 16 + 8, 400 if attempt == 7 else 60):
+                    ok = False
+                    break
+            if ok:
+                self.run(None, 2)
+                return
+            # something in the way: an animal close by gets the paddle, otherwise wait for traffic
+            x, y = self.pos
+            near = [k for k in range(self.ram('enCount')) if self.enemy(k)['alive']
+                    and abs(self.enemy(k)['x'] - x) + abs(self.enemy(k)['y'] - y) < 48]
+            if near:
+                self.fight(near[0], 300)
+            else:
+                self.run(None, 20)
+        npcs = [(self.ram('npcX', 2, True, k), self.ram('npcY', 2, True, k)) for k in range(self.ram('npcCount'))]
+        raise RuntimeError(f'stuck near {self.pos} heading for cell {(cx, cy)} (map {self.map}, people at {npcs})')
 
     def face(self, d):
         """Turn without moving: tap the direction for one frame, then step back if it moved."""

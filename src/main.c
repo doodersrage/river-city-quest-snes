@@ -509,6 +509,7 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     }
     combatLoad(ene);
     dungeonLoad();
+    lifeLoad();
 }
 
 u8 solidAt(s16 x, s16 y)
@@ -537,6 +538,8 @@ u8 blocked(s16 x, s16 y)
     for (k = 0; k < npcCount; k++)
         if (ABS(x - npcX[k]) < 12 && ABS(y - npcY[k]) < 12)
             return 1;
+    /* cars and the bus (never trap you if one is already on top of you) */
+    if (carHit(x, y) && !carHit(px, py)) return 1;
     return 0;
 }
 
@@ -615,6 +618,7 @@ void enterMap(u8 i)
     updateCamera();
     drawHero();
     drawNpcs();
+    lifeDraw();
     combatDraw();
     WaitForVBlank();
     songForMap();
@@ -702,8 +706,28 @@ u8 interact(void)
                 openShop(rec[5] - 1);
                 return 1;
             }
+            /* the bateau: the river historian, once you bring the oar, the pole and the tiller */
+            if (rec[8] == 7)
+            {
+                if (bateauDone)
+                {
+                    openText(rec[9] + 1);
+                    return 1;
+                }
+                if (parts >= 3)
+                {
+                    bateauDone = 1;
+                    hasLure = 1;
+                    coins = coins + 50 > 999 ? 999 : coins + 50;
+                    if (hpMax < 20) hpMax += 2; /* the heart charm */
+                    hp = hpMax;
+                    sfx(SFX_JING);
+                    openText(rec[9]);
+                    return 1;
+                }
+            }
             /* the trading quest: melon -> sheet music -> river map -> kayak */
-            if (rec[8] == 5)
+            else if (rec[8] == 5)
             {
                 if (hasBib && !hasShoes)
                 {
@@ -1005,6 +1029,7 @@ int main(void)
         {
             combatUpdate(pad, pressed);
             dungeonUpdate();
+            lifeUpdate();
             dx = 0;
             dy = 0;
             /* 1.5 px per frame like the web game's walk; slower while charging a spin */
@@ -1042,6 +1067,7 @@ int main(void)
 
         drawHero();
         drawNpcs();
+        lifeDraw();
         combatDraw();
         dungeonDraw();
         drawBalls();

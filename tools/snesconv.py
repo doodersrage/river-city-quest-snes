@@ -256,7 +256,7 @@ def light_tables(maps):
 
 LIT_AREAS = {'bank', 'byrd', 'capitol', 'vmfa', 'taproom', 'tearoom', 'hippo', 'stjohn', 'shop', 'rowhouse', 'station',
              'mansion', 'boathouse', 'studio'}   # web maps with lit:true (the Conservatory is lit but plays the dungeon song)
-TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4, 'bib': 5, 'shoes': 6}
+TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4, 'bib': 5, 'shoes': 6, 'parts': 7, 'bateau': 8}
 
 
 def build_world(w, extra_texts=()):
@@ -289,12 +289,14 @@ def build_world(w, extra_texts=()):
             q_need, q_give = TRADE[q['need']], TRADE[q['give']]
             q_text = len(texts)
             texts.append(encode_text(n['who'], q['pages']))
+            if q.get('after'):   # the historian afterwards: the next text
+                texts.append(encode_text(n['who'], q['after']))
         # coming back with the bottle empty or the balls low (the Brewer, the Ballplayer)
         refill = 255
         if n.get('refill'):
             refill = len(texts)
             texts.append(encode_text(n['who'], n['refill']['pages']))
-        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, shop, gift_talk, gift_item, q_need, q_text, q_give, refill))
+        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), (k + 1) | (0x80 if n.get('wander') else 0), shop, gift_talk, gift_item, q_need, q_text, q_give, refill))
     extra_ids = []
     for title, pages in extra_texts:
         extra_ids.append(text_id(title, pages))
@@ -487,6 +489,8 @@ def convert_combat(exp):
     for i in range(2):
         pals += sprite_palette(epals[i]) if i < len(epals) else bytes(32)
     pals += sprite_palette(p7x)
+    global TOWN_PAL
+    TOWN_PAL = p7x
     items_chr, item_defs = convert_items(exp, p7x)
     open(os.path.join(exp, '..', 'items.chr'), 'wb').write(items_chr)
     tables = ['/* Combat tables (generated). */',
@@ -526,9 +530,9 @@ def convert_combat(exp):
 # loaded in its room; only its non-empty cells take space.
 ITEM_CELLS = {'keg': 0, 'hook': 1, 'granite': 2, 'iron': 3, 'brick': 4, 'bronze': 5, 'container': 6, 'lantern': 7,
               'boom': 8, 'bug': 16, 'key': 17, 'carkey': 18, 'piece': 19, 'block': 20, 'can': 21,
-              'ball': 22, 'shoes': 23, 'bike': 24, 'bottle': 25, 'bib': 26, 'bikeside': 27, 'bikefront': 28}
+              'ball': 22, 'shoes': 23, 'bike': 24, 'bottle': 25, 'bib': 26, 'bikeside': 27, 'bikefront': 28, 'oar': 29}
 ITEM_SHEET_CELLS = 30
-BOSS_FIRST_CELL = 30
+BOSS_FIRST_CELL = 32   # row 4 of the second table (tile 128): bosses and town art load here
 BOSSES = ['foreman', 'turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']          # boss type 1, 2, ...
 
 
@@ -550,7 +554,7 @@ def convert_items(exp, pal):
                     idx.append(nearest(c15(p_), pal) + 1 if p_[3] > 96 else 0)
             sheet[t + qy * 16 + qx] = tile4bpp(idx)
     icons = Image.open(os.path.join(d, 'icons.png')).convert('RGBA')
-    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern', 'bug', 'key', 'carkey', 'piece', 'can', 'ball', 'shoes', 'bike', 'bottle', 'bib']):
+    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern', 'bug', 'key', 'carkey', 'piece', 'can', 'ball', 'shoes', 'bike', 'bottle', 'bib', 'oar']):
         put(ITEM_CELLS[name], icons, i * 16, 0)
     # the push block has its own palette (sprite palette 3, free in dungeon rooms)
     blk = Image.open(os.path.join(d, 'block.png')).convert('RGBA')
@@ -581,9 +585,9 @@ def convert_bosses(exp):
         nframes = im.width // 48
         pal = sorted({c15(p) for p in im.getdata() if p[3]})
         if len(pal) > 15: raise SystemExit(f'{name}: {len(pal)} colours')
-        first = BOSS_FIRST_CELL * 4      # tile offset of the boss area within the second table
+        first = obj_tile_of_frame(0, BOSS_FIRST_CELL)      # tile offset of the boss area within the second table
         sheet = [bytes(32)] * (256 - first)
-        tiles = []
+        tiles, seen = [], {}
         cell = BOSS_FIRST_CELL
         for f in range(nframes):
             for k in range(9):
@@ -591,7 +595,11 @@ def convert_bosses(exp):
                 px_ = [im.getpixel((x0 + x, y0 + y)) for y in range(16) for x in range(16)]
                 if not any(p[3] for p in px_):
                     tiles.append(0); continue
+                key = tuple(c15(p) if p[3] else None for p in px_)
+                if key in seen:     # the same 16x16 in another frame shares its cell
+                    tiles.append(seen[key]); continue
                 t = obj_tile_of_frame(0, cell)
+                seen[key] = 256 + t
                 cell += 1
                 if t + 17 >= 256: raise SystemExit(f'{name}: too many sprite cells')
                 for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
@@ -603,8 +611,52 @@ def convert_bosses(exp):
         pals.append(sprite_palette(pal))
         defs.append('static const u16 boss%dTile[%d] = {%s};  /* %s: frame*9 + cell, 0 = empty */'
                     % (bi + 1, nframes * 9, ', '.join(map(str, tiles)), name))
-    defs.append(f'#define VRAM_BOSS_OFS {BOSS_FIRST_CELL * 4 * 16}  /* words into the second OBJ table */')
+    defs.append(f'#define VRAM_BOSS_OFS {obj_tile_of_frame(0, BOSS_FIRST_CELL) * 16}  /* words into the second OBJ table */')
     return blobs, pals, defs
+
+
+# ---------- Stage 9: town life ----------
+# Cars, the Pulse bus and pigeons load into the boss area (cell 32 on) on outdoor maps, which never have a boss.
+TOWN_CELLS = {'car': 0, 'bus': 6, 'sit': 9, 'fly': 10}   # car colour c at 2c; bus 3 cells; fly 2 frames
+
+
+def convert_town(exp):
+    im = Image.open(os.path.join(exp, 'combat', 'town.png')).convert('RGBA')
+    pal = TOWN_PAL   # palette 7 (set by convert_combat), so night and weather tint them
+    first = obj_tile_of_frame(0, BOSS_FIRST_CELL)
+    sheet = [bytes(32)] * 128
+    for c in range(12):
+        t = obj_tile_of_frame(0, BOSS_FIRST_CELL + c)
+        for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            idx = []
+            for y in range(8):
+                for x in range(8):
+                    p_ = im.getpixel((c * 16 + qx * 8 + x, qy * 8 + y))
+                    idx.append(nearest(c15(p_), pal) + 1 if p_[3] > 96 else 0)
+            sheet[t - first + qy * 16 + qx] = tile4bpp(idx)
+    used = obj_tile_of_frame(0, BOSS_FIRST_CELL + 11) - first + 18
+    defs = [f'#define TOWN_{n.upper()} {c}' for n, c in TOWN_CELLS.items()]
+    defs.append('static const u16 townTile[12] = {%s};  /* OBJ tile of each town cell */'
+                % ', '.join(str(256 + obj_tile_of_frame(0, BOSS_FIRST_CELL + c)) for c in range(12)))
+    return b''.join(sheet[:used]), defs
+
+
+def town_tables(maps):
+    """Per map: two car lanes (tile row | 0x40 going left | 0x80 bus, 0 = none) and two pigeon spots (tx, ty; 255 = none)."""
+    lanes, bx, by = [], [], []
+    for m in maps:
+        cs = (m.get('cars') or [])[:2] if m['ow'] else []
+        for i in range(2):
+            c = cs[i] if i < len(cs) else None
+            lanes.append(0 if not c else c['y'] | (0x40 if c['dir'] < 0 else 0) | (0x80 if c['kind'] == 'bus' else 0))
+        bs = (m.get('birds') or [])[:2] if m['ow'] else []
+        for i in range(2):
+            b_ = bs[i] if i < len(bs) else None
+            bx.append(b_[0] if b_ else 255); by.append(b_[1] if b_ else 255)
+    j = lambda a: ', '.join(map(str, a))
+    return [f'static const u8 carLane[MAP_COUNT * 2] = {{{j(lanes)}}};',
+            f'static const u8 birdTx[MAP_COUNT * 2] = {{{j(bx)}}};',
+            f'static const u8 birdTy[MAP_COUNT * 2] = {{{j(by)}}};']
 
 
 # ---------- Stage 4: shops ----------
@@ -785,7 +837,7 @@ def main():
         xtr.append(len(pk))
         for it in pk:
             gid = pickup_gid.setdefault(m['id'] + ':' + it['id'], len(pickup_gid))
-            kind = {'skey': 9, 'carkey': 10, 'piece': 11, 'bib': 12}[it['kind']]
+            kind = {'skey': 9, 'carkey': 10, 'piece': 11, 'bib': 12, 'part': 14}[it['kind']]
             xtr += bytes((it['x'] & 0xFF, it['x'] >> 8, it['y'] & 0xFF, it['y'] >> 8, kind, gid))
         # Push blocks and the switches they go on (tx, ty each).
         bl, sw = (m.get('blocks') or [])[:4], m.get('switches') or []
@@ -872,7 +924,16 @@ def main():
         for n in range(1, 5):
             sys_texts.append((f'KEY{k}_{n}', 'Keystone', [f"You found the {boss_text['keynames'][kname]} Keystone! ({n} of 4)",
                               'All four hum together. The tunnel on Church Hill is waiting.' if n >= 4 else 'Take the stairs to head back up.']))
+    # "You found the bateau oar! (1 of 3)" for every part and count (web collect 'part')
+    for k, part in enumerate(['oar', 'pole', 'tiller']):
+        for n in range(1, 4):
+            sys_texts.append((f'PART{k}_{n}', 'Bateau Part', [f'You found the bateau {part}! ({n} of 3)',
+                              "That's every part! Take them to the historian at Ancarrow's Landing." if n == 3 else
+                              "The river historian at Ancarrow's Landing will want it."]))
     blob, defs = b'', []
+    for k, part in enumerate(['oar', 'pole', 'tiller']):
+        gid = [g for key, g in pickup_gid.items() if key.endswith(':' + part)]
+        defs.append(f'#define PART_GID{k} {gid[0] if gid else 255}')
     for name, title, pages in sys_texts:
         defs.append(f'#define TXT_{name} {len(blob)}')
         blob += encode_text(title, pages)
@@ -911,6 +972,7 @@ def main():
             'static const u8 mapDark[MAP_COUNT] = {%s};' % ', '.join(str(
                 0 if m['ow'] else 1 if m.get('lit') and m['area'] != 'conserv' else 3 if m['area'] == 'tunnel' else 2) for m in maps),
             *light_tables(maps),
+            *town_tables(maps),
             '#define RELIGHT_N %d' % len(relight),
             '#define MAP_WIN %d' % index_of['ow:3,0'],
             '#define WIN_X %d' % (win_door['ret'][0] * 16 + 8), '#define WIN_Y %d' % (win_door['ret'][1] * 16 + 8),
@@ -952,6 +1014,10 @@ def main():
     asm += ['.section ".items" superfree', 'items_chr:', '.incbin "data/items.chr"', 'items_chrend:',
             'block_pal:', '.incbin "data/block.pal"', '.ends', '']
     hdr += ['extern char items_chr, items_chrend, block_pal;']
+    town_chr, town_defs = convert_town(exp)
+    open(os.path.join(out, 'town.chr'), 'wb').write(town_chr)
+    asm += ['.section ".town" superfree', 'town_chr:', '.incbin "data/town.chr"', 'town_chrend:', '.ends', '']
+    hdr += ['extern char town_chr, town_chrend;'] + town_defs
     hdr += ['extern char combat_chr, combat_chrend, combat_pal;', ''] + ctables + ['']
     font = convert_font(os.path.join(exp, 'font.png'))
     open(os.path.join(out, 'font.chr'), 'wb').write(font)

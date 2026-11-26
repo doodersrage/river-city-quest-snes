@@ -80,8 +80,8 @@ const dump = vm.runInContext(`(function(){
       s.g=keep;}
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
       grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,
-      solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],lights,lit:!!s.lit,
-      pickups:(s.items||[]).filter(it=>['skey','carkey','piece','bib'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
+      solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],lights,lit:!!s.lit,cars:(s.cars||[]).map(c=>({y:c.y,dir:c.dir,kind:c.kind||'car'})),birds:s.birds||[],
+      pickups:(s.items||[]).filter(it=>['skey','carkey','piece','bib','part'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
       blocks:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='#'?[x,y]:null).filter(Boolean)),
       switches:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='^'?[x,y]:null).filter(Boolean)),
       dyn:dynAll.map(d=>({cells:d.cells,closed:d.closed,open:d.open,flag:d.flag||null,solved:d.solved||null})),
@@ -166,8 +166,12 @@ const world = vm.runInContext(`(function(){
       {const keep=st;st=newState();st.got.bib=1;const n=Object.assign({},n0);let r=null;SAID=null;
         try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
         if(r&&st.items.shoes)quest.push({need:'bib',give:'shoes',pages:pages(r)});st=keep;}
+      // The bateau: the river historian rebuilds it once you bring the oar, the pole and the tiller.
+      {const keep=st;st=newState();st.got.oar=st.got.pole=st.got.tiller=1;const n=Object.assign({},n0);let r=null;SAID=null;
+        try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
+        if(r&&st.f.bateau){const after=pages(TALK[n.talk](n));quest.push({need:'parts',give:'bateau',pages:pages(r),after});}st=keep;}
       let sp;try{sp=n0.spr&&n0.spr.down?n0.spr:npcSpr(n0);}catch(e){sp=npcSpr(Object.assign({hat:['#888','#666','#aaa'],shirt:['#888','#666','#aaa']},n0));}
-      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,gifts,quest,refill,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
+      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',wander:!!n0.wander,talks,gifts,quest,refill,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
     });
     out[id]={reads,npcs};
   }
@@ -181,7 +185,7 @@ for (const id in world) {
     n.spr.forEach((f, i) => x.drawImage(f, i * 16 + Math.floor((16 - f.width) / 2), 16 - f.height));
     const file = 'npcs/' + safe + '_' + k + '.png';
     fs.writeFileSync(path.join(OUT, file), c.toBuffer('image/png'));
-    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, gifts: n.gifts, quest: n.quest, refill: n.refill, shop: n.shop, file };
+    return { tx: n.tx, ty: n.ty, who: n.who, wander: n.wander, talks: n.talks, gifts: n.gifts, quest: n.quest, refill: n.refill, shop: n.shop, file };
   }) };
 }
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1));
@@ -278,7 +282,7 @@ const bossArt = vm.runInContext(`(function(){
     x.drawImage(SPR.raven.r.c,X-12,Y-9);x.drawImage(WINGS[fl].r.c,X-12+4,Y-9+(fl?6:-3));return c;});
   // 16x16 icons: keg, hook, keystones (granite, iron, brick, bronze); explosion 32x32 x2
   const icon=(img)=>{const c=mkCanvas(16,16),x=c.getContext('2d');x.drawImage(img,Math.floor((16-img.width)/2),Math.floor((16-img.height)/2));return c;};
-  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key),icon(IC.carkey),icon(IC.piece),icon(IC.can),icon(IC.ball),icon(IC.shoes),icon(IC.bike),icon(IC.bottle),icon(IC.bib)];
+  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key),icon(IC.carkey),icon(IC.piece),icon(IC.can),icon(IC.ball),icon(IC.shoes),icon(IC.bike),icon(IC.bottle),icon(IC.bib),icon(IC.oar)];
   // the bike under the hero (web drawBike), side and front, the hero's feet at (8,6)
   out.bikes=[1,0].map(dir=>{const c=mkCanvas(16,16),old=g,op=p,os=st.riding;g=c.getContext('2d');p={x:8,y:6,dir};st.riding=true;frame=0;
     try{drawBike();}catch(e){}g=old;p=op;st.riding=os;return c;});
@@ -286,6 +290,14 @@ const bossArt = vm.runInContext(`(function(){
     const cols=['#ffffff','#fff2a8','#f8e060','#f08020','#e83048'];const r0=i?14:10;
     for(let r=r0;r>0;r-=2){g.fillStyle=cols[Math.min(4,Math.floor((r0-r)/2.5)+i)];g.beginPath();g.arc(16,16,r,0,7);g.fill();}
     g=old;return c;});
+  // Town life: three cars (red, yellow, blue), the Pulse bus, a pigeon sitting and flying (2 wing beats).
+  // Each in 16-row cells, facing right; the ROM flips them. Car 32 wide, bus 48, pigeon 16 each.
+  {const c=mkCanvas(32*3+48+16*3,16),old=g;g=c.getContext('2d');frame=0;
+   ['#e83048','#f2c14e','#3d63c8'].forEach((col,i)=>drawCar({x:i*32+16,y:10,len:26,kind:'car',dir:1,col}));
+   drawCar({x:96+24,y:11,len:40,kind:'bus',dir:1});
+   {const x=152,y=10;R(x-3,y-2,6,4,'#1a1423');R(x-2,y-1,4,2,'#8a8496');R(x+2,y-4,3,3,'#1a1423');R(x+3,y-3,1,1,'#5f566a');}
+   [0,1].forEach(w=>{const x=168+w*16,y=9;R(x-2,y-1,4,3,'#1a1423');R(x-1,y,2,1,'#8a8496');R(x-6,y-(w?3:0),4,2,'#5f566a');R(x+2,y-(w?3:0),4,2,'#5f566a');});
+   g=old;out.town=c;}
   out.keynames=KEYNAME;
   // heart container pickup (16x16, centre 8,9)
   {const c=mkCanvas(16,16),old=g;g=c.getContext('2d');frame=0;const k={kind:'container',x:8,y:9,life:1e9,t:0};
@@ -300,6 +312,7 @@ const bossArt = vm.runInContext(`(function(){
   fs.writeFileSync(path.join(OUT, 'combat', 'foreman.png'), strip.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'container.png'), bossArt.container.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'block.png'), bossArt.block.toBuffer('image/png'));
+  fs.writeFileSync(path.join(OUT, 'combat', 'town.png'), bossArt.town.toBuffer('image/png'));
   for (const name of ['turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']) {
     const ts = createCanvas(48 * bossArt[name].length, 48), tx2 = ts.getContext('2d');
     bossArt[name].forEach((c, i) => tx2.drawImage(c, i * 48, 0));

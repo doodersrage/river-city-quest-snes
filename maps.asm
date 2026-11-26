@@ -1829,6 +1829,12 @@ block_pal:
 .incbin "data/block.pal"
 .ends
 
+.section ".town" superfree
+town_chr:
+.incbin "data/town.chr"
+town_chrend:
+.ends
+
 .section ".font" superfree
 font_chr:
 .incbin "data/font.chr"

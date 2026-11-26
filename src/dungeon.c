@@ -22,6 +22,7 @@ u8 hasHook, hasPowder, hasLantern, hasShield, hasBug, hasCan, powder, eqItem;
 u8 *pickPtr;   /* count, then pickups lying in the room: x, y (2 bytes each), kind, id */
 u8 *blkPtr;    /* count, then push blocks (tx, ty); then count, then switches (tx, ty) */
 u8 hasCarkey, pieces, hasKayak, tradeItem, melonTaken;
+u8 parts, bateauDone, hasLure;
 
 /* push blocks (web blocks, tryPush, updBlocks) */
 #define MAX_BLK 4
@@ -102,6 +103,9 @@ void dungeonInit(void)
     hasKayak = 0;
     tradeItem = 0;
     melonTaken = 0;
+    parts = 0;
+    bateauDone = 0;
+    hasLure = 0;
     blkN = 0;
     bugOn = 0;
     for (i = 0; i < sizeof(pickupGot); i++) pickupGot[i] = 0;

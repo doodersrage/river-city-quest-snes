@@ -142,6 +142,8 @@ def effects(music):
         ('SHOT', [(0, 520, .06, 'square', .04)], 16000, 8),
         ('SLAM', [(0, (80, 50), .4, 'sawtooth', .08)], 8000, 14),
         ('FANFARE', tune(F, 'triangle'), 8000, 12),
+        ('HORN', [(0, 440, .12, 'square', .03)], 8000, 9),        # a car stopping for you (web updLife)
+        ('FLAP', [(0, 1300, .04, 'square', .01)], 16000, 6),      # a pigeon taking off
     ]
 
 # ---------------------------------------------------------------- IT writer
