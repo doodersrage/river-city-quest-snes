@@ -23,6 +23,12 @@ static u8 hudSecs, hudGot, hudShown, bangK;
 static u16 bangBit;
 static s16 bangX, bangY;
 
+void chalReset(void)
+{
+    hudShown = 1; /* hides the countdown sprites on the next draw */
+    bangK = 255;
+}
+
 /* Called when a map loads: who here has a challenge (for the "!"). */
 void chalLoad(void)
 {

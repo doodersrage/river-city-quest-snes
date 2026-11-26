@@ -108,6 +108,9 @@ void dungeonInit(void)
     hasLure = 0;
     chalOn = 0;
     askKind = 0;
+    miniOn = 0; /* WRAM isn't cleared at power-on */
+    for (i = 0; i < 8; i++) miniBest[i] = 0;
+    chalReset();
     pins = 0;
     goldPaddle = 0;
     for (i = 0; i < (LORE_COUNT + 7) / 8; i++) loreRead[i] = 0;

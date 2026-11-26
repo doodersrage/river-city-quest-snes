@@ -175,11 +175,15 @@ class Lab:
 
     def face(self, d):
         """Turn without moving: tap the direction for one frame, then step back if it moved."""
+        want = {'down': 0, 'up': 1, 'left': 2, 'right': 3}.get(d)
         x, y = self.pos
-        self.run(DIRS[d], 1)
-        self.steer_to(x, y, 20)
-        self.run(DIRS[d], 1)
-        self.run(None, 1)
+        for _ in range(4):   # a one-frame tap can fall in a long frame: check it took
+            self.run(DIRS[d], 1)
+            self.steer_to(x, y, 20)
+            self.run(DIRS[d], 1)
+            self.run(None, 1)
+            if want is None or self.ram('heroDir') == want:
+                break
 
     # ---------- combat ----------
     def enemy(self, k):
