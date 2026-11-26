@@ -261,6 +261,8 @@ extern char combat_chr, combat_chrend, combat_pal;
 #define OBJ_FEATHER 245
 #define OBJ_RING 246
 #define OBJ_SEED 247
+#define OBJ_RAIN 248
+#define OBJ_SNOW 249
 #define ENEMY_TYPES 7
 /* 0=rat 1=squirrel 2=goose 3=scooter 4=crab 5=bat 6=ghost */
 static const u8 enemyHp[7] = {1, 1, 2, 2, 2, 1, 2};

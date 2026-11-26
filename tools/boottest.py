@@ -25,7 +25,7 @@ def screen():
 lab = Lab(rom, sym, root)
 lab.run(None, 120)
 check(screen().std() > 10, 'boots to a drawn map')
-SONG = {1: 'town', 2: 'south', 3: 'dungeon', 4: 'boss', 5: 'forge', 6: 'win'}
+SONG = {1: 'town', 2: 'south', 3: 'dungeon', 4: 'boss', 5: 'forge', 6: 'win', 8: 'night'}
 def song():
     return SONG.get(lab.ram('curSong'), lab.ram('curSong'))
 check(song() == 'town', f'the town theme plays ({song()})')
@@ -631,7 +631,7 @@ talk((8, 5), 'up')
 check(lab.ram('hasKayak') == 1, 'the Belle Isle kayaker lends a kayak')
 go('DOWN', (15, 21))
 check(lab.map == lab.map_named('Manchester'), 'paddle across the James to Manchester')
-check(song() == 'south', f'south of the river, its own theme ({song()})')
+check(song() in ('south', 'night'), f'south of the river, its own theme (or the night theme after dark) ({song()})')
 go('LEFT', (0, 10))
 equip(2); lab.walk_to_cell(22, 9); lab.face('up'); lab.press('B', 2); lab.walk_to_cell(22, 12); lab.run(None, 90)
 lab.walk_to_cell(22, 8); lab.run('UP', 20); lab.run(None, 30)
