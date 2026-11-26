@@ -32,7 +32,7 @@ static u16 row[32];
 static void bg3Row(u8 r, const char *s, u16 font)
 {
     u8 c, k = 0;
-    while (s[k]) k++;
+    while (s[k] && k < 32) k++;
     for (c = 0; c < 32; c++) row[c] = 0;
     for (c = 0; c < k && c < 32; c++) row[(32 - k) / 2 + c] = (font + s[c] - 32) | 0x2000;
     dmaCopyVram((u8 *)row, VRAM_BG3_MAP + r * 32, 64);
@@ -625,6 +625,8 @@ void runMini(u8 k)
     u16 pad, pressed, lastPad = 0xFFFF;
     u8 i;
     mgKind = k;
+    topDirty = msgDirty = 0; /* (work RAM starts as noise) */
+    top[0] = msg[0] = 0;
     miniOn = 1;
     fadeTo(0);
     setBrightness(0);
