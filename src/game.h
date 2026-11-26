@@ -109,6 +109,7 @@ extern u8 pkKind[];
 #define ASK_MINI 3
 extern u8 miniOn, lightDirty;
 void runMini(u8 k);
+void miniVBlank(void);
 extern u16 miniBest[];
 void chalReset(void);
 void miniOffer(u8 k, u8 text);

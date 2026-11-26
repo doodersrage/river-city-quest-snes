@@ -520,6 +520,22 @@ static void raceDraw(void)
     put8(40, 245, 30 + MY + 138 - ((rcY >> 4) * 138) / (rcLen >> 4), MT_NEEDLE, 1);
 }
 
+/* Called from rcqVBlank straight after the VBlank starts: a changed score line or message goes to BG3 then
+   (after the sound driver's turn it would land outside VBlank and be lost). */
+void miniVBlank(void)
+{
+    if (topDirty)
+    {
+        bg3Row(0, top, FONT_GOLD);
+        topDirty = 0;
+    }
+    else if (msgDirty)
+    {
+        bg3Row(27, msg, FONT_WHITE);
+        msgDirty = 0;
+    }
+}
+
 /* ---------- the frame around them ---------- */
 static const char *const miniName[4] = {"", "Batting Practice", "Rams Free Throws", "Ashe Center Tennis"};
 static const char *const medalName[3] = {"gold", "silver", "bronze"};
@@ -687,16 +703,6 @@ void runMini(u8 k)
         }
         mgT++;
         WaitForVBlank();
-        if (topDirty)
-        {
-            bg3Row(0, top, FONT_GOLD);
-            topDirty = 0;
-        }
-        else if (msgDirty)
-        {
-            bg3Row(27, msg, FONT_WHITE);
-            msgDirty = 0;
-        }
     }
     /* the result, then back to the neighbourhood */
     for (i = 0; i < 40; i++) WaitForVBlank();
