@@ -13,11 +13,19 @@
 
 .include "hdr.asm"
 
+; RAM lives in bank $7E whatever the ROM speed (FastROM moves code and data to banks $80 up)
+.BASE $00
 .RAMSECTION ".lightram" BANK $7E SLOT 2
 lightTab1 DSB 451
 lightTab2 DSB 451
 lightPrev DSB 8       ; cy, r of the circle on each table
 .ENDS
+
+.ifdef FASTROM
+.BASE $80
+.else
+.BASE $00
+.endif
 
 .SECTION ".light_text" SUPERFREE
 
