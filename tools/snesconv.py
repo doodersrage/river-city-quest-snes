@@ -430,7 +430,7 @@ def convert_font(path):
 ENEMY_TYPES = ['rat', 'squirrel', 'goose', 'scooter', 'crab', 'bat', 'ghost']
 ENEMY_HP = [1, 1, 2, 2, 2, 1, 2]          # HPS in the web game
 ENEMY_FRAME_OF = [0, 1, 2, 3, 4, 5, 7]    # bat animates between frames 5 and 6
-OBJ_ENEMY, OBJ_PADDLE, OBJ_HUD = 128, 160, 224
+OBJ_ENEMY, OBJ_PADDLE, OBJ_HUD = 64, 160, 224   # enemies: 64-127 since stage 12 (two frames each)
 HUD_HEART, HUD_HALF, HUD_EMPTY, HUD_COIN, HUD_DIGIT = 0, 1, 2, 3, 5
 
 
@@ -462,13 +462,21 @@ def convert_combat(exp):
         for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
             sheet[tile - 128 + qy * 16 + qx] = tile4bpp([idx16[(qy * 8 + y) * 16 + qx * 8 + x] for y in range(8) for x in range(8)])
 
-    en = Image.open(os.path.join(d, 'enemies.png')).convert('RGBA')
-    frames = [[en.getpixel((i * 16 + x, y)) for y in range(16) for x in range(16)] for i in range(8)]
+    # Stage 12: the SNES edition's own enemies (tools/art/enemies.py), two frames a type, at OBJ tiles 64-127
+    en = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'art', 'enemies.png')).convert('RGBA')
+    nfr = en.width // 16
+    frames = [[en.getpixel((i * 16 + x, y)) for y in range(16) for x in range(16)] for i in range(nfr)]
     sets = [frozenset(c15(p) for p in f if p[3]) for f in frames]
     epals, ewhich = pack_sprite_palettes(sets, 2)
+    esheet = [bytes(32)] * 64
     for i, f in enumerate(frames):
         pal = epals[ewhich[i]]
-        put16(obj_tile_of_frame(OBJ_ENEMY, i), [pal.index(c15(p)) + 1 if p[3] else 0 for p in f])
+        idx16 = [pal.index(c15(p)) + 1 if p[3] else 0 for p in f]
+        t0 = obj_tile_of_frame(0, i)
+        for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            esheet[t0 + qy * 16 + qx] = tile4bpp([idx16[(qy * 8 + y) * 16 + qx * 8 + x] for y in range(8) for x in range(8)])
+    global ENEMY_CHR
+    ENEMY_CHR = b''.join(esheet)
 
     # Palette 7: paddle, hearts, coins, digits.
     pd = Image.open(os.path.join(d, 'paddles.png')).convert('RGBA')
@@ -557,9 +565,8 @@ def convert_combat(exp):
               f'#define ENEMY_TYPES {len(ENEMY_TYPES)}',
               '/* ' + ' '.join(f'{i}={t}' for i, t in enumerate(ENEMY_TYPES)) + ' */',
               f'static const u8 enemyHp[{len(ENEMY_TYPES)}] = {{{", ".join(map(str, ENEMY_HP))}}};',
-              f'static const u16 enemyTile[{len(ENEMY_TYPES)}] = {{{", ".join(str(obj_tile_of_frame(OBJ_ENEMY, f)) for f in ENEMY_FRAME_OF)}}};',
-              f'static const u8 enemyPal[{len(ENEMY_TYPES)}] = {{{", ".join(str(5 + ewhich[f]) for f in ENEMY_FRAME_OF)}}};',
-              f'#define BAT_TILE2 {obj_tile_of_frame(OBJ_ENEMY, 6)}',
+              f'static const u16 enemyTile[{len(ENEMY_TYPES)}] = {{{", ".join(str(obj_tile_of_frame(OBJ_ENEMY, 2 * t)) for t in range(len(ENEMY_TYPES)))}}};   /* frame a; frame b is +2 */',
+              f'static const u8 enemyPal[{len(ENEMY_TYPES)}] = {{{", ".join(str(5 + ewhich[2 * t]) for t in range(len(ENEMY_TYPES)))}}};',
               f'static const u16 paddleTile[16] = {{{", ".join(str(obj_tile_of_frame(OBJ_PADDLE, a)) for a in range(16))}}};',
               f'static const s16 paddleOx[16] = {{{", ".join(map(str, pad_ox))}}};',
               f'static const s16 paddleOy[16] = {{{", ".join(map(str, pad_oy))}}};']
@@ -1408,6 +1415,8 @@ def main():
     open(os.path.join(out, 'combat.pal'), 'wb').write(cpal)
     asm += ['.section ".combat" superfree', 'combat_chr:', '.incbin "data/combat.chr"', 'combat_chrend:',
             'combat_pal:', '.incbin "data/combat.pal"', '.ends', '']
+    open(os.path.join(out, 'enemy.chr'), 'wb').write(ENEMY_CHR)
+    asm += ['.section ".enemy" superfree', 'enemy_chr:', '.incbin "data/enemy.chr"', 'enemy_chrend:', '.ends', '']
     import shutil
     shutil.copy(os.path.join(exp, '..', 'items.chr'), os.path.join(out, 'items.chr'))
     shutil.copy(os.path.join(exp, '..', 'block.pal'), os.path.join(out, 'block.pal'))
@@ -1432,7 +1441,7 @@ def main():
     open(os.path.join(out, 'town.chr'), 'wb').write(town_chr)
     asm += ['.section ".town" superfree', 'town_chr:', '.incbin "data/town.chr"', 'town_chrend:', '.ends', '']
     hdr += ['extern char town_chr, town_chrend;'] + town_defs
-    hdr += ['extern char combat_chr, combat_chrend, combat_pal;', ''] + ctables + ['']
+    hdr += ['extern char combat_chr, combat_chrend, combat_pal, enemy_chr, enemy_chrend;', ''] + ctables + ['']
     font = convert_font(os.path.join(exp, 'font.png'))
     open(os.path.join(out, 'font.chr'), 'wb').write(font)
     asm += ['.section ".font" superfree', 'font_chr:', '.incbin "data/font.chr"', 'font_chrend:', '.ends', '']

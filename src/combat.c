@@ -686,7 +686,7 @@ void combatDraw(void)
             continue;
         }
         tile = enemyTile[enType[k]];
-        if (enType[k] == T_BAT && (frameCount & 8)) tile = BAT_TILE2;
+        if ((frameCount + k * 5) & 8) tile += 2; /* the second frame (stage 12): everything moves, a little out of step */
         sprPut((id) >> 2, 1, sx, sy, 2, enFlip[k], tile, enemyPal[enType[k]]);
     }
 

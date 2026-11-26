@@ -559,6 +559,8 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     dmaCopyVram(map, VRAM_BG1_MAP, 64 * 64 * 2);
     dmaCopyCGram(pal, 0, 8 * 16 * 2);
     /* stage 12: people are 16x32 and streamed like the hero; here, while the screen is off, each one's first frame */
+    /* the enemies, two frames each (stage 12): OBJ tiles 64-127, which the minigames borrow, so with every map */
+    dmaCopyVram(&enemy_chr, VRAM_OBJ_CHR + 64 * 16, (&enemy_chrend - &enemy_chr));
     npcChr = och;
     for (k = 0; k < MAX_NPCS; k++)
     {
