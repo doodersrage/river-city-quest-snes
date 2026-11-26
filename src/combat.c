@@ -11,11 +11,12 @@ u16 coins;
 u8 dying;
 
 u8 enCount;
-u8 enType[MAX_EN], enHp[MAX_EN], enFlash[MAX_EN], enKt[MAX_EN], enStuck[MAX_EN], enFlip[MAX_EN], enAlive[MAX_EN];
+u8 enType[MAX_EN], enHp[MAX_EN], enFlash[MAX_EN], enKt[MAX_EN], enStuck[MAX_EN], enFlip[MAX_EN], enAlive[MAX_EN], enStun[MAX_EN];
+u8 enemiesExisted;
 s16 enX[MAX_EN], enY[MAX_EN], enVX[MAX_EN], enVY[MAX_EN], enKX[MAX_EN], enKY[MAX_EN];
 u16 enT[MAX_EN];
 
-u8 pkKind[MAX_PK]; /* 0 none, 1 coin, 2 heart */
+u8 pkKind[MAX_PK]; /* 0 none, 1 coin, 2 heart, 3 heart container */
 s16 pkX[MAX_PK], pkY[MAX_PK];
 u16 pkLife[MAX_PK];
 
@@ -67,7 +68,10 @@ void combatLoad(u8 *ene)
     u8 k, n;
     n = ene[0];
     if (n > MAX_EN) n = MAX_EN;
+    /* beaten rooms stay beaten (web: clr / boss flags); outdoors always refills */
+    if (mapW != 32 && (roomFlags[curMap] & (ROOM_CLEARED | ROOM_BOSS))) n = 0;
     enCount = n;
+    enemiesExisted = n > 0;
     for (k = 0; k < MAX_EN; k++)
     {
         enAlive[k] = 0;
@@ -82,6 +86,7 @@ void combatLoad(u8 *ene)
             enFlash[k] = 0;
             enKt[k] = 0;
             enStuck[k] = 0;
+            enStun[k] = 0;
             enFlip[k] = 0;
             enT[k] = rnd() % 30;
             enAlive[k] = 1;
@@ -146,9 +151,42 @@ void dropKind(s16 x, s16 y, u8 kind)
             pkKind[i] = kind;
             pkX[i] = x;
             pkY[i] = y;
-            pkLife[i] = 600;
+            pkLife[i] = kind == 3 ? 0xFFFF : 600;
             return;
         }
+}
+
+u8 enemiesAlive(void)
+{
+    u8 k;
+    for (k = 0; k < MAX_EN; k++)
+        if (enAlive[k]) return 1;
+    return 0;
+}
+
+/* The hook stuns what it hits (web updHook). */
+u8 hookHitsEnemy(s16 x, s16 y, s16 kx, s16 ky)
+{
+    u8 k;
+    for (k = 0; k < MAX_EN; k++)
+        if (enAlive[k] && ABS((enX[k] >> 4) - x) < 9 && ABS((enY[k] >> 4) - 6 - y) < 12)
+        {
+            hitEnemy(k, 1, kx, ky);
+            if (enAlive[k]) enStun[k] = 60;
+            return 1;
+        }
+    return 0;
+}
+
+void collectPickup(u8 k);
+
+/* ...and brings back what it touches */
+void hookGrabsPickup(s16 x, s16 y)
+{
+    u8 k;
+    for (k = 0; k < MAX_PK; k++)
+        if (pkKind[k] && ABS(pkX[k] - x) < 9 && ABS(pkY[k] - y) < 9)
+            collectPickup(k);
 }
 
 /* what a beaten enemy leaves behind (web kill()) */
@@ -157,6 +195,20 @@ void dropAt(s16 x, s16 y)
     u8 r = rnd() % 100;
     if (r < 30) dropKind(x, y, 1);
     else if (r < 44) dropKind(x, y, 2);
+}
+
+void collectPickup(u8 k)
+{
+    if (pkKind[k] == 1) { if (coins < 999) coins++; }
+    else if (pkKind[k] == 2) { hp += 2; if (hp > hpMax) hp = hpMax; }
+    else
+    {
+        if (hpMax < 20) hpMax += 2;
+        hp = hpMax;
+        roomFlags[curMap] |= ROOM_CONTAINER;
+        openTextAt((u8 *)&sys_txt + TXT_CONTAINER);
+    }
+    pkKind[k] = 0;
 }
 
 void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy)
@@ -194,7 +246,7 @@ void hurtHero(s16 sx, s16 sy)
     if (hp == 0)
     {
         dying = 1;
-        openTextAt((u8 *)&sys_txt + TXT_DEAD);
+        openTextAt((u8 *)&sys_txt + (dentMap != 255 ? TXT_DEADIN : TXT_DEAD));
     }
 }
 
@@ -205,6 +257,11 @@ void updEnemy(u8 k)
     u8 ty = enType[k];
 
     if (enFlash[k]) enFlash[k]--;
+    if (enStun[k])
+    {
+        enStun[k]--;
+        return;
+    }
     if (enKt[k])
     {
         enKt[k]--;
@@ -281,10 +338,16 @@ void updEnemy(u8 k)
     }
 }
 
-/* Is the hero mid-swing or spinning (so they can't walk)? */
+/* Is the hero mid-swing, spinning, knocked back or on the hook (so they can't walk)? */
 u8 heroBusy(void)
 {
-    return atk || spin || kt;
+    return atk || spin || kt || hookSt;
+}
+
+extern s16 bossX, bossY;
+u8 bossNear(s16 x, s16 y)
+{
+    return ABS((bossX >> 4) - x) < 14 && ABS((bossY >> 4) - 8 - y) < 18;
 }
 
 void combatUpdate(u16 pad, u16 pressed)
@@ -302,8 +365,12 @@ void combatUpdate(u16 pad, u16 pressed)
         if (ky && !blocked(px, py + ky)) py += ky;
     }
 
+    /* B fires the hook */
+    if ((pressed & KEY_B) && !atk && !spin && !charging)
+        fireHook();
+
     /* A swings (main.c calls interact() first and only swings if nothing was there) */
-    if ((pressed & KEY_A) && !atk && !spin)
+    if ((pressed & KEY_A) && !atk && !spin && !hookSt)
     {
         atk = 14;
         charging = 0;
@@ -320,6 +387,7 @@ void combatUpdate(u16 pad, u16 pressed)
                 d = dist(dx, dy);
                 if (d < 24) hitEnemy(k, 2, dx * 48 / d, dy * 48 / d);
             }
+        if (bossOn) bossHit(2);
         /* web: every 4th spin frame, cut at 8 points 16px out */
         if ((spin & 3) == 0)
         {
@@ -369,30 +437,34 @@ void combatUpdate(u16 pad, u16 pressed)
                     hitEnemy(k, 1, dirX[heroDir] * 40, dirY[heroDir] * 40);
             }
         if (atk == 10) cutAt(hx, hy);
+        if (bossOn && bossNear(hx, hy) && bossHit(1) == 2)
+        {
+            /* clank: the paddle bounces off the armour */
+            kx = -dirX[heroDir] * 2;
+            ky = -dirY[heroDir] * 2;
+            kt = 6;
+            atk = 0;
+        }
     }
 
     for (k = 0; k < MAX_EN; k++)
         if (enAlive[k])
         {
             updEnemy(k);
-            if (!dying && ABS((enX[k] >> 4) - px) < 9 && ABS((enY[k] >> 4) - py) < 9)
+            if (!dying && !enStun[k] && ABS((enX[k] >> 4) - px) < 9 && ABS((enY[k] >> 4) - py) < 9)
                 hurtHero(enX[k] >> 4, enY[k] >> 4);
         }
 
     for (k = 0; k < MAX_PK; k++)
         if (pkKind[k])
         {
-            if (!--pkLife[k])
+            if (pkKind[k] != 3 && !--pkLife[k])
             {
                 pkKind[k] = 0;
                 continue;
             }
             if (ABS(pkX[k] - px) < 10 && ABS(pkY[k] - py) < 10)
-            {
-                if (pkKind[k] == 1) { if (coins < 999) coins++; }
-                else { hp += 2; if (hp > hpMax) hp = hpMax; }
-                pkKind[k] = 0;
-            }
+                collectPickup(k);
         }
 }
 
@@ -445,6 +517,12 @@ void combatDraw(void)
         if (!pkKind[k] || (pkLife[k] < 120 && (frameCount & 4)) || sx < -8 || sx > SCREEN_W || sy < -8 || sy > SCREEN_H)
         {
             oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
+            continue;
+        }
+        if (pkKind[k] == 3)
+        {
+            oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
+            oamSet(id, (sx - 4) & 0x1FF, (sy - 4) & 0xFF, 2, 0, 0, OBJ_CONTAINER, PAL_CONTAINER);
             continue;
         }
         tile = pkKind[k] == 1 ? HUD_COIN + ((frameCount >> 3) & 1) : HUD_HEART;

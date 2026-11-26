@@ -68,9 +68,24 @@ class Lab:
         Image.fromarray(self.emu.get_screen()).save(path)
 
     # ---------- movement ----------
+    def map_named(self, name):
+        """Map index by its name, from the comments in the generated maps.h."""
+        import re
+        for line in open(os.path.join(self.root, 'maps.h')):
+            m = re.match(r'extern char m(\d+)_chr.*/\* (.*) \*/', line)
+            if m and m.group(2) == name:
+                return int(m.group(1))
+        raise KeyError(name)
+
     def solid_grid(self):
-        col = open(os.path.join(self.root, 'data', f'm{self.map}.col'), 'rb').read()
-        grid = [[1 if col[y * MAP_W + x] in (1, 4, 5) else 0 for x in range(MAP_W)] for y in range(MAP_H)]
+        """The live collision grid (colRam), so opened doors and cut bushes count."""
+        self.data.update_ram()
+        wram = self.data.memory.blocks[0x7E0000]
+        off = self.sym['colRam'] - 0x7E0000
+        col = [int(wram[off + i]) for i in range(MAP_W * MAP_H)]
+        w, h = self.ram('mapW'), self.ram('mapH')
+        grid = [[1 if (x >= w or y >= h or col[y * MAP_W + x] in (1, 4, 5, 6, 7, 8)) else 0
+                 for x in range(MAP_W)] for y in range(MAP_H)]
         for k in range(self.ram('npcCount')):
             nx, ny = self.ram('npcX', 2, True, k), self.ram('npcY', 2, True, k)
             grid[ny // 16][nx // 16] = 1

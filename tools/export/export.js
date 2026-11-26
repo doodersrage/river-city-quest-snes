@@ -39,7 +39,9 @@ for (const f of files) {
 // Top-level consts (SC, TS, g...) live in the context's shared script scope.
 // Scenes for the SNES port so far: the outdoor maps plus every single-room area (interiors, caves).
 vm.runInContext(`var SNES_AREAN={};for(const id in SC){const a=SC[id].area;SNES_AREAN[a]=(SNES_AREAN[a]||0)+1;}
-  function portScene(s){return s.ow||SNES_AREAN[s.area]==1;}`, sb);
+  var PORT_AREAS=${JSON.stringify((process.env.DUNGEONS || 'tredegar').split(','))};
+  function portScene(s){return s.ow||SNES_AREAN[s.area]==1||PORT_AREAS.includes(s.area);}`, sb);
+vm.runInContext('shadow=()=>{};', sb);   // soft shadows don't survive palette reduction
 const dump = vm.runInContext(`(function(){
   st=newState();p=newPlayer();   // a fresh game: chests closed, rubble in place
   const out=[];
@@ -51,17 +53,27 @@ const dump = vm.runInContext(`(function(){
       try{drawLandmarks(s,0);}catch(e){} try{drawDecor(s);}catch(e){} g=old; }
     catch(e){ out.push({id,err:String(e)}); continue; }
     // Same map with every chest open, for the tiles the ROM swaps in when you open one.
-    // ...and with every bush cut (bushes become the map's base ground, as cutAt() does).
-    let opened=null;const bushes=[];
+    // Alternate renders for tiles the ROM swaps in at runtime:
+    //  alt1: every locked door / gate / cracked wall open, every chest closed (including ones that
+    //        appear when a room is solved), boss stairs, bushes cut;  alt2: the same with chests open.
+    const bushes=[];
     for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++)if(s.g[y][x]=='b')bushes.push([x,y]);
-    if((s.chests||[]).length||bushes.length){const keep=s.chests.map(q=>s.g[q.ty][q.tx]);s.chests.forEach(q=>s.g[q.ty][q.tx]='o');
-      bushes.forEach(([x,y])=>s.g[y][x]=s.base);
-      opened=renderMap(s,0);const o2=g;g=opened.getContext('2d');try{drawLandmarks(s,0);}catch(e){}try{drawDecor(s);}catch(e){}g=o2;
-      s.chests.forEach((q,i)=>s.g[q.ty][q.tx]=keep[i]);bushes.forEach(([x,y])=>s.g[y][x]='b');}
+    let opened=null,closed=null;
+    const dynCells=[];for(const d of s.dyn)for(const [x,y] of d.cells)dynCells.push([x,y,d.open]);
+    if((s.chests||[]).length||bushes.length||dynCells.length||s.bossT){
+      const keep=s.g.map(r=>r.slice());
+      const paint=()=>{const c=renderMap(s,0),o2=g;g=c.getContext('2d');try{drawLandmarks(s,0);}catch(e){}try{drawDecor(s);}catch(e){}g=o2;return c;};
+      bushes.forEach(([x,y])=>s.g[y][x]=s.base);dynCells.forEach(([x,y,o])=>s.g[y][x]=o);
+      if(s.bossT){s.g[8][7]='E';s.g[8][8]='E';}
+      (s.chests||[]).forEach(q=>s.g[q.ty][q.tx]='c');closed=paint();
+      (s.chests||[]).forEach(q=>s.g[q.ty][q.tx]='o');opened=paint();
+      s.g=keep;}
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
-      grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,
+      grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,
+      solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,
+      dyn:s.dyn.map(d=>({cells:d.cells,closed:d.closed,open:d.open,flag:d.flag||null,solved:d.solved||null})),
       doors:(s.doors||[]).map(d=>({tx:d.tx,ty:d.ty,to:d.to,need:d.need||null,ret:d.ret})),
-      chests:(s.chests||[]).map(q=>({id:q.id,tx:q.tx,ty:q.ty,item:q.item})),bushes});
+      chests:(s.chests||[]).map(q=>({id:q.id,tx:q.tx,ty:q.ty,item:q.item,appear:!!q.appear})),bushes});
   }
   return out;
 })()`, sb);
@@ -72,8 +84,10 @@ for (const m of dump) {
   const safe = m.id.replace(/[^a-z0-9_-]+/gi, '_');
   fs.writeFileSync(path.join(OUT, 'maps', safe + '.png'), m.canvas.toBuffer('image/png'));
   if (m.opened) fs.writeFileSync(path.join(OUT, 'maps', safe + '.open.png'), m.opened.toBuffer('image/png'));
-  const { canvas, opened, ...meta } = m;
-  index.push({ ...meta, file: 'maps/' + safe + '.png', openFile: opened ? 'maps/' + safe + '.open.png' : null });
+  if (m.closed) fs.writeFileSync(path.join(OUT, 'maps', safe + '.alt.png'), m.closed.toBuffer('image/png'));
+  const { canvas, opened, closed, ...meta } = m;
+  index.push({ ...meta, file: 'maps/' + safe + '.png', openFile: opened ? 'maps/' + safe + '.open.png' : null,
+    altFile: closed ? 'maps/' + safe + '.alt.png' : null });
 }
 fs.writeFileSync(path.join(OUT, 'maps.json'), JSON.stringify(index, null, 1));
 
@@ -183,7 +197,7 @@ const combat = vm.runInContext(`(function(){
 const extra = vm.runInContext(`(function(){
   const gives={};
   for(const id in SC)for(const q of SC[id].chests||[]){if(gives[q.item])continue;
-    st=newState();p=newPlayer();let L;try{L=give(q.item);}catch(e){L=['You found something!'];}
+    st=newState();p=newPlayer();cur=SC[id];let L;try{L=give(q.item);}catch(e){L=['You found something!'];}
     gives[q.item]=(L||[]).map(String);}
   const shopOf=(list,title)=>({title,items:list.map(it=>{st=newState();p=newPlayer();st.items.basket=1;st.items.bottle=1;st.items.balls=1;st.items.powder=1;
     let msg='';try{const r=it.buy();msg=r?String(r):'';}catch(e){}
@@ -193,3 +207,34 @@ const extra = vm.runInContext(`(function(){
 })()`, sb);
 fs.writeFileSync(path.join(OUT, 'extra.json'), JSON.stringify(extra, null, 1));
 console.log('chest items', Object.keys(extra.gives).join(' '));
+
+// ---------- Stage 5: bosses, projectiles, the hook ----------
+const bossArt = vm.runInContext(`(function(){
+  const out={};
+  // The Iron Foreman: walk (2 steps), wind-up, stunned (2 blinks). 48x48, centre (24,40).
+  const fr=[];
+  const draw=(state,f)=>{const c=mkCanvas(48,48),old=g;g=c.getContext('2d');frame=f;
+    const e={x:24,y:40,state,t:1,hp:9,vx:0,f:1};drawForeman(e,false);g=old;return c;};
+  fr.push(draw('walk',0),draw('walk',8),draw('wind',2),draw('stun',0),draw('stun',4));
+  out.foreman=fr;
+  // heart container pickup (16x16, centre 8,9)
+  {const c=mkCanvas(16,16),old=g;g=c.getContext('2d');frame=0;const k={kind:'container',x:8,y:9,life:1e9,t:0};
+   R(1,1,15,14,'#1a1423');R(2,2,13,12,'#fff2a8');R(3,3,11,10,'#3a1c30');g.drawImage(HEART,4,4);g=old;out.container=c;}
+  out.text={foreman:BOSSTXT.foreman,foremanIntro:(typeof BOSSINTRO!=='undefined'&&BOSSINTRO.foreman)||null};
+  return out;})()`, sb);
+{
+  const strip = createCanvas(48 * bossArt.foreman.length, 48), x = strip.getContext('2d');
+  bossArt.foreman.forEach((c, i) => x.drawImage(c, i * 48, 0));
+  fs.writeFileSync(path.join(OUT, 'combat', 'foreman.png'), strip.toBuffer('image/png'));
+  fs.writeFileSync(path.join(OUT, 'combat', 'container.png'), bossArt.container.toBuffer('image/png'));
+  // spark shot (2 blinks) and the hook head and chain link, 8x8 each, drawn like the web game
+  const sm = createCanvas(32, 8), q = sm.getContext('2d');
+  const R2 = (X, Y, W, H, C) => { q.fillStyle = C; q.fillRect(X, Y, W, H); };
+  for (const [i, c] of [[0, '#f8e060'], [1, '#f08020']]) { const X = i * 8 + 4, Y = 4;
+    R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
+  { const X = 20, Y = 4; R2(X - 3, Y - 3, 7, 7, '#1a1423'); R2(X - 2, Y - 2, 5, 5, '#d8dce4'); R2(X - 1, Y - 1, 3, 3, '#8e909c'); }
+  { const X = 28, Y = 4; R2(X - 1, Y - 1, 3, 3, '#1a1423'); R2(X, Y, 1, 1, '#aeb2c0'); }
+  fs.writeFileSync(path.join(OUT, 'combat', 'small.png'), sm.toBuffer('image/png'));
+  const intro = vm.runInContext("(function(){try{return Object.entries(BANNERS||{})}catch(e){return null}})()", sb);
+  fs.writeFileSync(path.join(OUT, 'combat', 'boss.json'), JSON.stringify({ text: bossArt.text }, null, 1));
+}

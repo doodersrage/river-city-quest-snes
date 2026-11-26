@@ -1056,6 +1056,94 @@ m47_xtr:
 .incbin "data/m47.xtr"
 .ends
 
+.section ".map48" superfree
+m48_chr:
+.incbin "data/m48.chr"
+m48_chrend:
+m48_map:
+.incbin "data/m48.map"
+m48_pal:
+.incbin "data/m48.pal"
+m48_col:
+.incbin "data/m48.col"
+m48_wld:
+.incbin "data/m48.wld"
+m48_och:
+.incbin "data/m48.och"
+m48_opl:
+.incbin "data/m48.opl"
+m48_ene:
+.incbin "data/m48.ene"
+m48_xtr:
+.incbin "data/m48.xtr"
+.ends
+
+.section ".map49" superfree
+m49_chr:
+.incbin "data/m49.chr"
+m49_chrend:
+m49_map:
+.incbin "data/m49.map"
+m49_pal:
+.incbin "data/m49.pal"
+m49_col:
+.incbin "data/m49.col"
+m49_wld:
+.incbin "data/m49.wld"
+m49_och:
+.incbin "data/m49.och"
+m49_opl:
+.incbin "data/m49.opl"
+m49_ene:
+.incbin "data/m49.ene"
+m49_xtr:
+.incbin "data/m49.xtr"
+.ends
+
+.section ".map50" superfree
+m50_chr:
+.incbin "data/m50.chr"
+m50_chrend:
+m50_map:
+.incbin "data/m50.map"
+m50_pal:
+.incbin "data/m50.pal"
+m50_col:
+.incbin "data/m50.col"
+m50_wld:
+.incbin "data/m50.wld"
+m50_och:
+.incbin "data/m50.och"
+m50_opl:
+.incbin "data/m50.opl"
+m50_ene:
+.incbin "data/m50.ene"
+m50_xtr:
+.incbin "data/m50.xtr"
+.ends
+
+.section ".map51" superfree
+m51_chr:
+.incbin "data/m51.chr"
+m51_chrend:
+m51_map:
+.incbin "data/m51.map"
+m51_pal:
+.incbin "data/m51.pal"
+m51_col:
+.incbin "data/m51.col"
+m51_wld:
+.incbin "data/m51.wld"
+m51_och:
+.incbin "data/m51.och"
+m51_opl:
+.incbin "data/m51.opl"
+m51_ene:
+.incbin "data/m51.ene"
+m51_xtr:
+.incbin "data/m51.xtr"
+.ends
+
 .section ".hero" superfree
 hero_chr:
 .incbin "data/hero.chr"
@@ -1073,6 +1161,14 @@ sys_txt:
 .section ".shops" superfree
 shops_bin:
 .incbin "data/shops.bin"
+.ends
+
+.section ".boss" superfree
+boss_chr:
+.incbin "data/boss.chr"
+boss_chrend:
+boss_pal:
+.incbin "data/boss.pal"
 .ends
 
 .section ".combat" superfree

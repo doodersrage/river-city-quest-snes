@@ -6,12 +6,8 @@
 ---------------------------------------------------------------------------------*/
 #include "game.h"
 
-/* VRAM layout (word addresses). */
-#define VRAM_BG1_CHR 0x0000 /* up to 1024 4bpp tiles */
-#define VRAM_BG1_MAP 0x4000 /* 64x64 tilemap */
-#define VRAM_BG3_CHR 0x5000 /* 2bpp font and box frame */
-#define VRAM_BG3_MAP 0x5800 /* 32x32 text layer */
-#define VRAM_OBJ_CHR 0x6000 /* hero at tiles 0-31 */
+/* VRAM layout (word addresses, see game.h): BG1 tiles 0x0000, BG1 map 0x4000 (64x64),
+   BG3 font 0x5000, BG3 map 0x5800, sprites 0x6000 (hero 0-31), boss art 0x7000 (tiles 256+). */
 #define VRAM_OBJ_NPC (VRAM_OBJ_CHR + 32 * 16) /* NPCs from tile 32 */
 
 
@@ -33,7 +29,7 @@ u8 *bushes;   /* count, then tx, ty, 4 tilemap words of cut ground */
 u8 colRam[COL_STRIDE * 22]; /* the collision grid, copied to RAM so cut bushes open up */
 
 /* 2x2-cell tile changes to copy into the BG1 tilemap during the next vblank */
-#define MAX_PATCH 10
+#define MAX_PATCH 16
 u16 patchWords[MAX_PATCH][4];
 u16 patchAddr[MAX_PATCH];
 u8 patchCount;
@@ -364,14 +360,19 @@ u16 cellAddr(u8 cx, u8 cy)
 
 u8 *chestRec(u8 k)
 {
-    return chests + 1 + k * 14;
+    return chests + 1 + k * 23;
 }
 
-/* Queue a 2x2 tile change for 16px cell (tx, ty); w points at 4 little-endian words. */
-void queuePatch(u8 tx, u8 ty, u8 *w)
+/* Queue a 2x2 tile change for 16px cell (tx, ty); w points at 4 little-endian words.
+   now = 1 during forced blank: a full queue is written out at once instead of dropping changes. */
+void queuePatch(u8 tx, u8 ty, u8 *w, u8 now)
 {
     u8 i;
-    if (patchCount >= MAX_PATCH) return;
+    if (patchCount >= MAX_PATCH)
+    {
+        if (!now) return;
+        flushText();
+    }
     for (i = 0; i < 4; i++)
         patchWords[patchCount][i] = w[i * 2] | (w[i * 2 + 1] << 8);
     patchAddr[patchCount] = cellAddr(tx * 2, ty * 2); /* the row below is +32 words */
@@ -382,7 +383,7 @@ void queuePatch(u8 tx, u8 ty, u8 *w)
 void chestTiles(u8 k, u8 now)
 {
     u8 *r = chestRec(k);
-    queuePatch(r[0], r[1], r + 6);
+    queuePatch(r[0], r[1], r + 15, now);
     if (now) flushText();
 }
 
@@ -401,7 +402,7 @@ void cutAt(s16 x, s16 y)
         b = bushes + 1 + k * 10;
         if (b[0] == tx && b[1] == ty)
         {
-            queuePatch(tx, ty, b + 2);
+            queuePatch(tx, ty, b + 2, 0);
             break;
         }
     }
@@ -426,16 +427,21 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     mapH = xtr[1];
     doors = xtr + 2;
     chests = doors + 1 + doors[0] * 4;
-    bushes = chests + 1 + chests[0] * 14;
+    bushes = chests + 1 + chests[0] * 23;
+    rec = bushes + 1 + bushes[0] * 10;
+    roomArea = rec[0];
+    roomSolve = rec[1];
+    roomBoss = rec[2];
+    roomEntry = rec[3];
+    dynPtr = rec + 4;
+    rec = dynPtr + 1;
+    for (k = 0; k < dynPtr[0]; k++)
+        rec += 3 + rec[2] * 10;
+    stairsPtr = rec;
     for (n = 0; n < COL_STRIDE * 22; n++)
         colRam[n] = col[n];
     colGrid = colRam;
-    for (k = 0; k < chests[0]; k++)
-    {
-        gid = chestRec(k)[2];
-        if (chestOpen[gid >> 3] & (1 << (gid & 7)))
-            chestTiles(k, 1);
-    }
+
     npcCount = wld[WLD_NNPC];
     for (k = 0; k < npcCount; k++)
     {
@@ -446,6 +452,7 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
         npcTalk[k] = 0;
     }
     combatLoad(ene);
+    dungeonLoad();
 }
 
 u8 solidAt(s16 x, s16 y)
@@ -456,7 +463,7 @@ u8 solidAt(s16 x, s16 y)
     tx = x >> 4;
     ty = y >> 4;
     tx = colGrid[ty * COL_STRIDE + tx];
-    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH;
+    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_LOCK;
 }
 
 u8 blocked(s16 x, s16 y)
@@ -552,6 +559,7 @@ void enterMap(u8 i)
         setBrightness(b);
         WaitForVBlank();
     }
+    dungeonEntered();
 }
 
 void drawHero(void)
@@ -657,10 +665,19 @@ u8 interact(void)
                 hpMax += 2;
                 hp = hpMax;
             }
+            else if (rec[3] == EFFECT_KEY)
+                keys[roomArea]++;
+            else if (rec[3] == EFFECT_ITEM && rec[4] == ITEM_HOOK)
+                hasHook = 1;
             chestTiles(k, 0);
             openText(rec[5]);
             return 1;
         }
+    }
+    if (tryUnlock(fx, fy) == 2)
+    {
+        openTextAt((u8 *)&sys_txt + TXT_LOCKED);
+        return 1;
     }
     t = wld[WLD_GRID + (fy >> 4) * COL_STRIDE + (fx >> 4)];
     if (!t)
@@ -687,6 +704,7 @@ void useDoor(u8 tx, u8 ty)
             py = 8 * 16 + 6;
             heroDir = 1;
             enterMap(d[2]);
+            if (roomArea) dentMap = d[2];
             return;
         }
         px = tx * 16 + 8;
@@ -713,6 +731,7 @@ void checkCells(void)
         heroDir = 0;
         m = retMap;
         retMap = 255;
+        dentMap = 255;
         enterMap(m);
     }
 }
@@ -721,9 +740,18 @@ void checkCells(void)
 void respawn(void)
 {
     dying = 0;
-    retMap = 255;
     hp = hpMax;
     inv = 60;
+    if (dentMap != 255)
+    {
+        /* "You come to at the entrance." */
+        px = 128;
+        py = 8 * 16 + 6;
+        heroDir = 1;
+        enterMap(dentMap);
+        return;
+    }
+    retMap = 255;
     px = 7 * 16 + 8;
     py = 8 * 16 + 8;
     heroDir = 2;
@@ -770,6 +798,7 @@ int main(void)
         shopOwned[1][i] = 0;
     }
     combatInit();
+    dungeonInit();
     setBrightness(0); /* forced blank while loading */
 
     /* Enemies, the paddle and the HUD: OBJ tiles 128-255, sprite palettes 5-7. */
@@ -825,6 +854,7 @@ int main(void)
         else
         {
             combatUpdate(pad, pressed);
+            dungeonUpdate();
             dx = 0;
             dy = 0;
             /* 1.5 px per frame like the web game's walk; slower while charging a spin */
@@ -842,7 +872,9 @@ int main(void)
             {
                 step++;
                 if (dx && !blocked(px + dx, py)) px += dx;
+                else if (dx) tryUnlock(px + dx * 8, py);
                 if (dy && !blocked(px, py + dy)) py += dy;
+                else if (dy) tryUnlock(px, py + dy * 8);
                 checkExits();
                 checkCells();
             }
@@ -854,6 +886,7 @@ int main(void)
         drawHero();
         drawNpcs();
         combatDraw();
+        dungeonDraw();
         hudDraw();
         WaitForVBlank();
         flushText();

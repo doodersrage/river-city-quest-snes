@@ -21,8 +21,24 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define OAM_NPCS 16   /* MAX_NPCS */
 #define OAM_ENEMIES 20
 #define OAM_PICKUPS 26
+#define OAM_BOSS 40   /* 9 */
+#define OAM_SHOTS 50  /* 10 */
+#define OAM_HOOK 64   /* 14 */
 #define MAX_EN 6
 #define MAX_PK 6
+
+/* VRAM (word addresses) */
+#define VRAM_BG1_CHR 0x0000
+#define VRAM_BG1_MAP 0x4000
+#define VRAM_BG3_CHR 0x5000
+#define VRAM_BG3_MAP 0x5800
+#define VRAM_OBJ_CHR 0x6000
+
+/* roomFlags bits */
+#define ROOM_CLEARED 1
+#define ROOM_BOSS 2
+#define ROOM_CONTAINER 4
+#define ROOM_SEEN 8
 
 extern u8 *colGrid;
 extern u8 curMap;
@@ -38,7 +54,32 @@ extern s8 kx, ky;
 extern u16 coins;
 extern u8 dying;
 
+extern u8 *chests;
+extern u8 chestOpen[];
+extern u8 roomArea, roomSolve, roomBoss, roomEntry;
+extern u8 *dynPtr, *stairsPtr;
+extern u8 roomFlags[];
+extern u8 keys[];
+extern u8 hasHook, dentMap, hookSt, bossOn;
+extern u8 enemiesExisted;
+
 u8 solidAt(s16 x, s16 y);
+u8 *chestRec(u8 k);
+void queuePatch(u8 tx, u8 ty, u8 *w, u8 now);
+void hurtHero(s16 sx, s16 sy);
+u8 enBlocked(s16 x, s16 y);
+u8 enemiesAlive(void);
+u8 hookHitsEnemy(s16 x, s16 y, s16 kx, s16 ky);
+void hookGrabsPickup(s16 x, s16 y);
+void dungeonInit(void);
+void dungeonLoad(void);
+void dungeonEntered(void);
+void dungeonUpdate(void);
+void dungeonDraw(void);
+void applyRoomState(u8 now);
+u8 tryUnlock(s16 x, s16 y);
+u8 bossHit(u8 dmg);
+void fireHook(void);
 u8 blocked(s16 x, s16 y);
 void enterMap(u8 i);
 void openTextAt(u8 *p);
