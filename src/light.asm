@@ -13,7 +13,7 @@
 
 .include "hdr.asm"
 
-.RAMSECTION ".lightram" BANK $7E SLOT RAMSLOT_0
+.RAMSECTION ".lightram" BANK $7E SLOT 2
 lightTab1 DSB 451
 lightTab2 DSB 451
 .ENDS
