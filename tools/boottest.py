@@ -137,12 +137,21 @@ lab.screenshot(f'{out}/9-hollywood-cemetery.png')
 
 # Stage 5: Tredegar Iron Works, start to finish.
 def clear_room():
-    for _ in range(12):
+    missed = set()
+    for _ in range(24):
         alive = [k for k in range(lab.ram('enCount')) if lab.enemy(k)['alive']]
         if not alive:
             break
+        tries = [k for k in alive if k not in missed]
+        if not tries:
+            # everything left is out of reach (a bat over a pit): give it time to drift back
+            missed.clear()
+            lab.run(None, 90)
+            continue
         x, y = lab.pos
-        lab.fight(min(alive, key=lambda k: abs(lab.enemy(k)['x'] - x) + abs(lab.enemy(k)['y'] - y)), 900)
+        k = min(tries, key=lambda k: abs(lab.enemy(k)['x'] - x) + abs(lab.enemy(k)['y'] - y))
+        if lab.fight(k, 600) is None:
+            missed.add(k)
         if lab.ram('hp') <= 2:
             lab.poke('hp', lab.ram('hpMax'))  # this test checks the dungeon, not our dodging
     return not any(lab.enemy(k)['alive'] for k in range(lab.ram('enCount')))
