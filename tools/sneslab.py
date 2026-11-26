@@ -18,6 +18,7 @@ MAP_W, MAP_H, HALF = 32, 22, 5
 
 class Lab:
     def __init__(self, rom, sym, root):
+        self.rom = rom
         self.emu = retro.RetroEmulator(rom)
         self.data = retro.data.GameData()
         self.emu.configure_data(self.data)
@@ -190,6 +191,19 @@ class Lab:
         return {'x': self.ram('enX', 2, True, k) >> 4, 'y': self.ram('enY', 2, True, k) >> 4,
                 'alive': self.ram('enAlive', 1, False, k), 'type': self.ram('enType', 1, False, k),
                 'hp': self.ram('enHp', 1, False, k)}
+
+    def power_cycle(self):
+        """Switch the console off and on: a fresh emulator, keeping only the battery-backed SRAM."""
+        import gc
+        self.data.update_ram()
+        sram = bytes(self.data.memory.blocks[0x700000])
+        del self.emu
+        gc.collect()
+        self.emu = retro.RetroEmulator(self.rom)
+        self.data = retro.data.GameData()
+        self.emu.configure_data(self.data)
+        for i, v in enumerate(sram):
+            self.data.memory.assign(0x700000 + i, '|u1', v)
 
     def poke(self, name, value, index=0):
         """Write one byte of a game variable (for tests that need a set-up state)."""

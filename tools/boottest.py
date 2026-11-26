@@ -1538,16 +1538,16 @@ check(lab.ram('frogsDone') and lab.ram('coins', 2) == min(999, coins + 40) and n
       f"the naturalist counts them: 40 coins and the Maymont card ({ncards()} cards)")
 lab.poke('wx', 0); lab.poke('wxK', 0)
 
-# Stage 11: every arrival saves to SRAM. Reset the console: slot 1 is on the title, and CONTINUE puts you back.
+# Stage 11: every arrival saves to SRAM. Switch the console off and on: slot 1 is on the title, and CONTINUE puts you back.
 travel(lab, N('Broad Street'), close_box)
 close_box()
 lab.run(None, 20)
 where, pos, coins = lab.map, lab.pos, lab.ram('coins', 2)
 lab.poke('coins', (coins + 123) & 0xFF); lab.poke('coins', ((coins + 123) >> 8) & 0xFF, 1)   # spent after the save
-lab.emu.reset()
+lab.power_cycle()
 lab.run(None, 150)
 lab.screenshot(f'{out}/90-title-with-a-save.png')
-check(lab.ram('saveSlot') == 0 and lab.ram('curSong') == 7, 'a reset goes back to the title')
+check(lab.ram('saveSlot') == 0 and lab.ram('curSong') == 7, 'switched off and on: the title again')
 lab.press('A', 30)                       # slot 1 is used: CONTINUE / ERASE / BACK
 lab.screenshot(f'{out}/91-continue.png')
 lab.press('A', 120)

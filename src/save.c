@@ -136,9 +136,10 @@ u8 slotOk(u8 slot)
     return saveBuf[saveLen] == (c & 0xFF) && saveBuf[saveLen + 1] == (c >> 8);
 }
 
-/* start the game from a slot (after slotOk said yes) */
+/* start the game from a slot (one the title saw was good) */
 void loadGame(u8 slot)
 {
+    slotOk(slot); /* the buffer may hold another slot by now */
     svMode = 0;
     saveWalk();
     heroName[8] = 0;
