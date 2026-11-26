@@ -866,9 +866,16 @@ walk((4, 5)); lab.steer_to(72, 90); lab.run('UP', 40); lab.run(None, 70); close_
 check(lab.map == N('Church Hill Tunnel'), 'the four keystones open the Church Hill Tunnel')
 lab.screenshot(f'{out}/41-church-hill-tunnel.png')
 clear_room()
-equip(2); walk((14, 5)); lab.face('right'); lab.press('B', 2); walk((10, 5)); lab.run(None, 100)
+entry_clear = clear_room()
+for _ in range(3):
+    if lab.ram('colRam', 1, False, 5 * 32 + 15) == 0: break
+    equip(2); walk((14, 5)); lab.face('right'); lab.press('B', 2); walk((10, 5)); lab.run(None, 100)
+wall = [lab.ram('colRam', 1, False, y * 32 + 15) for y in (4, 5, 6)]
 walk((15, 5)); lab.run('RIGHT', 30); lab.run(None, 60); close_box()
-check(lab.map == N('Flooded Siding') and clear_room(), 'a keg opens the Flooded Siding')
+in_siding = lab.map == N('Flooded Siding')
+siding_clear = in_siding and clear_room()
+check(in_siding and siding_clear, f"a keg opens the Flooded Siding (entry cleared {entry_clear}, wall {wall}, map {lab.map}, powder {lab.ram('powder')}, "
+      f"left {[(lab.enemy(k)['type'], lab.enemy(k)['x'], lab.enemy(k)['y']) for k in range(6) if lab.enemy(k)['alive']]})")
 equip(5); walk((7, 5)); lab.face('right'); lab.press('B', 8); lab.run(None, 60); close_box()
 check(lab.ram('keys', 1, False, lab.ram('roomArea')) == 1, 'the Gold-Bug fetches the key from the island')
 walk((7, 1)); lab.run('UP', 10); lab.run('UP', 40); lab.run(None, 60); close_box()
