@@ -197,6 +197,14 @@ def _neighbours(root):
     return {d: [int(v) for v in re.search(r'nb%s\[MAP_COUNT\] = \{([^}]*)\}' % d, h).group(1).split(',')] for d in 'NSEW'}
 
 
+def _edge_open(root, m, d):
+    """Whether map m has a walkable cell on its d edge (outdoor maps are 32x22)."""
+    col = open(os.path.join(root, 'data', f'm{m}.col'), 'rb').read()
+    cells = [col[(0 if d == 'N' else 21) * 32 + x] for x in range(32)] if d in 'NS' else \
+            [col[y * 32 + (0 if d == 'W' else 31)] for y in range(22)]
+    return any(c in (0, 10) for c in cells)
+
+
 def route(lab, dest):
     """The edges to take (N, S, E, W) from the current map to dest, breadth first."""
     from collections import deque
@@ -206,7 +214,7 @@ def route(lab, dest):
         m = q.popleft()
         for d in 'NSEW':
             n = nb[d][m]
-            if n != 255 and n not in prev:
+            if n != 255 and n not in prev and _edge_open(lab.root, m, d):
                 prev[n] = (m, d)
                 q.append(n)
     out, m = [], dest
@@ -227,16 +235,28 @@ def leave(lab, d, close_box):
         cells, key = [(x, y) for y in range(h) if not g[y][x]], 'LEFT' if d == 'W' else 'RIGHT'
     cells.sort(key=lambda c: abs(c[0] - w // 2) + abs(c[1] - h // 2))
     m0 = lab.map
+    want = _neighbours(lab.root)[d][m0]
     for c in cells:
         try:
             lab.walk_to_cell(*c)
         except RuntimeError:
-            continue
-        lab.run(key, 30)
-        lab.run(None, 40)
+            pass
+        if lab.map == m0:
+            lab.run(key, 30)
+            lab.run(None, 40)
         close_box()
-        if lab.map != m0:
+        if lab.map == want:
             return True
+        if lab.map != m0:
+            # stumbled through a door on the way: walk back out the way we came
+            for back in ('DOWN', 'UP', 'LEFT', 'RIGHT'):
+                lab.run(back, 40)
+                lab.run(None, 40)
+                close_box()
+                if lab.map == m0:
+                    break
+            if lab.map != m0:
+                return False
     return False
 
 

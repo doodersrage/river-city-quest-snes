@@ -78,7 +78,7 @@ const dump = vm.runInContext(`(function(){
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
       grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,
       solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],
-      pickups:(s.items||[]).filter(it=>['skey','carkey','piece'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
+      pickups:(s.items||[]).filter(it=>['skey','carkey','piece','bib'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
       blocks:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='#'?[x,y]:null).filter(Boolean)),
       switches:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='^'?[x,y]:null).filter(Boolean)),
       dyn:dynAll.map(d=>({cells:d.cells,closed:d.closed,open:d.open,flag:d.flag||null,solved:d.solved||null})),
@@ -116,7 +116,7 @@ console.log('exported', index.length, 'maps of', dump.length);
 // ---------- Stage 2: things to read and people to talk to, per outdoor map ----------
 fs.mkdirSync(path.join(OUT, 'npcs'), { recursive: true });
 // Sound and pop-ups have no meaning here; silence them so talk functions run cleanly.
-vm.runInContext('toast=()=>{};tune=()=>{};sfx=()=>{};var SAID=null;say=(l)=>{SAID=l;};p=newPlayer();', sb);
+vm.runInContext('toast=()=>{};tune=()=>{};sfx=()=>{};var SAID=null;say=(l)=>{SAID=l;};p=newPlayer();offer=(n,pre)=>pre;', sb);
 vm.runInContext('var DEBUG=' + (process.env.DEBUG ? 1 : 0), sb);
 const world = vm.runInContext(`(function(){
   st=newState();
@@ -154,8 +154,17 @@ const world = vm.runInContext(`(function(){
         const got=st.items.kayak?'kayak':st.trade;
         if(r&&got!==need)quest.push({need:need||'none',give:got,pages:pages(r)});
         st=keep;}
+      // What someone says when you come back with the bottle empty or the balls nearly gone.
+      let refill=null;
+      for(const it of ['bottle','balls']){const keep=st;st=newState();st.items[it]=1;st.bottle=0;st.ammo.balls=0;
+        const n=Object.assign({},n0);let r=null;SAID=null;try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
+        if(r&&(it=='bottle'?st.bottle:st.ammo.balls))refill={item:it,pages:pages(r)};st=keep;}
+      // The race bib: the Runner trades his spare Running Shoes for it.
+      {const keep=st;st=newState();st.got.bib=1;const n=Object.assign({},n0);let r=null;SAID=null;
+        try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
+        if(r&&st.items.shoes)quest.push({need:'bib',give:'shoes',pages:pages(r)});st=keep;}
       let sp;try{sp=n0.spr&&n0.spr.down?n0.spr:npcSpr(n0);}catch(e){sp=npcSpr(Object.assign({hat:['#888','#666','#aaa'],shirt:['#888','#666','#aaa']},n0));}
-      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,gifts,quest,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
+      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,gifts,quest,refill,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
     });
     out[id]={reads,npcs};
   }
@@ -169,7 +178,7 @@ for (const id in world) {
     n.spr.forEach((f, i) => x.drawImage(f, i * 16 + Math.floor((16 - f.width) / 2), 16 - f.height));
     const file = 'npcs/' + safe + '_' + k + '.png';
     fs.writeFileSync(path.join(OUT, file), c.toBuffer('image/png'));
-    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, gifts: n.gifts, quest: n.quest, shop: n.shop, file };
+    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, gifts: n.gifts, quest: n.quest, refill: n.refill, shop: n.shop, file };
   }) };
 }
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1));
@@ -261,7 +270,10 @@ const bossArt = vm.runInContext(`(function(){
     x.drawImage(SPR.raven.r.c,X-12,Y-9);x.drawImage(WINGS[fl].r.c,X-12+4,Y-9+(fl?6:-3));return c;});
   // 16x16 icons: keg, hook, keystones (granite, iron, brick, bronze); explosion 32x32 x2
   const icon=(img)=>{const c=mkCanvas(16,16),x=c.getContext('2d');x.drawImage(img,Math.floor((16-img.width)/2),Math.floor((16-img.height)/2));return c;};
-  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key),icon(IC.carkey),icon(IC.piece),icon(IC.can)];
+  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key),icon(IC.carkey),icon(IC.piece),icon(IC.can),icon(IC.ball),icon(IC.shoes),icon(IC.bike),icon(IC.bottle),icon(IC.bib)];
+  // the bike under the hero (web drawBike), side and front, the hero's feet at (8,6)
+  out.bikes=[1,0].map(dir=>{const c=mkCanvas(16,16),old=g,op=p,os=st.riding;g=c.getContext('2d');p={x:8,y:6,dir};st.riding=true;frame=0;
+    try{drawBike();}catch(e){}g=old;p=op;st.riding=os;return c;});
   out.boom=[0,1].map(i=>{const c=mkCanvas(32,32),old=g;g=c.getContext('2d');
     const cols=['#ffffff','#fff2a8','#f8e060','#f08020','#e83048'];const r0=i?14:10;
     for(let r=r0;r>0;r-=2){g.fillStyle=cols[Math.min(4,Math.floor((r0-r)/2.5)+i)];g.beginPath();g.arc(16,16,r,0,7);g.fill();}
@@ -270,7 +282,7 @@ const bossArt = vm.runInContext(`(function(){
   // heart container pickup (16x16, centre 8,9)
   {const c=mkCanvas(16,16),old=g;g=c.getContext('2d');frame=0;const k={kind:'container',x:8,y:9,life:1e9,t:0};
    R(1,1,15,14,'#1a1423');R(2,2,13,12,'#fff2a8');R(3,3,11,10,'#3a1c30');g.drawImage(HEART,4,4);g=old;out.container=c;}
-  out.text={foreman:BOSSTXT.foreman,foremanIntro:BOSSINTRO.foreman,turtle:BOSSTXT.turtle,turtleIntro:BOSSINTRO.turtle,wraith:BOSSTXT.wraith,wraithIntro:BOSSINTRO.wraith,raven:BOSSTXT.raven,ravenIntro:BOSSINTRO.raven,bell:BOSSTXT.bell,bellIntro:BOSSINTRO.bell,arum:BOSSTXT.arum,arumIntro:BOSSINTRO.arum,can:'The sprout drinks it up and grows!',bloom:'The Titan Arum unfurls!'};
+  out.text={foreman:BOSSTXT.foreman,foremanIntro:BOSSINTRO.foreman,turtle:BOSSTXT.turtle,turtleIntro:BOSSINTRO.turtle,wraith:BOSSTXT.wraith,wraithIntro:BOSSINTRO.wraith,raven:BOSSTXT.raven,ravenIntro:BOSSINTRO.raven,bell:BOSSTXT.bell,bellIntro:BOSSINTRO.bell,arum:BOSSTXT.arum,arumIntro:BOSSINTRO.arum,can:'The sprout drinks it up and grows!',bib:['A race bib from the Monument Avenue 10K.','A runner in the Fan must be missing it.'],bloom:'The Titan Arum unfurls!'};
   return out;})()`, sb);
 {
   const strip = createCanvas(48 * bossArt.foreman.length, 48), x = strip.getContext('2d');
@@ -286,6 +298,9 @@ const bossArt = vm.runInContext(`(function(){
   const ic = createCanvas(16 * bossArt.icons.length, 16), ix = ic.getContext('2d');
   bossArt.icons.forEach((c, i) => ix.drawImage(c, i * 16, 0));
   fs.writeFileSync(path.join(OUT, 'combat', 'icons.png'), ic.toBuffer('image/png'));
+  const bk = createCanvas(32, 16), bkx = bk.getContext('2d');
+  bossArt.bikes.forEach((c, i) => bkx.drawImage(c, i * 16, 0));
+  fs.writeFileSync(path.join(OUT, 'combat', 'bikes.png'), bk.toBuffer('image/png'));
   const bm = createCanvas(64, 32), bx = bm.getContext('2d');
   bossArt.boom.forEach((c, i) => bx.drawImage(c, i * 32, 0));
   fs.writeFileSync(path.join(OUT, 'combat', 'boom.png'), bm.toBuffer('image/png'));

@@ -113,22 +113,28 @@ extern char sys_txt;
 #define TXT_PIECE3 2328
 #define TXT_PIECE4 2388
 #define TXT_NOPOWDER 2454
-#define TXT_KEY0_1 2479
-#define TXT_KEY0_2 2562
-#define TXT_KEY0_3 2645
-#define TXT_KEY0_4 2728
-#define TXT_KEY1_1 2839
-#define TXT_KEY1_2 2919
-#define TXT_KEY1_3 2999
-#define TXT_KEY1_4 3079
-#define TXT_KEY2_1 3187
-#define TXT_KEY2_2 3268
-#define TXT_KEY2_3 3349
-#define TXT_KEY2_4 3430
-#define TXT_KEY3_1 3539
-#define TXT_KEY3_2 3621
-#define TXT_KEY3_3 3703
-#define TXT_KEY3_4 3785
+#define TXT_NOBALLS 2479
+#define TXT_NOBIKE 2498
+#define TXT_DRINK 2527
+#define TXT_EMPTY 2555
+#define TXT_FULL 2600
+#define TXT_BIB 2635
+#define TXT_KEY0_1 2725
+#define TXT_KEY0_2 2808
+#define TXT_KEY0_3 2891
+#define TXT_KEY0_4 2974
+#define TXT_KEY1_1 3085
+#define TXT_KEY1_2 3165
+#define TXT_KEY1_3 3245
+#define TXT_KEY1_4 3325
+#define TXT_KEY2_1 3433
+#define TXT_KEY2_2 3514
+#define TXT_KEY2_3 3595
+#define TXT_KEY2_4 3676
+#define TXT_KEY3_1 3785
+#define TXT_KEY3_2 3867
+#define TXT_KEY3_3 3949
+#define TXT_KEY3_4 4031
 #define MAP_CAPITOL 12
 static const u16 keystoneTxt[16] = {TXT_KEY0_1, TXT_KEY0_2, TXT_KEY0_3, TXT_KEY0_4, TXT_KEY1_1, TXT_KEY1_2, TXT_KEY1_3, TXT_KEY1_4, TXT_KEY2_1, TXT_KEY2_2, TXT_KEY2_3, TXT_KEY2_4, TXT_KEY3_1, TXT_KEY3_2, TXT_KEY3_3, TXT_KEY3_4};
 static const u16 bossInTxt[7] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN, TXT_BELL_IN, TXT_ARUM_IN};
@@ -143,7 +149,12 @@ extern char shops_bin;
 #define SHOP_ONCE 0
 #define SHOP_REPEAT 1
 #define SHOP_LOCKED 2
+#define SHOP_NEEDS 3
 #define EFFECT_HEART 1
+#define EFFECT_BALLS 2
+#define EFFECT_KEGS 3
+#define EFFECT_GINGER 4
+#define EFFECT_SATCHEL 5
 #define SHOP_OFS_SHOP 0
 #define SHOP_OFS_MARKET 458
 #define SHOP_MSGS 736
@@ -172,13 +183,13 @@ extern char boss3_chr, boss3_chrend, boss3_pal;
 extern char boss4_chr, boss4_chrend, boss4_pal;
 extern char boss5_chr, boss5_chrend, boss5_pal;
 extern char boss6_chr, boss6_chrend, boss6_pal;
-static const u16 boss1Tile[36] = {0, 352, 354, 356, 358, 360, 362, 364, 366, 0, 384, 386, 388, 390, 392, 394, 396, 398, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452, 454, 456, 458, 460, 462, 480, 482};  /* foreman: frame*9 + cell, 0 = empty */
-static const u16 boss2Tile[36] = {0, 0, 0, 352, 354, 356, 358, 360, 362, 0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 0, 0, 392, 394, 396, 398, 416, 418, 0, 0, 0, 420, 422, 424, 426, 428, 430};  /* turtle: frame*9 + cell, 0 = empty */
-static const u16 boss3Tile[36] = {0, 0, 0, 352, 354, 356, 358, 360, 362, 0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 0, 0, 392, 394, 396, 398, 416, 418, 0, 0, 0, 420, 422, 424, 426, 428, 430};  /* wraith: frame*9 + cell, 0 = empty */
-static const u16 boss4Tile[18] = {0, 0, 0, 0, 352, 354, 356, 358, 360, 0, 0, 0, 0, 362, 364, 366, 384, 386};  /* raven: frame*9 + cell, 0 = empty */
-static const u16 boss5Tile[18] = {0, 0, 0, 352, 354, 356, 358, 360, 362, 0, 364, 366, 384, 386, 388, 390, 392, 394};  /* bell: frame*9 + cell, 0 = empty */
-static const u16 boss6Tile[27] = {0, 352, 0, 0, 354, 0, 356, 358, 360, 0, 362, 0, 0, 364, 0, 366, 384, 386, 0, 388, 390, 392, 394, 396, 398, 416, 418};  /* arum: frame*9 + cell, 0 = empty */
-#define VRAM_BOSS_OFS 1536  /* words into the second OBJ table */
+static const u16 boss1Tile[36] = {0, 364, 366, 384, 386, 388, 390, 392, 394, 0, 396, 398, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452, 454, 456, 458, 460, 462, 480, 482, 484, 486, 488, 490, 492, 494};  /* foreman: frame*9 + cell, 0 = empty */
+static const u16 boss2Tile[36] = {0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 0, 0, 392, 394, 396, 398, 416, 418, 0, 0, 0, 420, 422, 424, 426, 428, 430, 0, 0, 0, 448, 450, 452, 454, 456, 458};  /* turtle: frame*9 + cell, 0 = empty */
+static const u16 boss3Tile[36] = {0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 0, 0, 392, 394, 396, 398, 416, 418, 0, 0, 0, 420, 422, 424, 426, 428, 430, 0, 0, 0, 448, 450, 452, 454, 456, 458};  /* wraith: frame*9 + cell, 0 = empty */
+static const u16 boss4Tile[18] = {0, 0, 0, 0, 364, 366, 384, 386, 388, 0, 0, 0, 0, 390, 392, 394, 396, 398};  /* raven: frame*9 + cell, 0 = empty */
+static const u16 boss5Tile[18] = {0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 392, 394, 396, 398, 416, 418, 420, 422};  /* bell: frame*9 + cell, 0 = empty */
+static const u16 boss6Tile[27] = {0, 364, 0, 0, 366, 0, 384, 386, 388, 0, 390, 0, 0, 392, 0, 394, 396, 398, 0, 416, 418, 420, 422, 424, 426, 428, 430};  /* arum: frame*9 + cell, 0 = empty */
+#define VRAM_BOSS_OFS 1920  /* words into the second OBJ table */
 #define PAL_BOSS 1
 #define PAL_ITEM 7
 #define AREA_COUNT 7
@@ -189,10 +200,14 @@ static const u16 boss6Tile[27] = {0, 352, 0, 0, 354, 0, 356, 358, 360, 0, 362, 0
 #define ITEM_SHIELD 4
 #define ITEM_BUG 5
 #define ITEM_CAN 6
+#define ITEM_BALLS 7
+#define ITEM_SHOES 8
+#define ITEM_BIKE 9
+#define ITEM_BOTTLE 10
 #define EFFECT_KEY 3
 #define EFFECT_ITEM 4
 #define EFFECT_PIECE 5
-#define PICKUP_COUNT 9
+#define PICKUP_COUNT 10
 #define PAL_BLOCK 3
 
 extern char items_chr, items_chrend, block_pal;
@@ -244,6 +259,13 @@ static const s8 sinTab[64] = {0, 6, 12, 19, 24, 30, 36, 41, 45, 49, 53, 56, 59, 
 #define OBJ_I_PIECE 326
 #define OBJ_I_BLOCK 328
 #define OBJ_I_CAN 330
+#define OBJ_I_BALL 332
+#define OBJ_I_SHOES 334
+#define OBJ_I_BIKE 352
+#define OBJ_I_BOTTLE 354
+#define OBJ_I_BIB 356
+#define OBJ_I_BIKESIDE 358
+#define OBJ_I_BIKEFRONT 360
 #define OBJ_I_KEYSTONE OBJ_I_GRANITE  /* +2 per keystone: granite, iron, brick, bronze */
 
 

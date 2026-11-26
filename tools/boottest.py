@@ -735,11 +735,104 @@ lab.screenshot(f'{out}/35-arum-beaten.png')
 lab.walk_to_cell(7, 7); lab.run('DOWN', 30); lab.run(None, 60); close_box()
 check(lab.map == lab.map_named('Lewis Ginter Botanical Garden'), 'the stairs lead back out to Lewis Ginter')
 
+# Stage 6: gear from around town, and the item menu on START.
+def walk(cell):
+    m0, outdoor = lab.map, lab.ram('mapW') == 32
+    for _ in range(4):
+        try:
+            lab.walk_to_cell(*cell)
+        except RuntimeError:
+            close_box(); lab.run(None, 30)
+        if lab.map != m0 and not outdoor:
+            return          # walked out a door on purpose
+        if lab.map != m0:   # knocked over an edge: come back
+            close_box(); travel(lab, m0, close_box)
+            continue
+        if (lab.pos[0] // 16, lab.pos[1] // 16) == tuple(cell):
+            return
+    lab.walk_to_cell(*cell)
+def talk2(cell, d):
+    walk(cell); lab.face(d); lab.press('A', 60); close_box()
+def menu_pick(item):
+    lab.press('START', 10)
+    items = [lab.ram('menuList', 1, False, i) for i in range(lab.ram('menuN'))]
+    while lab.ram('menuCur') < items.index(item): lab.press('DOWN', 4)
+    while lab.ram('menuCur') > items.index(item): lab.press('UP', 4)
+    lab.press('A', 6)
+    return lab.ram('eqItem') == item and not lab.ram('boxState')
+N = lab.map_named
+travel(lab, N("Scott's Addition"), close_box)
+talk2((13, 9), 'up')
+check(lab.ram('hasBalls') and lab.ram('balls') == 15, 'the Ballplayer in Scott\'s Addition gives you Baseballs')
+walk((23, 5)); lab.run('UP', 20); lab.run(None, 60); close_box()
+lab.poke('hp', 2)
+talk2((7, 4), 'up')
+check(lab.map == N("Scott's Addition Taproom") and lab.ram('hasBottle') and lab.ram('bottleFull') and lab.ram('hp') == lab.ram('hpMax'),
+      'the Brewer pours a bottle of Ginger Beer and tops up your hearts')
+walk((7, 9)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+lab.press('START', 10)
+lab.screenshot(f'{out}/36-item-menu.png')
+check(lab.ram('boxState') == 5 and lab.ram('menuN') >= 7, f"START opens the item menu ({lab.ram('menuN')} items)")
+lab.press('START', 6)
+check(menu_pick(7), 'the menu puts Baseballs on B')
+b0 = lab.ram('balls'); lab.face('down'); lab.press('B', 4)
+lab.screenshot(f'{out}/37-baseball.png')
+check(lab.ram('balls') == b0 - 1 and lab.ram('ballOn', 1, False, 0), 'B throws a baseball')
+travel(lab, N('Byrd Park & Maymont'), close_box)
+try:
+    lab.walk_to_cell(12, 17)
+except RuntimeError:
+    pass
+lab.run(None, 20); close_box()
+check(lab.ram('hasBib'), 'a race bib in Byrd Park')
+travel(lab, N('The Fan'), close_box)
+for _ in range(4):
+    talk2((26, 7), 'up')
+    if lab.ram('hasShoes'): break
+check(lab.ram('hasShoes'), 'the Runner in the Fan trades his spare Running Shoes for it')
+check(menu_pick(8), 'Running Shoes on B')
+walk((10, 12)); lab.face('right'); x0 = lab.pos[0]; lab.press('B', 1); lab.run(None, 8)
+lab.screenshot(f'{out}/38-dash.png'); lab.run(None, 20)
+check(lab.pos[0] - x0 > 40, f'B dashes ({lab.pos[0] - x0} px)')
+travel(lab, N('Rocketts Landing'), close_box)
+for _ in range(4):
+    talk2((20, 11), 'up')
+    if lab.ram('hasBike'): break
+check(lab.ram('hasBike'), 'the Trail Cyclist at Rocketts Landing hands over a bicycle')
+walk((6, 12)); lab.press('B', 2)
+x0 = lab.pos[0]; lab.run('RIGHT', 60)
+lab.screenshot(f'{out}/39-bike.png')
+check(lab.ram('riding') and lab.pos[0] - x0 >= 110, f'B hops on the bike: {lab.pos[0] - x0} px in a second (walking is 90)')
+lab.press('A', 4)
+check(not lab.ram('riding'), 'A hops off')
+check(menu_pick(10), 'Ginger Beer on B')
+lab.poke('hp', 1); lab.press('B', 10); close_box()
+check(lab.ram('hp') == lab.ram('hpMax') and not lab.ram('bottleFull'), 'drinking it refills every heart')
+travel(lab, N('Carytown'), close_box)
+walk((6, 17)); lab.run('UP', 30); lab.run(None, 40)
+lab.poke('coins', 200); lab.poke('balls', 5)
+walk((8, 5)); lab.face('up'); lab.press('A', 10)
+for idx, what in ((9, 'Ginger Beer'), (10, '10 Baseballs'), (7, 'Big Satchel')):
+    while lab.ram('shopCur') < idx: lab.press('DOWN', 3)
+    while lab.ram('shopCur') > idx: lab.press('UP', 3)
+    if idx == 10: lab.screenshot(f'{out}/40-shop-gear.png')
+    lab.press('A', 60); lab.press('A', 10)
+lab.press('B', 10)
+check(lab.ram('bottleFull') and lab.ram('balls') == 15 and lab.ram('capBalls') == 50 and lab.ram('capPowder') == 16,
+      'Carytown Goods refills the bottle, sells baseballs and the Big Satchel')
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+check(lab.map == N('Carytown'), 'back out to Carytown')
+
 # Stage 3: let an enemy take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)
-for _ in range(1500):
+# put a rat right on top of the hero (wherever the gear run ended, there may be none nearby)
+lab.poke('enAlive', 1, 0); lab.poke('enType', 0, 0); lab.poke('enHp', 1, 0); lab.poke('enFlash', 0, 0)
+for _ in range(300):
     if lab.ram('dying'):
         break
+    x, y = lab.pos
+    for name, v in (('enX', x * 16), ('enY', y * 16)):
+        lab.poke(name, v & 0xFF, 0); lab.poke(name, (v >> 8) & 0xFF, 1)
     lab.run(None, 1)
 check(lab.ram('dying') == 1, 'an enemy takes the last heart')
 lab.run(None, 60)

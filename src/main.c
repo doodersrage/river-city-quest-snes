@@ -13,7 +13,6 @@
 
 #define PRIO 0x2000 /* tilemap priority bit: the box draws over sprites */
 #define BOX_ROWS 8
-#define FILL (FONT_WHITE)  /* a space: box fill colour */
 
 extern void rcqLoadMap(u8 i);
 void drawHero(void);
@@ -200,12 +199,19 @@ u8 *shopItem(u8 j)
     return shopBase + SHOP_HEAD + j * SHOP_ITEM;
 }
 
-/* 0 buyable, 1 sold out, 2 locked (shows its lock text) */
+/* 0 buyable, 1 sold out, 2 locked (shows its lock text), 3 full */
 u8 shopStatus(u8 j)
 {
     u8 *it = shopItem(j);
-    u8 kind = it[SHOP_NAME + SHOP_LOCK + 1], req = it[SHOP_NAME + SHOP_LOCK + 2];
+    u8 kind = it[SHOP_NAME + SHOP_LOCK + 1], req = it[SHOP_NAME + SHOP_LOCK + 2], e;
     if (kind == SHOP_LOCKED) return 2;
+    if (kind == SHOP_NEEDS)
+    {
+        if (!hasItem(req)) return 2;
+        e = it[SHOP_NAME + SHOP_LOCK + 3];
+        if ((e == EFFECT_BALLS && balls >= capBalls) || (e == EFFECT_KEGS && powder >= capPowder) || (e == EFFECT_GINGER && bottleFull)) return 3;
+        return 0;
+    }
     if (req != 255 && !shopOwned[shopId][req]) return 2;
     if (kind == SHOP_ONCE && shopOwned[shopId][j]) return 1;
     return 0;
@@ -227,6 +233,7 @@ void drawShop(void)
         st = shopStatus(j);
         if (st == 1) boxText(2 + r, 22, (u8 *)"SOLD OUT", FONT_GOLD);
         else if (st == 2) boxTextRight(2 + r, 29, it + SHOP_NAME, FONT_GOLD);
+        else if (st == 3) boxTextRight(2 + r, 29, (u8 *)"FULL", FONT_GOLD);
         else boxNum(2 + r, 29, it[SHOP_NAME + SHOP_LOCK]);
     }
     boxText(6, 2, (u8 *)"A: BUY   B: LEAVE", FONT_GOLD);
@@ -253,7 +260,7 @@ void shopBuy(void)
     shopReturn = 1;
     if (st)
     {
-        openTextAt((u8 *)&sys_txt + (st == 1 ? TXT_SOLDOUT : TXT_NOTYET));
+        openTextAt((u8 *)&sys_txt + (st == 1 ? TXT_SOLDOUT : st == 3 ? TXT_FULL : TXT_NOTYET));
         return;
     }
     if (coins < price)
@@ -267,6 +274,22 @@ void shopBuy(void)
     {
         hpMax += 2;
         hp = hpMax;
+    }
+    switch (it[SHOP_NAME + SHOP_LOCK + 3])
+    {
+    case EFFECT_BALLS:
+        balls = balls + 10 > capBalls ? capBalls : balls + 10;
+        break;
+    case EFFECT_KEGS:
+        powder = powder + 4 > capPowder ? capPowder : powder + 4;
+        break;
+    case EFFECT_GINGER:
+        bottleFull = 1;
+        break;
+    case EFFECT_SATCHEL:
+        capBalls = 50;
+        capPowder = 16;
+        break;
     }
     mo = it[SHOP_NAME + SHOP_LOCK + 4] | (it[SHOP_NAME + SHOP_LOCK + 5] << 8);
     openTextAt((u8 *)&shops_bin + SHOP_MSGS + mo);
@@ -327,6 +350,11 @@ void updateText(u16 pressed)
     if (boxState == BOX_SHOP)
     {
         updateShop(pressed);
+        return;
+    }
+    if (boxState == BOX_MENU)
+    {
+        updateMenu(pressed);
         return;
     }
     if (boxState == BOX_TYPING)
@@ -444,6 +472,7 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     colGrid = col;
     wld = w;
     mapW = xtr[0];
+    if (mapW != 32) riding = 0; /* the bike stays outside */
     mapH = xtr[1];
     doors = xtr + 2;
     chests = doors + 1 + doors[0] * 4;
@@ -667,7 +696,16 @@ u8 interact(void)
                 return 1;
             }
             /* the trading quest: melon -> sheet music -> river map -> kayak */
-            if (rec[8] != 255 && ((rec[8] == 0 && !tradeItem && !hasKayak && !melonTaken) || (rec[8] && tradeItem == rec[8])))
+            if (rec[8] == 5)
+            {
+                if (hasBib && !hasShoes)
+                {
+                    openText(rec[9]);
+                    gotItem(ITEM_SHOES);
+                    return 1;
+                }
+            }
+            else if (rec[8] != 255 && ((rec[8] == 0 && !tradeItem && !hasKayak && !melonTaken) || (rec[8] && tradeItem == rec[8])))
             {
                 openText(rec[9]);
                 if (rec[10] == 4)
@@ -678,6 +716,23 @@ u8 interact(void)
                 else tradeItem = rec[10];
                 if (rec[10] == 1) melonTaken = 1;
                 return 1;
+            }
+            /* the Brewer tops up your hearts, and refills an empty bottle; the Ballplayer refills your balls */
+            if (rec[7] == ITEM_BOTTLE) hp = hpMax;
+            if (rec[11] != 255 && rec[7] && hasItem(rec[7]))
+            {
+                if (rec[7] == ITEM_BOTTLE && !bottleFull)
+                {
+                    bottleFull = 1;
+                    openText(rec[11]);
+                    return 1;
+                }
+                if (rec[7] == ITEM_BALLS && balls < 10)
+                {
+                    balls = 10;
+                    openText(rec[11]);
+                    return 1;
+                }
             }
             /* someone handing you something (the Archivist's Gas Lantern) */
             if (rec[7] && !hasItem(rec[7]))
@@ -854,6 +909,7 @@ int main(void)
     }
     combatInit();
     dungeonInit();
+    gearInit();
     setBrightness(0); /* forced blank while loading */
 
     /* Enemies, the paddle and the HUD: OBJ tiles 128-255, sprite palettes 5-7. */
@@ -908,6 +964,11 @@ int main(void)
         {
             step = 0;
         }
+        else if ((pressed & KEY_START) && !heroBusy() && !charging && !dying)
+        {
+            openMenu();
+            step = 0;
+        }
         else
         {
             combatUpdate(pad, pressed);
@@ -917,6 +978,9 @@ int main(void)
             /* 1.5 px per frame like the web game's walk; slower while charging a spin */
             spd = (frameCount & 1) ? 2 : 1;
             if (charging) spd = (frameCount % 5) ? 1 : 0;
+            if (riding) spd = 2;
+            updDash();
+            updBalls();
             if (!heroBusy() && !dying)
             {
                 if (pad & KEY_UP) { dy = -spd; if (!charging) heroDir = 1; }
@@ -948,6 +1012,8 @@ int main(void)
         drawNpcs();
         combatDraw();
         dungeonDraw();
+        drawBalls();
+        drawBike();
         hudDraw();
         WaitForVBlank();
         flushText();

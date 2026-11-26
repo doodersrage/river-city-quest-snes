@@ -29,6 +29,8 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define OAM_BICON 86  /* 3: item icon and count */
 #define OAM_BUG 89
 #define OAM_BLOCKS 90 /* 4 */
+#define OAM_BALLS 94  /* 3 */
+#define OAM_BIKE 97
 #define MAX_EN 6
 #define MAX_PK 6
 
@@ -125,5 +127,37 @@ void openShop(u8 id);
 u16 rnd(void);
 void dropKind(s16 x, s16 y, u8 kind);
 void cutAt(s16 x, s16 y);
+
+/* the text box (main.c) */
+#define BOX_MENU 5
+#define FILL (FONT_WHITE)
+extern u8 boxState, boxTop;
+void boxPut(u8 row, u8 col, u16 tile);
+void boxDrawFrame(void);
+void boxText(u8 row, u8 col, u8 *s, u16 font);
+void boxTextRight(u8 row, u8 right, u8 *s, u16 font);
+void boxNum(u8 row, u8 right, u16 v);
+void closeText(void);
+void checkExits(void);
+void checkCells(void);
+void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy);
+extern s16 enX[], enY[];
+extern s16 bossX, bossY;
+extern const s8 dirX[4], dirY[4];
+
+/* gear (gear.c) */
+extern u8 hasBalls, hasShoes, hasBike, hasBottle, hasBib;
+extern u8 bottleFull, balls, capBalls, capPowder, riding, dash;
+extern u8 hudBalls, hudBottle;
+void gearInit(void);
+void useGear(void);
+void gotGear(u8 item);
+void updBalls(void);
+void drawBalls(void);
+void updDash(void);
+void drawBike(void);
+void hudCount(u8 n);
+void openMenu(void);
+void updateMenu(u16 pressed);
 
 #endif

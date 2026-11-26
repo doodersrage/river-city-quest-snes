@@ -230,9 +230,9 @@ def encode_text(title, pages):
     return bytes(out)
 
 
-GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug']   # same numbering as ITEM_* in the ROM
+GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug', 'can', 'balls', 'shoes', 'bike', 'bottle']   # ITEM_* in the ROM, from 1
 NPC_REC = 12
-TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4}
+TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4, 'bib': 5, 'shoes': 6}
 
 
 def build_world(w, extra_texts=()):
@@ -265,7 +265,12 @@ def build_world(w, extra_texts=()):
             q_need, q_give = TRADE[q['need']], TRADE[q['give']]
             q_text = len(texts)
             texts.append(encode_text(n['who'], q['pages']))
-        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, shop, gift_talk, gift_item, q_need, q_text, q_give, 0))
+        # coming back with the bottle empty or the balls low (the Brewer, the Ballplayer)
+        refill = 255
+        if n.get('refill'):
+            refill = len(texts)
+            texts.append(encode_text(n['who'], n['refill']['pages']))
+        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, shop, gift_talk, gift_item, q_need, q_text, q_give, refill))
     extra_ids = []
     for title, pages in extra_texts:
         extra_ids.append(text_id(title, pages))
@@ -496,9 +501,10 @@ def convert_combat(exp):
 # lantern, explosion (2 frames x 4 cells), Gold-Bug, small key. Tiles 352+ hold the current boss,
 # loaded in its room; only its non-empty cells take space.
 ITEM_CELLS = {'keg': 0, 'hook': 1, 'granite': 2, 'iron': 3, 'brick': 4, 'bronze': 5, 'container': 6, 'lantern': 7,
-              'boom': 8, 'bug': 16, 'key': 17, 'carkey': 18, 'piece': 19, 'block': 20, 'can': 21}
-ITEM_SHEET_CELLS = 24
-BOSS_FIRST_CELL = 24
+              'boom': 8, 'bug': 16, 'key': 17, 'carkey': 18, 'piece': 19, 'block': 20, 'can': 21,
+              'ball': 22, 'shoes': 23, 'bike': 24, 'bottle': 25, 'bib': 26, 'bikeside': 27, 'bikefront': 28}
+ITEM_SHEET_CELLS = 30
+BOSS_FIRST_CELL = 30
 BOSSES = ['foreman', 'turtle', 'wraith', 'raven', 'bell', 'arum']          # boss type 1, 2, ...
 
 
@@ -509,7 +515,7 @@ def item_palette(p7):
 
 def convert_items(exp, pal):
     d = os.path.join(exp, 'combat')
-    sheet = [bytes(32)] * (ITEM_SHEET_CELLS * 4)
+    sheet = [bytes(32)] * ((ITEM_SHEET_CELLS + 7) // 8 * 32)   # whole rows of 8 cells; the boss loads over the rest later
     def put(cell, im, x0, y0):
         t = obj_tile_of_frame(0, cell)
         for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
@@ -520,7 +526,7 @@ def convert_items(exp, pal):
                     idx.append(nearest(c15(p_), pal) + 1 if p_[3] > 96 else 0)
             sheet[t + qy * 16 + qx] = tile4bpp(idx)
     icons = Image.open(os.path.join(d, 'icons.png')).convert('RGBA')
-    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern', 'bug', 'key', 'carkey', 'piece', 'can']):
+    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern', 'bug', 'key', 'carkey', 'piece', 'can', 'ball', 'shoes', 'bike', 'bottle', 'bib']):
         put(ITEM_CELLS[name], icons, i * 16, 0)
     # the push block has its own palette (sprite palette 3, free in dungeon rooms)
     blk = Image.open(os.path.join(d, 'block.png')).convert('RGBA')
@@ -530,6 +536,9 @@ def convert_items(exp, pal):
         sheet[t + qy * 16 + qx] = tile4bpp([bpal.index(c15(blk.getpixel((qx * 8 + x, qy * 8 + y)))) + 1
             if blk.getpixel((qx * 8 + x, qy * 8 + y))[3] else 0 for y in range(8) for x in range(8)])
     open(os.path.join(exp, '..', 'block.pal'), 'wb').write(sprite_palette(bpal))
+    bikes = Image.open(os.path.join(d, 'bikes.png')).convert('RGBA')
+    put(ITEM_CELLS['bikeside'], bikes, 0, 0)
+    put(ITEM_CELLS['bikefront'], bikes, 16, 0)
     put(ITEM_CELLS['container'], Image.open(os.path.join(d, 'container.png')).convert('RGBA'), 0, 0)
     boom = Image.open(os.path.join(d, 'boom.png')).convert('RGBA')
     for f in range(2):
@@ -576,8 +585,8 @@ def convert_bosses(exp):
 
 # ---------- Stage 4: shops ----------
 SHOP_NAME, SHOP_LOCK, SHOP_HEAD, SHOP_ITEM = 21, 9, 26, 36
-ONCE, REPEAT, LOCKED = 0, 1, 2
-EFFECT_NONE, EFFECT_HEART = 0, 1
+ONCE, REPEAT, LOCKED, NEEDS = 0, 1, 2, 3
+EFFECT_NONE, EFFECT_HEART, EFFECT_BALLS, EFFECT_KEGS, EFFECT_GINGER, EFFECT_SATCHEL = 0, 1, 2, 3, 4, 5
 
 
 def convert_shops(extra):
@@ -597,23 +606,29 @@ def convert_shops(extra):
             kind, req, lock = ONCE, 255, ''
             if it['name'] in ('Virginia Ham', 'Bag of Flour', 'Bag of Sugar', 'Landmark Card Pack'):
                 kind = REPEAT
+            needs = {'10 Baseballs': (7, EFFECT_BALLS), '4 Powder Kegs': (2, EFFECT_KEGS), 'Ginger Beer': (10, EFFECT_GINGER)}
+            if it['name'] in needs:
+                kind, req, lock = NEEDS, needs[it['name']][0], why    # lock text until you have the item
             if it['name'] == 'Cupcake':
                 kind, req, lock = REPEAT, names.index('Picnic Basket'), '???'
-            elif why:
+            elif why and kind != NEEDS:
                 kind, lock = LOCKED, why           # needs something from a later stage
             msg = it['msg']
             if it['name'] == 'Heart Charm': msg = 'A heart charm! Your hearts grew by one.'
             if it['name'] == 'Landmark Card Pack': msg = 'You got a landmark card!'
+            effect = {'Heart Charm': EFFECT_HEART, 'Big Satchel': EFFECT_SATCHEL}.get(it['name'], EFFECT_NONE)
+            if kind == NEEDS: effect = needs[it['name']][1]
+            if not msg: msg = {EFFECT_BALLS: 'Ten baseballs.', EFFECT_KEGS: 'Four powder kegs.', EFFECT_GINGER: 'Your bottle is full of ginger beer.',
+                               EFFECT_SATCHEL: 'A big satchel. You can carry more baseballs and kegs now.'}.get(effect, '')
             msg = msg.split(' You have ')[0] or 'Thank you!'
-            effect = EFFECT_HEART if it['name'] == 'Heart Charm' else EFFECT_NONE
             mo = len(msgs)
             msgs += encode_text(it['name'], [msg])
             blob += (ascii_text(it['name'])[:SHOP_NAME - 1].encode().ljust(SHOP_NAME, b'\0') +
                      ascii_text(lock)[:SHOP_LOCK - 1].encode().ljust(SHOP_LOCK, b'\0') +
                      bytes((min(255, it['price']), kind, req, effect, mo & 0xFF, mo >> 8)))
     defs = [f'#define SHOP_HEAD {SHOP_HEAD}', f'#define SHOP_ITEM {SHOP_ITEM}', f'#define SHOP_NAME {SHOP_NAME}',
-            f'#define SHOP_LOCK {SHOP_LOCK}', '#define SHOP_ONCE 0', '#define SHOP_REPEAT 1', '#define SHOP_LOCKED 2',
-            '#define EFFECT_HEART 1', f'#define SHOP_OFS_SHOP {offsets["shop"]}', f'#define SHOP_OFS_MARKET {offsets["market"]}',
+            f'#define SHOP_LOCK {SHOP_LOCK}', '#define SHOP_ONCE 0', '#define SHOP_REPEAT 1', '#define SHOP_LOCKED 2', '#define SHOP_NEEDS 3',
+            '#define EFFECT_HEART 1', '#define EFFECT_BALLS 2', '#define EFFECT_KEGS 3', '#define EFFECT_GINGER 4', '#define EFFECT_SATCHEL 5', f'#define SHOP_OFS_SHOP {offsets["shop"]}', f'#define SHOP_OFS_MARKET {offsets["market"]}',
             f'#define SHOP_MSGS {len(blob)}', '#define MAX_SHOP_ITEMS 16']
     return bytes(blob + msgs), defs
 
@@ -639,7 +654,7 @@ def main():
     area_id = {a: i + 1 for i, a in enumerate(dungeon_areas)}   # 0 = not a dungeon
     link_flag = {}
     pickup_gid = {}
-    items_list = ['hook', 'powder', 'lantern', 'shield', 'bug', 'can']
+    items_list = GIFT_ITEMS
 
     asm = ['.include "hdr.asm"', '']
     hdr = ['/* Generated by tools/snesconv.py. Do not edit. */', '#ifndef MAPS_H', '#define MAPS_H', '',
@@ -746,7 +761,7 @@ def main():
         xtr.append(len(pk))
         for it in pk:
             gid = pickup_gid.setdefault(m['id'] + ':' + it['id'], len(pickup_gid))
-            kind = {'skey': 9, 'carkey': 10, 'piece': 11}[it['kind']]
+            kind = {'skey': 9, 'carkey': 10, 'piece': 11, 'bib': 12}[it['kind']]
             xtr += bytes((it['x'] & 0xFF, it['x'] >> 8, it['y'] & 0xFF, it['y'] >> 8, kind, gid))
         # Push blocks and the switches they go on (tx, ty each).
         bl, sw = (m.get('blocks') or [])[:4], m.get('switches') or []
@@ -817,7 +832,13 @@ def main():
                  ('PIECE2', 'Treasure', ['A heart piece! (2 of 4) Find four to grow a heart.']),
                  ('PIECE3', 'Treasure', ['A heart piece! (3 of 4) Find four to grow a heart.']),
                  ('PIECE4', 'Treasure', ['A heart piece! That makes four. Your hearts grew by one.']),
-                 ('NOPOWDER', '', ['Out of blasting powder.'])]
+                 ('NOPOWDER', '', ['Out of blasting powder.']),
+                 ('NOBALLS', '', ['Out of baseballs.']),
+                 ('NOBIKE', '', ['Save the bike for outdoors.']),
+                 ('DRINK', '', ['Ahh. Every heart refilled.']),
+                 ('EMPTY', '', ['The bottle is empty. The brewer refills it.']),
+                 ('FULL', '', ["You can't carry any more of that."]),
+                 ('BIB', 'Race Bib', boss_text['bib'])]
     # "You found the Granite Keystone! (1 of 4)" for every keystone and count (web collect())
     for k, kname in enumerate(['granite', 'iron', 'brick', 'bronze']):
         for n in range(1, 5):
@@ -849,7 +870,7 @@ def main():
         hdr.append(f'extern char boss{i + 1}_chr, boss{i + 1}_chrend, boss{i + 1}_pal;')
     hdr += bdefs + ['#define PAL_BOSS 1', '#define PAL_ITEM 7',
             f'#define AREA_COUNT {len(dungeon_areas) + 1}', f'#define LINK_COUNT {max(1, len(link_flag))}',
-            '#define ITEM_HOOK 1', '#define ITEM_POWDER 2', '#define ITEM_LANTERN 3', '#define ITEM_SHIELD 4', '#define ITEM_BUG 5', '#define ITEM_CAN 6',
+            '#define ITEM_HOOK 1', '#define ITEM_POWDER 2', '#define ITEM_LANTERN 3', '#define ITEM_SHIELD 4', '#define ITEM_BUG 5', '#define ITEM_CAN 6', '#define ITEM_BALLS 7', '#define ITEM_SHOES 8', '#define ITEM_BIKE 9', '#define ITEM_BOTTLE 10',
             '#define EFFECT_KEY 3', '#define EFFECT_ITEM 4', '#define EFFECT_PIECE 5', f'#define PICKUP_COUNT {max(1, len(pickup_gid))}',
             '#define PAL_BLOCK 3', '']
     cobj, cpal, ctables = convert_combat(exp)

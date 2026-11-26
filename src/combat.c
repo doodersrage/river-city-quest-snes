@@ -287,7 +287,8 @@ void dropAt(s16 x, s16 y)
     u8 r = rnd() % 100;
     if (r < 30) dropKind(x, y, 1);
     else if (r < 44) dropKind(x, y, 2);
-    else if (r >= 52 && r < 57 && hasPowder) dropKind(x, y, 4);
+    else if (r < 52 && hasBalls) dropKind(x, y, 13);
+    else if (r < 57 && hasPowder) dropKind(x, y, 4);
 }
 
 /* web explode(): 2 damage to everything within 30px, knocked away */
@@ -318,7 +319,13 @@ void collectPickup(u8 k)
         roomFlags[curMap] |= ROOM_CONTAINER;
         openTextAt((u8 *)&sys_txt + TXT_CONTAINER);
     }
-    else if (kind == 4) { if (powder < 10) powder++; }
+    else if (kind == 4) { if (powder < capPowder) powder++; }
+    else if (kind == 13) { balls = balls + 3 > capBalls ? capBalls : balls + 3; }
+    else if (kind == 12)
+    {
+        hasBib = 1;
+        openTextAt((u8 *)&sys_txt + TXT_BIB);
+    }
     else if (kind == 9)
     {
         keys[roomArea]++;
@@ -358,7 +365,8 @@ void hurtHero(s16 sx, s16 sy)
 void hurtHeroBy(s16 sx, s16 sy, u8 dmg)
 {
     s16 dx, dy, d;
-    if (inv || hp == 0 || dying || hookSt == 3) return;
+    if (inv || hp == 0 || dying || hookSt == 3 || dash) return;
+    riding = 0;
     hp = hp > dmg ? hp - dmg : 0;
     inv = 50;
     dx = px - sx;
@@ -469,7 +477,7 @@ void updEnemy(u8 k)
 /* Is the hero mid-swing, spinning, knocked back or on the hook (so they can't walk)? */
 u8 heroBusy(void)
 {
-    return atk || spin || kt || hookSt;
+    return atk || spin || kt || hookSt || dash;
 }
 
 extern s16 bossX, bossY;
@@ -502,8 +510,12 @@ void combatUpdate(u16 pad, u16 pressed)
     /* A swings (main.c calls interact() first and only swings if nothing was there) */
     if ((pressed & KEY_A) && !atk && !spin && !hookSt)
     {
-        atk = 14;
-        charging = 0;
+        if (riding) riding = 0; /* A hops off the bike first */
+        else
+        {
+            atk = 14;
+            charging = 0;
+        }
     }
 
     if (spin)
@@ -650,7 +662,7 @@ void combatDraw(void)
         if (pkKind[k] >= 3)
         {
             tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : pkKind[k] == 9 ? OBJ_I_KEY : pkKind[k] == 10 ? OBJ_I_CARKEY :
-                   pkKind[k] == 11 ? OBJ_I_PIECE : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
+                   pkKind[k] == 11 ? OBJ_I_PIECE : pkKind[k] == 12 ? OBJ_I_BIB : pkKind[k] == 13 ? OBJ_I_BALL : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
             sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, PAL_ITEM);
             continue;
         }
