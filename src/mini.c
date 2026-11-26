@@ -526,9 +526,9 @@ u16 dbgLine;
 void miniVBlank(void)
 {
     u8 lo, hi;
-    lo = *(vu8 *)0x2137; /* latch the beam position (debug) */
-    lo = *(vu8 *)0x213D;
-    hi = *(vu8 *)0x213D;
+    lo = *(vuint8 *)0x2137; /* latch the beam position (debug) */
+    lo = *(vuint8 *)0x213D;
+    hi = *(vuint8 *)0x213D;
     dbgLine = lo | ((hi & 1) << 8);
     if (topDirty)
     {
