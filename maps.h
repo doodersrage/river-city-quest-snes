@@ -605,7 +605,7 @@ extern char mini0_chr, mini0_chrend, mini0_map, mini0_pal;  /* bat: 97 tiles, 8 
 extern char mini1_chr, mini1_chrend, mini1_map, mini1_pal;  /* hoops: 91 tiles, 8 palettes */
 extern char mini2_chr, mini2_chrend, mini2_map, mini2_pal;  /* tennis: 24 tiles, 1 palettes */
 extern char mini6_chr, mini6_chrend, mini6_map, mini6_pal;  /* pin: 129 tiles, 3 palettes */
-extern char mini10_chr, mini10_chrend, mini10_map, mini10_pal;  /* title: 458 tiles, 6 palettes */
+extern char mini10_chr, mini10_chrend, mini10_map, mini10_pal;  /* title: 477 tiles, 7 palettes */
 extern char mini11_chr, mini11_chrend, mini11_map, mini11_pal;  /* name: 402 tiles, 7 palettes */
 extern char race0_chr, race0_chrend, race0_map, race0_pal, race0_och, race0_ochend, race0_opl;  /* derby: 18 tiles */
 extern char race1_chr, race1_chrend, race1_map, race1_pal, race1_och, race1_ochend, race1_opl;  /* trail: 17 tiles */

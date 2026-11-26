@@ -317,9 +317,22 @@ def leave(lab, d, close_box):
     return False
 
 
+def _step_in(lab):
+    """Just arrived over an edge: walk a little way in, so the next walk can't step straight back over it."""
+    x, y = lab.pos
+    w, h = lab.ram('mapW') * 16, lab.ram('mapH') * 16
+    for d, near in (('RIGHT', x < 16), ('LEFT', x > w - 16), ('DOWN', y < 16), ('UP', y > h - 16)):
+        if near:
+            lab.run(d, 10)
+            lab.run(None, 2)
+            return
+
+
 def travel(lab, dest, close_box):
     for tries in range(3):   # knocked off course (a door, an edge): plan again from wherever we are
-        if lab.map == dest: return
+        if lab.map == dest:
+            _step_in(lab)
+            return
         for d in route(lab, dest):
             for attempt in range(3):   # people and traffic move: if every way out was blocked, wait and look again
                 if leave(lab, d, close_box): break
@@ -327,3 +340,4 @@ def travel(lab, dest, close_box):
             else:
                 raise RuntimeError(f'stuck leaving map {lab.map} {d}')
     if lab.map != dest: raise RuntimeError(f'travel ended on map {lab.map}, not {dest}')
+    _step_in(lab)

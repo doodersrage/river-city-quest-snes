@@ -369,7 +369,10 @@ const bossArt = vm.runInContext(`(function(){
   {const T=(x,str,X,Y,col,sz)=>{x.font=sz+'px PS2P';x.textAlign='center';x.textBaseline='top';x.fillStyle=col;x.fillText(str,X,Y);};
    const base=()=>{const c=mkCanvas(256,200),old=g;g=c.getContext('2d');frame=0;try{drawTitleBg();}finally{g=old;}return c;};
    const t=base(),x=t.getContext('2d');
-   T(x,'RIVER CITY',130,26,'#6a1c2c',16);T(x,'RIVER CITY',128,24,'#f2c14e',16);T(x,'QUEST',130,48,'#6a1c2c',16);T(x,'QUEST',128,46,'#fff2a8',16);
+   // the moon sits right where the SNES logo's Y goes: sky over it, and the moon up in the corner instead
+   x.putImageData(x.getImageData(150,18,24,22),192,18);
+   for(const[a,b,w,h,c]of[[196,22,14,14,'#fff2c8'],[194,25,18,8,'#fff2c8'],[198,20,10,18,'#fff2c8'],[200,26,3,3,'#e8d8a0'],[205,31,2,2,'#e8d8a0']]){x.fillStyle=c;x.fillRect(a+34,b-14,w,h);}
+   for(const[dx,dy]of[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]]){T(x,'RIVER CITY',128+dx,24+dy,'#1a1423',16);T(x,'QUEST',128+dx,46+dy,'#1a1423',16);}T(x,'RIVER CITY',130,26,'#6a1c2c',16);T(x,'RIVER CITY',128,24,'#f2c14e',16);T(x,'QUEST',130,48,'#6a1c2c',16);T(x,'QUEST',128,46,'#fff2a8',16);
    T(x,'The Tunnel Under Church Hill',129,71,'#1a1423',8);T(x,'The Tunnel Under Church Hill',128,70,'#e8ecf8',8);
    x.fillStyle='rgba(8,10,24,.8)';x.fillRect(14,84,228,58);x.fillStyle='#f2c14e';x.fillRect(14,84,228,1);x.fillRect(14,141,228,1);out.titlebg=t;
    const n=base(),y=n.getContext('2d');y.fillStyle='rgba(8,10,24,.82)';y.fillRect(16,20,224,160);y.fillStyle='#f2c14e';y.fillRect(16,20,224,1);out.namebg=n;}
