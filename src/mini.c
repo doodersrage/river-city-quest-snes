@@ -26,9 +26,19 @@ u16 mgPh;                /* free-throw needle phase */
 u8 mgSx0, mgSx1, mgBt;       /* free-throw flight: start/end x, frames */
 static char msg[33], top[33];
 static u8 msgDirty, topDirty;
-static u16 row[32];
+static u16 row[32], rowTop[32], rowMsg[32];
+static u8 topReady, msgReady;
 
 /* ---------- text on BG3 rows 0 (score) and 27 (messages), outside the picture ---------- */
+/* lay a line out centred in buf, as BG3 map words */
+static void bg3Fill(u16 *buf, const char *s, u16 font)
+{
+    u8 c, k = 0;
+    while (s[k] && k < 32) k++;
+    for (c = 0; c < 32; c++) buf[c] = 0;
+    for (c = 0; c < k; c++) buf[(32 - k) / 2 + c] = (font + s[c] - 32) | 0x2000;
+}
+
 static void bg3Row(u8 r, const char *s, u16 font)
 {
     u8 c, k = 0;
@@ -522,23 +532,18 @@ static void raceDraw(void)
 
 /* Called from rcqVBlank straight after the VBlank starts: a changed score line or message goes to BG3 then
    (after the sound driver's turn it would land outside VBlank and be lost). */
-u16 dbgLine;
 void miniVBlank(void)
 {
-    u8 lo, hi;
-    lo = *(vuint8 *)0x2137; /* latch the beam position (debug) */
-    lo = *(vuint8 *)0x213D;
-    hi = *(vuint8 *)0x213D;
-    dbgLine = lo | ((hi & 1) << 8);
-    if (topDirty)
+    /* only the copy happens here: the lines are laid out in the main loop */
+    if (topReady)
     {
-        bg3Row(0, top, FONT_GOLD);
-        topDirty = 0;
+        dmaCopyVram((u8 *)rowTop, VRAM_BG3_MAP, 64);
+        topReady = 0;
     }
-    else if (msgDirty)
+    else if (msgReady)
     {
-        bg3Row(27, msg, FONT_WHITE);
-        msgDirty = 0;
+        dmaCopyVram((u8 *)rowMsg, VRAM_BG3_MAP + 27 * 32, 64);
+        msgReady = 0;
     }
 }
 
@@ -631,7 +636,7 @@ void runMini(u8 k)
     u16 pad, pressed, lastPad = 0xFFFF;
     u8 i;
     mgKind = k;
-    topDirty = msgDirty = 0; /* (work RAM starts as noise) */
+    topDirty = msgDirty = topReady = msgReady = 0; /* (work RAM starts as noise) */
     top[0] = msg[0] = 0;
     miniOn = 1;
     fadeTo(0);
@@ -710,6 +715,18 @@ void runMini(u8 k)
             raceDraw();
         }
         mgT++;
+        if (topDirty && !topReady)
+        {
+            bg3Fill(rowTop, top, FONT_GOLD);
+            topDirty = 0;
+            topReady = 1;
+        }
+        if (msgDirty && !msgReady)
+        {
+            bg3Fill(rowMsg, msg, FONT_WHITE);
+            msgDirty = 0;
+            msgReady = 1;
+        }
         WaitForVBlank();
     }
     /* the result, then back to the neighbourhood */
