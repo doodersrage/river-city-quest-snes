@@ -60,14 +60,27 @@ void sprHide(u8 slot)
     oamShown[slot] = 0;
 }
 
+/* what each shown slot was last set to: a sprite that hasn't moved or changed costs no oamSet (stage 12, when the
+   characters went to two sprites each) */
+u16 oamKx[128], oamKt[128];
+u8 oamKy[128], oamKa[128];
+
 void sprPut(u8 slot, u8 large, s16 x, s16 y, u8 prio, u8 flip, u16 tile, u8 pal)
 {
+    u16 xx = x & 0x1FF;
+    u8 yy = y & 0xFF, a = prio | (flip << 2) | (pal << 4);
     if (oamShown[slot] != large + 1)
     {
         oamSetEx(slot * 4, large ? OBJ_LARGE : OBJ_SMALL, OBJ_SHOW);
         oamShown[slot] = large + 1;
     }
-    oamSet(slot * 4, x & 0x1FF, y & 0xFF, prio, flip, 0, tile, pal);
+    else if (oamKx[slot] == xx && oamKy[slot] == yy && oamKt[slot] == tile && oamKa[slot] == a)
+        return;
+    oamKx[slot] = xx;
+    oamKy[slot] = yy;
+    oamKt[slot] = tile;
+    oamKa[slot] = a;
+    oamSet(slot * 4, xx, yy, prio, flip, 0, tile, pal);
 }
 
 /* ---------- the text box ---------- */
