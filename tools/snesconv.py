@@ -382,7 +382,7 @@ def convert_npcs(exp, npcs):
         pals += sprite_palette(colors)
         for f in fs: out += frame_chunks(f, colors)
     pals += bytes(32) * (MAX_NPCS - len(npcs))
-    return out, pals[:MAX_NPCS * 32]
+    return out or bytes(NPC_FRAME_BYTES), pals[:MAX_NPCS * 32]   # (an empty file can't be included)
 
 
 def tile2bpp(idx):
