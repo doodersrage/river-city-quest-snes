@@ -568,7 +568,7 @@ static const s8 sinTab[64] = {0, 6, 12, 19, 24, 30, 36, 41, 45, 49, 53, 56, 59, 
 #define OBJ_I_OAR 362
 #define OBJ_I_ROD 364
 #define OBJ_I_FROG 366
-#define PAL_FROG 5
+#define PAL_FROG 6
 #define OBJ_I_KEYSTONE OBJ_I_GRANITE  /* +2 per keystone: granite, iron, brick, bronze */
 
 

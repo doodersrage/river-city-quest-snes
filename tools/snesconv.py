@@ -469,6 +469,12 @@ def convert_combat(exp):
     # two palettes as drawn: warm (rat, squirrel, scooter, crab) and cool (goose, bat, ghost)
     ewhich = [0 if ENEMY_TYPES[i // 2] in ('rat', 'squirrel', 'scooter', 'crab') else 1 for i in range(nfr)]
     epals = [sorted(set().union(*[{c15(p) for p in f if p[3]} for i, f in enumerate(frames) if ewhich[i] == w])) for w in (0, 1)]
+    # the frog (an item, caught in the rain) borrows an enemy palette: give the cool one its greens
+    icons = Image.open(os.path.join(d, 'icons.png')).convert('RGBA')
+    fi = 19   # 'frog' in convert_items' icon order
+    greens = sorted({c15(q) for q in icons.crop((fi * 16, 0, fi * 16 + 16, 16)).getdata() if q[3] > 96} - set(epals[1]),
+                    key=lambda c: -sum(1 for q in icons.crop((fi * 16, 0, fi * 16 + 16, 16)).getdata() if q[3] > 96 and c15(q) == c))
+    epals[1] = sorted(set(epals[1]) | set(greens[:15 - len(epals[1])]))
     if max(map(len, epals)) > 15: raise SystemExit(f'enemy palettes: {list(map(len, epals))} colours')
     esheet = [bytes(32)] * 64
     for i, f in enumerate(frames):
