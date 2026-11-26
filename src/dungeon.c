@@ -107,6 +107,7 @@ void dungeonInit(void)
     bateauDone = 0;
     hasLure = 0;
     chalOn = 0;
+    askKind = 0;
     pins = 0;
     goldPaddle = 0;
     for (i = 0; i < (LORE_COUNT + 7) / 8; i++) loreRead[i] = 0;
