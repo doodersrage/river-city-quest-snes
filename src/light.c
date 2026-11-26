@@ -147,7 +147,7 @@ void lightFrame(void)
                         }
                     }
         }
-        for (k = 0; k < 6; k++)
+        for (k = 0; k < 2; k++)
         {
             if (scanI >= lightOff[curMap + 1])
             {

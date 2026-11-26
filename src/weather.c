@@ -64,6 +64,7 @@ void weatherFrame(void)
        moves. Half of them move each frame, twice as far, to keep the frame rate. */
     n = outdoors && (wx == WX_RAIN || wx == WX_SNOW) ? (u8)((wxK >> 5) + 4) : 0;
     if (n > DROPS) n = DROPS;
+    if (darkLevel) n >>= 1; /* at night the dark hides most of the sky: half as many */
     if (!n && !wxShown) return;
     dx = camX - wxCamX;
     dy = camY - wxCamY;
