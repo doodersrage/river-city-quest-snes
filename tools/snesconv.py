@@ -466,8 +466,10 @@ def convert_combat(exp):
     en = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'art', 'enemies.png')).convert('RGBA')
     nfr = en.width // 16
     frames = [[en.getpixel((i * 16 + x, y)) for y in range(16) for x in range(16)] for i in range(nfr)]
-    sets = [frozenset(c15(p) for p in f if p[3]) for f in frames]
-    epals, ewhich = pack_sprite_palettes(sets, 2)
+    # two palettes as drawn: warm (rat, squirrel, scooter, crab) and cool (goose, bat, ghost)
+    ewhich = [0 if ENEMY_TYPES[i // 2] in ('rat', 'squirrel', 'scooter', 'crab') else 1 for i in range(nfr)]
+    epals = [sorted(set().union(*[{c15(p) for p in f if p[3]} for i, f in enumerate(frames) if ewhich[i] == w])) for w in (0, 1)]
+    if max(map(len, epals)) > 15: raise SystemExit(f'enemy palettes: {list(map(len, epals))} colours')
     esheet = [bytes(32)] * 64
     for i, f in enumerate(frames):
         pal = epals[ewhich[i]]

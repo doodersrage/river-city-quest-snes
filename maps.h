@@ -507,10 +507,10 @@ extern char town_chr, town_chrend;
 #define TOWN_CAMERA 19
 static const u16 townTile[20] = {384, 386, 388, 390, 392, 394, 396, 398, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452, 454};  /* OBJ tile of each town cell */
 static const u8 chalPal[14] = {7, 7, 2, 7, 3, 7, 7, 7, 2, 7, 2, 7, 7, 7};  /* the token's sprite palette */
-extern char combat_chr, combat_chrend, combat_pal;
+extern char combat_chr, combat_chrend, combat_pal, enemy_chr, enemy_chrend;
 
 /* Combat tables (generated). */
-#define OBJ_ENEMY 128
+#define OBJ_ENEMY 64
 #define OBJ_PADDLE 160
 #define OBJ_HUD 224
 #define HUD_HEART 224
@@ -534,9 +534,8 @@ extern char combat_chr, combat_chrend, combat_pal;
 #define ENEMY_TYPES 7
 /* 0=rat 1=squirrel 2=goose 3=scooter 4=crab 5=bat 6=ghost */
 static const u8 enemyHp[7] = {1, 1, 2, 2, 2, 1, 2};
-static const u16 enemyTile[7] = {128, 130, 132, 134, 136, 138, 142};
-static const u8 enemyPal[7] = {5, 5, 5, 5, 6, 6, 6};
-#define BAT_TILE2 140
+static const u16 enemyTile[7] = {64, 68, 72, 76, 96, 100, 104};   /* frame a; frame b is +2 */
+static const u8 enemyPal[7] = {5, 5, 6, 5, 5, 6, 6};
 static const u16 paddleTile[16] = {160, 162, 164, 166, 168, 170, 172, 174, 192, 194, 196, 198, 200, 202, 204, 206};
 static const s16 paddleOx[16] = {4, 3, 1, -2, -7, -12, -15, -18, -19, -18, -15, -12, -7, -2, 1, 3};
 static const s16 paddleOy[16] = {-10, -5, -2, 0, 1, 0, -2, -5, -10, -15, -18, -21, -22, -21, -18, -15};

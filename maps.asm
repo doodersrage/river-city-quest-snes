@@ -2137,6 +2137,12 @@ combat_pal:
 .incbin "data/combat.pal"
 .ends
 
+.section ".enemy" superfree
+enemy_chr:
+.incbin "data/enemy.chr"
+enemy_chrend:
+.ends
+
 .section ".items" superfree
 items_chr:
 .incbin "data/items.chr"
