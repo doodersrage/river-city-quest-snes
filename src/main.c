@@ -12,6 +12,9 @@
 #define NPC_BYTES (9 * 256)  /* one person's frames */
 u8 *npcChr;              /* the map's people: 9 frames each, 256 bytes a frame */
 u8 npcShown[MAX_NPCS];
+u8 npcPend;               /* a frame waiting for the next VBlank: from npcSrc to npcDst */
+u8 *npcSrc;
+u16 npcDst;
 
 
 #define PRIO 0x2000 /* tilemap priority bit: the box draws over sprites */
@@ -657,10 +660,6 @@ static const u8 walkFrame[4] = {0, 1, 0, 2}; /* stand, step, stand, the other st
 
 /* Stage 12: each person on the map has a 16x32 slot in VRAM (OBJ tiles 32+4k and 48+4k) holding the frame on
    show. A changed frame waits its turn: one person's frame is copied a VBlank, by npcVBlank. */
-u8 npcPend;
-u8 *npcSrc;
-u16 npcDst;
-
 void npcVBlank(void)
 {
     if (!npcPend) return;
