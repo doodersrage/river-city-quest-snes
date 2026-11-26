@@ -230,18 +230,114 @@ lab.screenshot(f'{out}/12-foreman-beaten.png')
 check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'the Iron Foreman is beaten')
 close_box()
 hpmax = lab.ram('hpMax')
-lab.walk_to_cell(9, 3)
-for _ in range(40):
-    if lab.ram('boxState'):
-        break
-    lab.run('DOWN', 1)
-lab.run(None, 30)
+try:
+    lab.walk_to_cell(9, 3)      # the container is at (144, 80); walking past it picks it up
+except RuntimeError:
+    pass
+close_box()
+if lab.ram('hpMax') == hpmax:
+    lab.walk_to_cell(9, 3)
+    for _ in range(40):
+        if lab.ram('boxState'):
+            break
+        lab.run('DOWN', 1)
+    lab.run(None, 30)
 check(lab.ram('hpMax') == hpmax + 2, 'he leaves a heart container')
 close_box()
 lab.walk_to_cell(7, 7)
 lab.run('DOWN', 30)
 lab.run(None, 60)
 check(lab.map == 17 and lab.ram('dentMap') == 255, 'the stairs lead back out to Hollywood Cemetery')
+
+# Stage 6: the Belle Isle Quarry, Blasting Powder and Old Snapper.
+lab.walk_to_cell(31, 10)
+lab.run('RIGHT', 30)
+lab.run(None, 40)
+lab.walk_to_cell(19, 6)
+lab.run('UP', 20)
+lab.run(None, 70)
+check(lab.map == lab.map_named('Quarry Floor'), 'east to Belle Isle and down into the quarry')
+check(clear_room(), 'the Quarry Floor is cleared')
+lab.walk_to_cell(12, 4)
+lab.face('up')
+lab.press('A', 60)
+close_box()
+lab.walk_to_cell(7, 1)
+lab.run('UP', 10)
+lab.run('UP', 40)
+lab.run(None, 40)
+check(lab.map == lab.map_named('Powder Store'), 'its key opens the way north to the Powder Store')
+check(clear_room(), 'the Powder Store is cleared')
+lab.walk_to_cell(3, 3)
+lab.face('up')
+lab.press('A', 60)
+check(lab.ram('hasPowder') == 1 and lab.ram('powder') == 8 and lab.ram('eqItem') == 2, 'Blasting Powder, 8 kegs, ready on B')
+lab.screenshot(f'{out}/13-blasting-powder.png')
+close_box()
+lab.walk_to_cell(13, 5)
+lab.face('right')
+lab.press('B', 2)
+check(lab.ram('powder') == 7 and lab.ram('bombOn'), 'B sets down a keg')
+lab.walk_to_cell(9, 5)
+lab.run(None, 90)
+check(all(lab.ram('colRam', 1, False, y * 32 + 15) == 0 for y in (4, 5, 6)), 'the keg blows the cracked wall open')
+lab.walk_to_cell(14, 5)
+lab.run('RIGHT', 30)
+lab.run(None, 60)
+check(lab.map == lab.map_named('Quarry Pond') and lab.ram('boxState'), 'Old Snapper stirs in the Quarry Pond')
+close_box()
+stunned = False
+for _ in range(8000):
+    if lab.ram('boxState') or not lab.ram('bossOn'):
+        break
+    if lab.ram('hp') <= 2:
+        lab.poke('hp', lab.ram('hpMax'))
+    bx, by = lab.ram('bossX', 2, True) >> 4, lab.ram('bossY', 2, True) >> 4
+    st = lab.ram('bossState')
+    x, y = lab.pos
+    dx, dy = bx - x, (by - 6) - y
+    if st == 2:            # stunned against the wall: paddle him
+        stunned = True
+        if abs(dx) + abs(dy) < 24 and (abs(dx) < 12 or abs(dy) < 12):
+            lab.run(('RIGHT' if dx > 0 else 'LEFT') if abs(dx) >= abs(dy) else ('DOWN' if dy > 0 else 'UP'), 1)
+            lab.press('A', 10)
+        else:
+            lab.run(('RIGHT' if dx > 0 else 'LEFT') if abs(dx) > abs(dy) else ('DOWN' if dy > 0 else 'UP'), 1)
+    elif st in (1, 3):     # winding up or charging: step out of his line
+        lab.run('UP' if y > 88 else 'DOWN', 1)
+    else:                  # wait on his row with a wall behind you
+        want_x = bx - 56 if bx > 128 else bx + 56
+        if abs(y - by) > 3:
+            lab.run('DOWN' if by > y else 'UP', 1)
+        elif abs(x - want_x) > 4:
+            lab.run('RIGHT' if want_x > x else 'LEFT', 1)
+        else:
+            lab.run(None, 1)
+check(stunned, 'Old Snapper charges into the wall and stuns himself')
+check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'Old Snapper is beaten')
+lab.run(None, 30)
+lab.screenshot(f'{out}/14-old-snapper-beaten.png')
+close_box()
+hpmax = lab.ram('hpMax')
+for c in [(7, 4), (9, 4)]:
+    try:
+        lab.walk_to_cell(*c)
+    except RuntimeError:
+        pass
+    close_box()
+    lab.run('DOWN', 4)
+    lab.run(None, 20)
+    close_box()
+check(lab.ram('keystones') == 1, 'the Granite Keystone (1 of 4)')
+check(lab.ram('hpMax') == hpmax + 2, 'and a heart container')
+lab.walk_to_cell(7, 7)
+lab.run('DOWN', 30)
+lab.run(None, 60)
+check(lab.map == 18, 'the stairs lead back up to Belle Isle')
+lab.walk_to_cell(0, 10)
+lab.run('LEFT', 30)
+lab.run(None, 40)
+check(lab.map == 17, 'west again to Hollywood Cemetery')
 
 # Stage 3: let a ghost take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)
@@ -251,7 +347,7 @@ for _ in range(1500):
     lab.run(None, 1)
 check(lab.ram('dying') == 1, 'a ghost takes the last heart')
 lab.run(None, 60)
-lab.screenshot(f'{out}/13-fog-takes-you.png')
+lab.screenshot(f'{out}/15-fog-takes-you.png')
 for _ in range(10):
     if not lab.ram('boxState'):
         break
