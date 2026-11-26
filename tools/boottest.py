@@ -21,7 +21,7 @@ def screen():
     return lab.emu.get_screen().astype(int)
 
 
-def name():
+def hero_name():
     return bytes(lab.ram('heroName', 1, index=i) for i in range(9)).split(b'\0')[0].decode('ascii', 'replace')
 
 
@@ -38,7 +38,7 @@ for b in ['A', 'RIGHT', 'RIGHT', 'RIGHT', 'A', 'LEFT', 'LEFT', 'LEFT', 'A']:   #
     lab.press(b, 8)
 lab.screenshot(f'{out}/0-name.png')
 lab.press('START', 120)
-check(name() == 'Ada', f'the hero is named ({name()!r})')
+check(hero_name() == 'Ada', f'the hero is named ({hero_name()!r})')
 check(lab.ram('saveSlot') == 1, 'the new game is in slot 1')
 check(lab.ram('boxState') != 0, 'the opening is read')
 lab.run(None, 200)
@@ -1551,7 +1551,7 @@ check(lab.ram('saveSlot') == 0 and lab.ram('curSong') == 7, 'switched off and on
 lab.press('A', 30)                       # slot 1 is used: CONTINUE / ERASE / BACK
 lab.screenshot(f'{out}/91-continue.png')
 lab.press('A', 120)
-check(lab.ram('saveSlot') == 1 and name() == 'Ada', f'CONTINUE loads slot 1 ({name()!r})')
+check(lab.ram('saveSlot') == 1 and hero_name() == 'Ada', f'CONTINUE loads slot 1 ({hero_name()!r})')
 check(lab.map == where and lab.pos == pos, f'back where the game last saved (map {lab.map} at {lab.pos}, saved {where} at {pos})')
 check(lab.ram('coins', 2) == coins,
       f"with the saved coins ({lab.ram('coins', 2)}, saved {coins})")
