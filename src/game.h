@@ -160,4 +160,9 @@ void hudCount(u8 n);
 void openMenu(void);
 void updateMenu(u16 pressed);
 
+/* the ending (ending.c) */
+#define BOX_ROWS_ALL (8 * 32)
+extern u8 gameWon, endingPending;
+void runEnding(void);
+
 #endif

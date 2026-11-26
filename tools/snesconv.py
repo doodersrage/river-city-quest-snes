@@ -505,7 +505,7 @@ ITEM_CELLS = {'keg': 0, 'hook': 1, 'granite': 2, 'iron': 3, 'brick': 4, 'bronze'
               'ball': 22, 'shoes': 23, 'bike': 24, 'bottle': 25, 'bib': 26, 'bikeside': 27, 'bikefront': 28}
 ITEM_SHEET_CELLS = 30
 BOSS_FIRST_CELL = 30
-BOSSES = ['foreman', 'turtle', 'wraith', 'raven', 'bell', 'arum']          # boss type 1, 2, ...
+BOSSES = ['foreman', 'turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']          # boss type 1, 2, ...
 
 
 def item_palette(p7):
@@ -823,6 +823,10 @@ def main():
                  ('SKEY', '', ['The Gold-Bug brought back a small key!']),
                  ('BELL_IN', 'The Great Bell', boss_text['bellIntro']),
                  ('BELL_OUT', 'The Great Bell', boss_text['bell']),
+                 ('VAMPIRE_IN', 'Engine 231', boss_text['vampireIntro']),
+                 ('VAMPIRE_OUT', 'Engine 231', boss_text['vampire']),
+                 ('SWARM', '', ['It bursts into a swarm of bats!']),
+                 ('DESPERATE', '', ['Engine 231 groans. The thing is desperate!']),
                  ('ARUM_IN', 'Under the Dome', boss_text['arumIntro']),
                  ('ARUM_OUT', 'Under the Dome', boss_text['arum']),
                  ('GROW', '', [boss_text['can']]),
@@ -850,10 +854,41 @@ def main():
         blob += encode_text(title, pages)
     open(os.path.join(out, 'sys.txt'), 'wb').write(blob)
     asm += ['.section ".systext" superfree', 'sys_txt:', '.incbin "data/sys.txt"', '.ends', '']
-    hdr += ['extern char sys_txt;'] + defs + [f'#define MAP_CAPITOL {pos[(2, 1)]}',
+    # The ending (web startRelight and CREDITS): five neighbourhoods, then pages of credits.
+    relight = boss_text['relight']
+    relight_maps = [index_of[r[0]] for r in relight]
+    win_door = next(d for m in maps if m['id'] == 'ow:3,0' for d in m['doors'] if d['to'].startswith('tunnel'))
+    def wrap(line, w=28):
+        out, cur = [], ''
+        for word in line.split(' '):
+            if cur and len(cur) + 1 + len(word) > w: out.append(cur); cur = word
+            else: cur = (cur + ' ' + word).strip()
+        return out + [cur]
+    groups, g = [], []
+    for line in boss_text['credits'] + ['']:
+        if line: g += wrap(ascii_text(line))
+        elif g: groups.append(g); g = []
+    pages, pg = [], []
+    for g in groups:
+        while len(g) > 6:                      # a long list gets split over pages
+            if pg: pages.append(pg); pg = []
+            pages.append(g[:5]); g = g[5:]
+        if pg and len(pg) + 1 + len(g) > 7: pages.append(pg); pg = []
+        pg = pg + ([''] if pg else []) + g
+    if pg: pages.append(pg)
+    credit_lines = [l for p_ in pages for l in p_ + ['\f']]
+    hdr += ['extern char sys_txt;'] + defs + [
+            '#define RELIGHT_N %d' % len(relight),
+            '#define MAP_WIN %d' % index_of['ow:3,0'],
+            '#define WIN_X %d' % (win_door['ret'][0] * 16 + 8), '#define WIN_Y %d' % (win_door['ret'][1] * 16 + 8),
+            'static const u8 relightMap[%d] = {%s};' % (len(relight), ', '.join(map(str, relight_maps))),
+            'static const char *const relightName[%d] = {%s};' % (len(relight), ', '.join('"%s"' % ascii_text(r[1]) for r in relight)),
+            '#define CREDIT_LINES %d' % len(credit_lines),
+            'static const char *const creditLine[%d] = {%s};  /* "\\f" ends a page */' % (len(credit_lines), ', '.join('"%s"' % l.replace('"', '\\"').replace('\f', '\\f') for l in credit_lines)),
+            f'#define MAP_CAPITOL {pos[(2, 1)]}',
             'static const u16 keystoneTxt[16] = {%s};' % ', '.join(f'TXT_KEY{k}_{n}' for k in range(4) for n in range(1, 5)),
-            'static const u16 bossInTxt[7] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN, TXT_BELL_IN, TXT_ARUM_IN};',
-            'static const u16 bossOutTxt[7] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT, TXT_RAVEN_OUT, TXT_BELL_OUT, TXT_ARUM_OUT};',
+            'static const u16 bossInTxt[8] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN, TXT_BELL_IN, TXT_ARUM_IN, TXT_VAMPIRE_IN};',
+            'static const u16 bossOutTxt[8] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT, TXT_RAVEN_OUT, TXT_BELL_OUT, TXT_ARUM_OUT, TXT_VAMPIRE_OUT};',
             'static const u16 pieceTxt[4] = {TXT_PIECE4, TXT_PIECE1, TXT_PIECE2, TXT_PIECE3};  /* by pieces % 4 */', '']
     shops, shop_defs = convert_shops(extra)
     open(os.path.join(out, 'shops.bin'), 'wb').write(shops)

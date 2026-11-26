@@ -2,7 +2,7 @@
 #ifndef MAPS_H
 #define MAPS_H
 
-#define MAP_COUNT 75
+#define MAP_COUNT 79
 #define COL_STRIDE 32
 
 extern char m0_chr, m0_chrend, m0_map, m0_pal, m0_col, m0_wld, m0_och, m0_opl, m0_ene, m0_xtr;  /* Richmond Raceway */
@@ -78,8 +78,12 @@ extern char m69_chr, m69_chrend, m69_map, m69_pal, m69_col, m69_wld, m69_och, m6
 extern char m70_chr, m70_chrend, m70_map, m70_pal, m70_col, m70_wld, m70_och, m70_opl, m70_ene, m70_xtr;  /* Casting Floor */
 extern char m71_chr, m71_chrend, m71_map, m71_pal, m71_col, m71_wld, m71_och, m71_opl, m71_ene, m71_xtr;  /* Foundry Gate */
 extern char m72_chr, m72_chrend, m72_map, m72_pal, m72_col, m72_wld, m72_och, m72_opl, m72_ene, m72_xtr;  /* Pattern Shop */
-extern char m73_chr, m73_chrend, m73_map, m73_pal, m73_col, m73_wld, m73_och, m73_opl, m73_ene, m73_xtr;  /* Virginia Museum of Fine Arts */
-extern char m74_chr, m74_chrend, m74_map, m74_pal, m74_col, m74_wld, m74_och, m74_opl, m74_ene, m74_xtr;  /* Virginia Museum of History & Culture */
+extern char m73_chr, m73_chrend, m73_map, m73_pal, m73_col, m73_wld, m73_och, m73_opl, m73_ene, m73_xtr;  /* Engine 231 */
+extern char m74_chr, m74_chrend, m74_map, m74_pal, m74_col, m74_wld, m74_och, m74_opl, m74_ene, m74_xtr;  /* Church Hill Tunnel */
+extern char m75_chr, m75_chrend, m75_map, m75_pal, m75_col, m75_wld, m75_och, m75_opl, m75_ene, m75_xtr;  /* Signal Room */
+extern char m76_chr, m76_chrend, m76_map, m76_pal, m76_col, m76_wld, m76_och, m76_opl, m76_ene, m76_xtr;  /* Flooded Siding */
+extern char m77_chr, m77_chrend, m77_map, m77_pal, m77_col, m77_wld, m77_och, m77_opl, m77_ene, m77_xtr;  /* Virginia Museum of Fine Arts */
+extern char m78_chr, m78_chrend, m78_map, m78_pal, m78_col, m78_wld, m78_och, m78_opl, m78_ene, m78_xtr;  /* Virginia Museum of History & Culture */
 extern char sys_txt;
 #define TXT_DEAD 0
 #define TXT_KEYSTONES 66
@@ -103,42 +107,54 @@ extern char sys_txt;
 #define TXT_SKEY 1509
 #define TXT_BELL_IN 1549
 #define TXT_BELL_OUT 1657
-#define TXT_ARUM_IN 1777
-#define TXT_ARUM_OUT 1951
-#define TXT_GROW 2079
-#define TXT_BLOOM 2115
-#define TXT_CARKEY_GOT 2140
-#define TXT_PIECE1 2208
-#define TXT_PIECE2 2268
-#define TXT_PIECE3 2328
-#define TXT_PIECE4 2388
-#define TXT_NOPOWDER 2454
-#define TXT_NOBALLS 2479
-#define TXT_NOBIKE 2498
-#define TXT_DRINK 2527
-#define TXT_EMPTY 2555
-#define TXT_FULL 2600
-#define TXT_BIB 2635
-#define TXT_KEY0_1 2725
-#define TXT_KEY0_2 2808
-#define TXT_KEY0_3 2891
-#define TXT_KEY0_4 2974
-#define TXT_KEY1_1 3085
-#define TXT_KEY1_2 3165
-#define TXT_KEY1_3 3245
-#define TXT_KEY1_4 3325
-#define TXT_KEY2_1 3433
-#define TXT_KEY2_2 3514
-#define TXT_KEY2_3 3595
-#define TXT_KEY2_4 3676
-#define TXT_KEY3_1 3785
-#define TXT_KEY3_2 3867
-#define TXT_KEY3_3 3949
-#define TXT_KEY3_4 4031
+#define TXT_VAMPIRE_IN 1777
+#define TXT_VAMPIRE_OUT 1890
+#define TXT_SWARM 2263
+#define TXT_DESPERATE 2296
+#define TXT_ARUM_IN 2340
+#define TXT_ARUM_OUT 2514
+#define TXT_GROW 2642
+#define TXT_BLOOM 2678
+#define TXT_CARKEY_GOT 2703
+#define TXT_PIECE1 2771
+#define TXT_PIECE2 2831
+#define TXT_PIECE3 2891
+#define TXT_PIECE4 2951
+#define TXT_NOPOWDER 3017
+#define TXT_NOBALLS 3042
+#define TXT_NOBIKE 3061
+#define TXT_DRINK 3090
+#define TXT_EMPTY 3118
+#define TXT_FULL 3163
+#define TXT_BIB 3198
+#define TXT_KEY0_1 3288
+#define TXT_KEY0_2 3371
+#define TXT_KEY0_3 3454
+#define TXT_KEY0_4 3537
+#define TXT_KEY1_1 3648
+#define TXT_KEY1_2 3728
+#define TXT_KEY1_3 3808
+#define TXT_KEY1_4 3888
+#define TXT_KEY2_1 3996
+#define TXT_KEY2_2 4077
+#define TXT_KEY2_3 4158
+#define TXT_KEY2_4 4239
+#define TXT_KEY3_1 4348
+#define TXT_KEY3_2 4430
+#define TXT_KEY3_3 4512
+#define TXT_KEY3_4 4594
+#define RELIGHT_N 5
+#define MAP_WIN 8
+#define WIN_X 72
+#define WIN_Y 72
+static const u8 relightMap[5] = {8, 12, 6, 11, 10};
+static const char *const relightName[5] = {"Church Hill", "Capitol Square", "Broad Street", "The Fan", "Carytown"};
+#define CREDIT_LINES 31
+static const char *const creditLine[31] = {"RIVER CITY QUEST", "", "Starring RORY", "", "Made by doodersrage", "with Claude", "\f", "Set in Richmond, Virginia", "", "The real places are worth a", "visit.", "Learn more from:", "\f", "Library of Virginia", "The Valentine", "Virginia Museum of History &", "Culture", "James River Park System", "\f", "Maymont", "Lewis Ginter Botanical", "Garden", "The Poe Museum", "American Civil War Museum", "\f", "Richmond National", "Battlefield Park", "Virginia Museum of Fine Arts", "", "Thanks for playing!", "\f"};  /* "\f" ends a page */
 #define MAP_CAPITOL 12
 static const u16 keystoneTxt[16] = {TXT_KEY0_1, TXT_KEY0_2, TXT_KEY0_3, TXT_KEY0_4, TXT_KEY1_1, TXT_KEY1_2, TXT_KEY1_3, TXT_KEY1_4, TXT_KEY2_1, TXT_KEY2_2, TXT_KEY2_3, TXT_KEY2_4, TXT_KEY3_1, TXT_KEY3_2, TXT_KEY3_3, TXT_KEY3_4};
-static const u16 bossInTxt[7] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN, TXT_BELL_IN, TXT_ARUM_IN};
-static const u16 bossOutTxt[7] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT, TXT_RAVEN_OUT, TXT_BELL_OUT, TXT_ARUM_OUT};
+static const u16 bossInTxt[8] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN, TXT_BELL_IN, TXT_ARUM_IN, TXT_VAMPIRE_IN};
+static const u16 bossOutTxt[8] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT, TXT_RAVEN_OUT, TXT_BELL_OUT, TXT_ARUM_OUT, TXT_VAMPIRE_OUT};
 static const u16 pieceTxt[4] = {TXT_PIECE4, TXT_PIECE1, TXT_PIECE2, TXT_PIECE3};  /* by pieces % 4 */
 
 extern char shops_bin;
@@ -183,17 +199,19 @@ extern char boss3_chr, boss3_chrend, boss3_pal;
 extern char boss4_chr, boss4_chrend, boss4_pal;
 extern char boss5_chr, boss5_chrend, boss5_pal;
 extern char boss6_chr, boss6_chrend, boss6_pal;
+extern char boss7_chr, boss7_chrend, boss7_pal;
 static const u16 boss1Tile[36] = {0, 364, 366, 384, 386, 388, 390, 392, 394, 0, 396, 398, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452, 454, 456, 458, 460, 462, 480, 482, 484, 486, 488, 490, 492, 494};  /* foreman: frame*9 + cell, 0 = empty */
 static const u16 boss2Tile[36] = {0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 0, 0, 392, 394, 396, 398, 416, 418, 0, 0, 0, 420, 422, 424, 426, 428, 430, 0, 0, 0, 448, 450, 452, 454, 456, 458};  /* turtle: frame*9 + cell, 0 = empty */
 static const u16 boss3Tile[36] = {0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 0, 0, 392, 394, 396, 398, 416, 418, 0, 0, 0, 420, 422, 424, 426, 428, 430, 0, 0, 0, 448, 450, 452, 454, 456, 458};  /* wraith: frame*9 + cell, 0 = empty */
 static const u16 boss4Tile[18] = {0, 0, 0, 0, 364, 366, 384, 386, 388, 0, 0, 0, 0, 390, 392, 394, 396, 398};  /* raven: frame*9 + cell, 0 = empty */
 static const u16 boss5Tile[18] = {0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 392, 394, 396, 398, 416, 418, 420, 422};  /* bell: frame*9 + cell, 0 = empty */
 static const u16 boss6Tile[27] = {0, 364, 0, 0, 366, 0, 384, 386, 388, 0, 390, 0, 0, 392, 0, 394, 396, 398, 0, 416, 418, 420, 422, 424, 426, 428, 430};  /* arum: frame*9 + cell, 0 = empty */
+static const u16 boss7Tile[9] = {0, 0, 0, 0, 364, 0, 0, 366, 0};  /* vampire: frame*9 + cell, 0 = empty */
 #define VRAM_BOSS_OFS 1920  /* words into the second OBJ table */
 #define PAL_BOSS 1
 #define PAL_ITEM 7
-#define AREA_COUNT 7
-#define LINK_COUNT 18
+#define AREA_COUNT 8
+#define LINK_COUNT 20
 #define ITEM_HOOK 1
 #define ITEM_POWDER 2
 #define ITEM_LANTERN 3
@@ -207,7 +225,7 @@ static const u16 boss6Tile[27] = {0, 364, 0, 0, 366, 0, 384, 386, 388, 0, 390, 0
 #define EFFECT_KEY 3
 #define EFFECT_ITEM 4
 #define EFFECT_PIECE 5
-#define PICKUP_COUNT 10
+#define PICKUP_COUNT 11
 #define PAL_BLOCK 3
 
 extern char items_chr, items_chrend, block_pal;
@@ -290,10 +308,10 @@ extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;
 #define FRAME_BR 200
 #define FRAME_MORE 201
 
-static const u8 nbN[MAP_COUNT] = {255, 255, 255, 255, 0, 1, 2, 3, 255, 255, 5, 6, 7, 8, 9, 255, 10, 11, 12, 13, 16, 17, 18, 19, 255, 255, 255, 255, 255, 255, 255, 255, 31, 32, 255, 255, 35, 36, 255, 255, 255, 255, 255, 255, 255, 44, 255, 46, 47, 255, 255, 50, 255, 52, 255, 54, 255, 56, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 69, 70, 255, 255, 255};
-static const u8 nbS[MAP_COUNT] = {4, 5, 6, 7, 255, 10, 11, 12, 13, 14, 16, 17, 18, 19, 255, 255, 20, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 32, 33, 255, 255, 36, 37, 255, 255, 255, 255, 255, 255, 255, 45, 255, 47, 48, 255, 255, 51, 255, 53, 255, 55, 255, 57, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 70, 71, 255, 255, 255, 255};
-static const u8 nbE[MAP_COUNT] = {1, 2, 3, 255, 5, 6, 7, 8, 9, 255, 11, 12, 13, 14, 255, 16, 17, 18, 19, 255, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 32, 255, 34, 255, 255, 255, 255, 38, 255, 255, 255, 255, 255, 255, 47, 48, 255, 255, 49, 255, 52, 53, 255, 255, 56, 57, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 72, 255, 255, 255};
-static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11, 12, 13, 255, 15, 16, 17, 18, 255, 20, 21, 22, 255, 255, 255, 255, 255, 255, 255, 255, 30, 255, 32, 255, 255, 255, 37, 255, 255, 255, 255, 255, 255, 255, 255, 44, 45, 48, 255, 255, 50, 51, 255, 255, 54, 55, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 71, 255, 255};
+static const u8 nbN[MAP_COUNT] = {255, 255, 255, 255, 0, 1, 2, 3, 255, 255, 5, 6, 7, 8, 9, 255, 10, 11, 12, 13, 16, 17, 18, 19, 255, 255, 255, 255, 255, 255, 255, 255, 31, 32, 255, 255, 35, 36, 255, 255, 255, 255, 255, 255, 255, 44, 255, 46, 47, 255, 255, 50, 255, 52, 255, 54, 255, 56, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 69, 70, 255, 255, 73, 255, 75, 255, 255};
+static const u8 nbS[MAP_COUNT] = {4, 5, 6, 7, 255, 10, 11, 12, 13, 14, 16, 17, 18, 19, 255, 255, 20, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 32, 33, 255, 255, 36, 37, 255, 255, 255, 255, 255, 255, 255, 45, 255, 47, 48, 255, 255, 51, 255, 53, 255, 55, 255, 57, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 70, 71, 255, 255, 74, 255, 76, 255, 255, 255};
+static const u8 nbE[MAP_COUNT] = {1, 2, 3, 255, 5, 6, 7, 8, 9, 255, 11, 12, 13, 14, 255, 16, 17, 18, 19, 255, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 32, 255, 34, 255, 255, 255, 255, 38, 255, 255, 255, 255, 255, 255, 47, 48, 255, 255, 49, 255, 52, 53, 255, 255, 56, 57, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 72, 255, 75, 76, 255, 255, 255, 255};
+static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11, 12, 13, 255, 15, 16, 17, 18, 255, 20, 21, 22, 255, 255, 255, 255, 255, 255, 255, 255, 30, 255, 32, 255, 255, 255, 37, 255, 255, 255, 255, 255, 255, 255, 255, 44, 45, 48, 255, 255, 50, 51, 255, 255, 54, 55, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 71, 255, 255, 73, 74, 255, 255};
 
 #define MAP_START 11  /* The Fan */
 

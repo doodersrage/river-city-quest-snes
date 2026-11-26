@@ -953,6 +953,11 @@ int main(void)
         {
             updateText(pressed);
             step = 0;
+            if (boxState == BOX_CLOSED && endingPending)
+            {
+                endingPending = 0;
+                runEnding();
+            }
             if (boxState == BOX_CLOSED && dying)
             {
                 WaitForVBlank();
