@@ -233,6 +233,7 @@ def encode_text(title, pages):
 
 GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug', 'can', 'balls', 'shoes', 'bike', 'bottle']   # ITEM_* in the ROM, from 1
 NPC_REC = 15
+ARCADE = set()   # (map, text) of the pinball machines
 MINIS = ['bat', 'hoops', 'tennis', 'derby', 'trail', 'race', 'pin']   # minigame kind 1, 2, ... (NPC byte 13)
 MINI_BUILT = ['bat', 'hoops', 'tennis', 'derby', 'trail', 'race']
 RACES = ['derby', 'trail', 'race']   # the scrolling-road games, MINI_DERBY on
@@ -277,6 +278,10 @@ def build_world(w, extra_texts=()):
     grid = bytearray(704)
     lore_refs = []   # (text id, lore id): reading it adds the story to your journal (for the history quiz)
     for r in w['reads']:
+        if r['title'] == 'Penny Arcade':   # the Stone House machines: Stone House pinball (web play.js '!arcade')
+            r = dict(r, title='Stone House Arcade', pages=['A pinball machine called RIVER CITY RAMBLE. One coin a game.'])
+            tid = text_id(r['title'], r['pages'])
+            ARCADE.add((w['_map'], tid))
         tid = text_id(r['title'], r['pages'])
         grid[r['ty'] * 32 + r['tx']] = tid + 1
         if r.get('lore'): lore_refs.append((tid, r['lore']))
@@ -683,12 +688,12 @@ def town_tables(maps):
 # ---------- Stage 10: minigames ----------
 # Each game's background is one screen on BG1 (the web game's 256x200, 12 px down); what moves is 8x8 sprites
 # from a small sheet at OBJ tile 32 (the NPC area, reloaded with the map), sprite palette 1.
-MINI_COLS = ['#ffffff', '#1a1423', '#c9a26b', '#f0dc98', '#d8f060', '#5a5662', '#e8ecf0', '#e07a28']
-MINI_TILES = ['ball2', 'ball3', 'ball4', 'ball5', 'bat', 'battip', 'tball', 'racket', 'rackethead', 'bball', 'needle']
+MINI_COLS = ['#ffffff', '#1a1423', '#c9a26b', '#f0dc98', '#d8f060', '#5a5662', '#e8ecf0', '#e07a28', '#f2c14e', '#e8ecf8']
+MINI_TILES = ['ball2', 'ball3', 'ball4', 'ball5', 'bat', 'battip', 'tball', 'racket', 'rackethead', 'bball', 'needle', 'pindot', 'pinball']
 
 
 def convert_mini_sprites():
-    W, D, BAT, TIP, TB, RK, RH, OR = range(1, 9)   # palette indexes (MINI_COLS + 1)
+    W, D, BAT, TIP, TB, RK, RH, OR, FL, PB = range(1, 11)   # palette indexes (MINI_COLS + 1)
     def blank(): return [[0] * 8 for _ in range(8)]
     def sq(n, c):
         t = blank()
@@ -705,7 +710,17 @@ def convert_mini_sprites():
     nd = blank()
     for y in range(8):
         for x in range(3): nd[y][x] = W
-    tiles = [sq(2, W), sq(3, W), sq(4, W), sq(5, W), sq(2, BAT), sq(2, TIP), tb, sq(2, RK), sq(2, RH), bb, nd]
+    # a flipper is a row of 5x5 rounded dots; the pinball 7x7 with a highlight
+    pd = blank()
+    for y in range(5):
+        for x in range(5):
+            if not ((x in (0, 4)) and (y in (0, 4))): pd[y][x] = FL
+    pb = blank()
+    for y in range(7):
+        for x in range(7):
+            if (x - 3) ** 2 + (y - 3) ** 2 <= 10: pb[y][x] = PB
+    pb[2][2] = W
+    tiles = [sq(2, W), sq(3, W), sq(4, W), sq(5, W), sq(2, BAT), sq(2, TIP), tb, sq(2, RK), sq(2, RH), bb, nd, pd, pb]
     chr_ = b''.join(tile4bpp([v for r in t for v in r]) for t in tiles)
     pal = sprite_palette([hexc(c) for c in MINI_COLS])
     defs = [f'#define MT_{n.upper()} {32 + i}' for i, n in enumerate(MINI_TILES)]
@@ -714,8 +729,8 @@ def convert_mini_sprites():
 
 def convert_minis(exp, out, asm, hdr):
     loader = ['void rcqMiniUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal);', 'void rcqLoadMini(u8 k)', '{', '    switch (k)', '    {']
-    for k, name in enumerate(MINI_BUILT):
-        if name in RACES: continue
+    for name in ['bat', 'hoops', 'tennis', 'pin']:
+        k = MINIS.index(name)
         src = Image.open(os.path.join(exp, 'combat', f'mini_{name}.png')).convert('RGB')
         full = Image.new('RGB', (256, 224), (0, 0, 0)); full.paste(src, (0, 12))
         path = os.path.join(exp, f'mini_{name}_full.png'); full.save(path)
@@ -729,6 +744,7 @@ def convert_minis(exp, out, asm, hdr):
         loader.append(f'    case {k}: rcqMiniUpload(&mini{k}_chr, &mini{k}_chrend - &mini{k}_chr, &mini{k}_map, &mini{k}_pal); break;')
     loader += ['    }', '}', '']
     loader += convert_races(exp, out, asm, hdr)
+    loader += convert_pinball(exp, out, asm, hdr)
     mchr, mpal, mdefs = convert_mini_sprites()
     open(os.path.join(out, 'minispr.chr'), 'wb').write(mchr)
     open(os.path.join(out, 'minispr.pal'), 'wb').write(mpal)
@@ -738,6 +754,40 @@ def convert_minis(exp, out, asm, hdr):
     hdr[end:end] = ['extern char minispr_chr, minispr_chrend, minispr_pal;'] + mdefs + \
                    [f'#define MINI_{n.upper()} {i + 1}' for i, n in enumerate(MINIS)]
     return loader
+
+
+def convert_pinball(exp, out, asm, hdr):
+    """Lit bumpers (radius 9, 10, 7) as 16x16 cells at OBJ tile 64, sprite palette 2; the flippers' directions;
+    where the machines are."""
+    import math
+    im = Image.open(os.path.join(exp, 'combat', 'pinlit.png')).convert('RGBA')
+    cols = sorted({c15(q) for q in im.getdata() if q[3] > 96})
+    sheet = [bytes(32)] * 64
+    for i in range(12):
+        t = obj_tile_of_frame(0, i)
+        x0, y0 = (i // 4) * 32 + (i % 2) * 16, ((i % 4) // 2) * 16
+        for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            sheet[t + qy * 16 + qx] = tile4bpp([cols.index(c15(q)) + 1 if q[3] > 96 else 0 for q in
+                (im.getpixel((x0 + qx * 8 + x, y0 + qy * 8 + y)) for y in range(8) for x in range(8))])
+    och = b''.join(sheet[:obj_tile_of_frame(0, 11) + 18])
+    open(os.path.join(out, 'pinlit.chr'), 'wb').write(och)
+    open(os.path.join(out, 'pinlit.pal'), 'wb').write(sprite_palette(cols))
+    asm += ['.section ".pinlit" superfree', 'pinlit_chr:', '.incbin "data/pinlit.chr"', 'pinlit_chrend:', 'pinlit_pal:', '.incbin "data/pinlit.pal"', '.ends', '']
+    # flipper i at f eighths up: web angle (dir > 0 ? .45 : pi - .45) - dir * f * .9, as a unit vector x 64
+    ux, uy = [], []
+    for d in (1, -1):
+        for f in range(9):
+            a = (0.45 if d > 0 else math.pi - 0.45) - d * (f / 8) * 0.9
+            ux.append(round(math.cos(a) * 64)); uy.append(round(math.sin(a) * 64))
+    J = lambda a: ', '.join(map(str, a))
+    arc = sorted(ARCADE)
+    defs = ['extern char pinlit_chr, pinlit_chrend, pinlit_pal;',
+            f'static const u16 pinLitTile[12] = {{{J(64 + obj_tile_of_frame(0, i) for i in range(12))}}};  /* 3 sizes x 4 corners */',
+            f'static const s8 pinUX[18] = {{{J(ux)}}};', f'static const s8 pinUY[18] = {{{J(uy)}}};  /* flipper, eighths up */',
+            f'#define ARCADE_N {len(arc)}', f'static const u8 arcadeAt[{2 * max(1, len(arc))}] = {{{J([v for a in arc for v in a] or [255, 0])}}};  /* map, text */']
+    end = len(hdr) - 1 - hdr[::-1].index('#endif')
+    hdr[end:end] = defs
+    return []
 
 
 RACE_LEN = {'derby': 3100, 'trail': 4200, 'race': 3900}     # web startMini
@@ -924,6 +974,7 @@ def main():
                 col[y * 32 + x] = cell(ch)
         col = bytes(col)
         chest_texts = [('Treasure', extra['gives'].get(q['item']) or ['You found something!']) for q in chests]
+        world[m['id']]['_map'] = i
         wld, npcs, chest_txt, lrefs = build_world(world[m['id']], chest_texts)
         lore_refs_all += [(i, t, l) for t, l in lrefs]
         # Enemies the ROM knows; bosses are handled by the room's boss type.
@@ -1098,6 +1149,7 @@ def main():
     sys_texts += [('PINAGAIN', 'City Pin', ['You did it!', 'Ten coins for another win.']),
                   ('NEEDBUG', '', ["You'd need something that can fly over the water and bring things back."]),
                   ('NEEDLAMP', '', ["You'll need a lantern for this one."]),
+                  ('NEEDCOIN', 'Stone House Arcade', ['You need a coin.']),
                   ('QUIZFEW', 'Tour Guide', ['Find at least three stories for your journal first, from markers, statues and people. Then come back!'])]
     for n in range(3):
         sys_texts.append((f'QUIZ{n}', 'Tour Guide', [f'{n} out of 3. Brush up on your journal and try again!']))

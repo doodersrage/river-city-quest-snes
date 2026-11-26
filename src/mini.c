@@ -547,8 +547,219 @@ void miniVBlank(void)
     }
 }
 
+/* ---------- Stone House pinball (web pinUpdate, segHit): B the left flipper, A the right ---------- */
+s16 pbX, pbY, pbVX, pbVY;      /* 1/64 px */
+u8 pbOn, pbBalls, pbLaunch, pbStill;
+u16 pbScore;
+u8 pbFl[2];                    /* flippers, eighths of the way up */
+s8 pbFlv[2];
+u8 pbLit[5];
+static const u8 bumpX[5] = {92, 164, 128, 60, 196}, bumpY[5] = {60, 60, 92, 104, 104}, bumpR[5] = {9, 9, 10, 7, 7};
+
+static u8 isqrt(u16 n)
+{
+    u8 r = 0, b;
+    for (b = 128; b; b >>= 1)
+        if ((u16)(r | b) * (r | b) <= n) r |= b;
+    return r;
+}
+
+static void pinTop(void)
+{
+    char *d = putStr(top, "SCORE ");
+    d = putNum(d, pbScore);
+    d = putStr(d, "    BALLS ");
+    putNum(d, pbBalls);
+    topDirty = 1;
+}
+
+/* the ball against a segment from (x1, y1) along (ux, uy)/64 for L px, 3 px thick (web segHit); boost: a flipper going up */
+static void pinSeg(s16 x1, s16 y1, s8 ux, s8 uy, u8 L, s8 boost, s8 side)
+{
+    s16 rx, ry, along, ex, ey, nx, ny, dot;
+    u8 d;
+    rx = pbX - (x1 << 6);
+    ry = pbY - (y1 << 6);
+    if (ABS(rx) > (L + 6) * 64 || ABS(ry) > (L + 6) * 64) return;
+    along = ((rx >> 6) * ux + (ry >> 6) * uy) >> 6;
+    if (along < 0) along = 0;
+    if (along > L) along = L;
+    ex = rx - ux * along;
+    ey = ry - uy * along;
+    if (ABS(ex) >= 3 * 64 || ABS(ey) >= 3 * 64) return;
+    d = isqrt((u16)((ex >> 3) * (ex >> 3) + (ey >> 3) * (ey >> 3)));
+    if (d >= 24 || !d) return;
+    nx = ((ex >> 3) << 6) / d;
+    ny = ((ey >> 3) << 6) / d;
+    pbX = (x1 << 6) + ux * along + nx * 3;
+    pbY = (y1 << 6) + uy * along + ny * 3;
+    dot = ((pbVX * nx) >> 6) + ((pbVY * ny) >> 6);
+    if (dot > 0) return;
+    pbVX = ((pbVX - ((dot * nx) >> 5)) * 27) >> 5;
+    pbVY = ((pbVY - ((dot * ny) >> 5)) * 27) >> 5;
+    if (boost > 0)
+    {
+        pbVY -= 40 * boost + 128;
+        pbVX += side * 77;
+    }
+}
+
+static void pinStep(u8 q)
+{
+    u8 i, r;
+    s16 dx, dy, nx, ny, dot, sx, sy;
+    u8 d, s;
+    /* quarter steps (the web game takes halves): a fast ball can't slip through a 3 px guide */
+    if (!(q & 1)) pbVY += 3;
+    pbX += pbVX >> 2;
+    pbY += pbVY >> 2;
+    sx = pbVX >> 3;
+    sy = pbVY >> 3;
+    if (ABS(sx) > 40 || ABS(sy) > 40 || sx * sx + sy * sy > 3136)
+    {
+        s = isqrt((u16)(ABS(sx) > 120 ? 14400 : sx * sx) + (u16)(ABS(sy) > 120 ? 14400 : sy * sy));
+        if (s > 56)
+        {
+            pbVX = ((sx * 56) / s) << 3;
+            pbVY = ((sy * 56) / s) << 3;
+        }
+    }
+    if (pbX < 22 * 64)
+    {
+        pbX = 22 * 64;
+        pbVX = (ABS(pbVX) * 4) / 5;
+    }
+    if (pbX > 244 * 64)
+    {
+        pbX = 244 * 64;
+        pbVX = -(ABS(pbVX) * 4) / 5;
+    }
+    if (pbY < 34 * 64)
+    {
+        pbY = 34 * 64;
+        pbVY = (ABS(pbVY) * 4) / 5;
+    }
+    dx = pbX >> 6;
+    dy = pbY >> 6;
+    if (dy < 70 && dx > 200 && (dx - 200) + (70 - dy) > 60) pbVX = -ABS(pbVX) - 32;
+    for (i = 0; i < 5; i++)
+    {
+        r = bumpR[i];
+        dx = (pbX >> 6) - bumpX[i];
+        dy = (pbY >> 6) - bumpY[i];
+        if (ABS(dx) >= r + 3 || ABS(dy) >= r + 3) continue;
+        if (dx * dx + dy * dy >= (r + 3) * (r + 3)) continue;
+        d = isqrt((u16)(dx * dx + dy * dy));
+        if (!d)
+        {
+            d = 1;
+            dy = -1;
+        }
+        nx = (dx << 6) / d;
+        ny = (dy << 6) / d;
+        pbX = (bumpX[i] << 6) + nx * (r + 3);
+        pbY = (bumpY[i] << 6) + ny * (r + 3);
+        dot = ((pbVX * nx) >> 6) + ((pbVY * ny) >> 6);
+        pbVX -= (dot * nx) >> 5;
+        pbVY -= (dot * ny) >> 5;
+        pbVX += (nx * 102) >> 6;
+        pbVY += (ny * 102) >> 6;
+        pbScore += 100;
+        pbLit[i] = 12;
+        sfx(SFX_COIN);
+        pinTop();
+    }
+    pinSeg(22, 150, 60, 23, 79, 0, 0);    /* the guides down to the flippers */
+    pinSeg(244, 150, -61, 20, 89, 0, 0);
+    pinSeg(96, 178, pinUX[pbFl[0]], pinUY[pbFl[0]], 26, pbFlv[0], 1);
+    pinSeg(160, 178, pinUX[9 + pbFl[1]], pinUY[9 + pbFl[1]], 26, pbFlv[1], -1);
+}
+
+static void pinUpdate(u16 pad)
+{
+    u8 i, on, prev;
+    for (i = 0; i < 2; i++)
+    {
+        on = (pad & (i ? KEY_A : KEY_B)) != 0;
+        prev = pbFl[i];
+        if (on) pbFl[i] = pbFl[i] + 3 > 8 ? 8 : pbFl[i] + 3;
+        else pbFl[i] = pbFl[i] > ((mgT & 1) ? 1 : 2) ? pbFl[i] - ((mgT & 1) ? 1 : 2) : 0;
+        pbFlv[i] = (s8)pbFl[i] - (s8)prev;
+        if (on && !prev) sfx(SFX_MENU);
+    }
+    for (i = 0; i < 5; i++)
+        if (pbLit[i]) pbLit[i]--;
+    if (!pbOn)
+    {
+        if (!pbBalls)
+        {
+            mgDone = 1;
+            return;
+        }
+        if (!--pbLaunch)
+        {
+            pbX = 236 << 6;
+            pbY = 40 << 6;
+            pbVX = -102 - (rnd() & 63);
+            pbVY = 32;
+            pbOn = 1;
+            pbStill = 0;
+            sfx(SFX_SHOT);
+            {
+                char *d = putStr(msg, "Ball ");
+                d = putNum(d, 4 - pbBalls);
+                putStr(d, " of 3");
+                msgDirty = 1;
+            }
+        }
+        return;
+    }
+    for (i = 0; i < 4; i++) pinStep(i);
+    if (ABS(pbVX) + ABS(pbVY) < 22)
+    {
+        if (++pbStill > 40)
+        {
+            pbVX += (pbX >> 6) < 128 ? 58 : -58;
+            pbVY -= 38;
+            pbStill = 0;
+        }
+    }
+    else pbStill = 0;
+    if ((pbY >> 6) > 206)
+    {
+        pbOn = 0;
+        pbBalls--;
+        pbLaunch = 60;
+        sfx(SFX_FAIL);
+        setMsg(pbBalls ? "Ball lost!" : "");
+        pinTop();
+    }
+}
+
+static void pinDraw(void)
+{
+    u8 i, r, slot = 1, c, z;
+    s16 x, y;
+    if (pbOn) put8(0, (pbX >> 6) - 3, (pbY >> 6) - 3 + MY, MT_PINBALL, 1);
+    else sprHide(OAM_M);
+    for (i = 0; i < 2; i++)
+        for (r = 0; r <= 24; r += 3)
+        {
+            x = (i ? 160 : 96) + ((pinUX[i * 9 + pbFl[i]] * r) >> 6);
+            y = 178 + ((pinUY[i * 9 + pbFl[i]] * r) >> 6);
+            put8(slot++, x - 2, y - 2 + MY, MT_PINDOT, 1);
+        }
+    for (i = 0; i < 5; i++)
+    {
+        z = bumpR[i] == 9 ? 0 : bumpR[i] == 10 ? 1 : 2;
+        for (c = 0; c < 4; c++, slot++)
+            if (pbLit[i]) sprPut(OAM_M + slot, 1, bumpX[i] - 16 + (c & 1) * 16, bumpY[i] - 16 + MY + (c >> 1) * 16, 2, 0, pinLitTile[z * 4 + c], 2);
+            else sprHide(OAM_M + slot);
+    }
+}
+
 /* ---------- the frame around them ---------- */
-static const char *const miniName[4] = {"", "Batting Practice", "Rams Free Throws", "Ashe Center Tennis"};
+static const char *const miniName[8] = {"", "Batting Practice", "Rams Free Throws", "Ashe Center Tennis", "", "", "", "Stone House Pinball"};
 static const char *const medalName[3] = {"gold", "silver", "bronze"};
 static const u8 medalCoins[3] = {20, 10, 5};
 static u8 endTxt[200];
@@ -568,7 +779,7 @@ static void endText(void)
 {
     char *d = (char *)endTxt;
     u16 coinsWon = 0, score = 0;
-    d = putStr(d, mgKind >= MINI_DERBY ? raceName[mgKind - MINI_DERBY] : miniName[mgKind]) + 1;
+    d = putStr(d, mgKind >= MINI_DERBY && mgKind != MINI_PIN ? raceName[mgKind - MINI_DERBY] : miniName[mgKind]) + 1;
     if (mgQuit)
         d = putStr(d, "You walk away from the game.");
     else if (mgKind == MINI_BAT)
@@ -582,6 +793,16 @@ static void endText(void)
         d = putStr(d, " home runs.\fThe coach slips you\n");
         d = putNum(d, coinsWon);
         d = putStr(d, " coins.");
+    }
+    else if (mgKind == MINI_PIN)
+    {
+        coinsWon = pbScore / 500;
+        score = pbScore;
+        d = putStr(d, "Game over! Score: ");
+        d = putNum(d, pbScore);
+        d = putStr(d, ".\fThe machine spits out\n");
+        d = putNum(d, coinsWon);
+        d = putStr(d, coinsWon == 1 ? " coin." : " coins.");
     }
     else if (mgKind >= MINI_DERBY)
     {
@@ -622,7 +843,7 @@ static void endText(void)
         d = putStr(d, " coins.");
         if (mgRet >= 15) d = putStr(d, "\nArthur Ashe would be proud.");
     }
-    if (!mgQuit && mgKind < MINI_DERBY && score > miniBest[mgKind])
+    if (!mgQuit && (mgKind < MINI_DERBY || mgKind == MINI_PIN) && score > miniBest[mgKind])
     {
         miniBest[mgKind] = score;
         d = putStr(d, "\nYour best yet!");
@@ -644,8 +865,13 @@ void runMini(u8 k)
     closeText();
     flushText(); /* the question box off BG3 */
     for (i = 0; i < 128; i++) sprHide(i);
-    if (k >= MINI_DERBY) rcqLoadRace(k - MINI_DERBY);
+    if (k >= MINI_DERBY && k != MINI_PIN) rcqLoadRace(k - MINI_DERBY);
     else rcqLoadMini(k - 1);
+    if (k == MINI_PIN)
+    {
+        dmaCopyVram(&pinlit_chr, VRAM_OBJ_CHR + 64 * 16, (&pinlit_chrend - &pinlit_chr));
+        dmaCopyCGram(&pinlit_pal, 128 + 32, 32);
+    }
     dmaCopyVram(&minispr_chr, VRAM_OBJ_CHR + 32 * 16, (&minispr_chrend - &minispr_chr));
     dmaCopyCGram(&minispr_pal, 128 + 16, 32);
     bgSetScroll(0, 0, 0);
@@ -671,6 +897,17 @@ void runMini(u8 k)
     {
         tennisTop();
         setMsg("A: swing   START: quit");
+    }
+    else if (k == MINI_PIN)
+    {
+        pbOn = 0;
+        pbBalls = 3;
+        pbLaunch = 40;
+        pbScore = 0;
+        pbFl[0] = pbFl[1] = 0;
+        for (i = 0; i < 5; i++) pbLit[i] = 0;
+        pinTop();
+        setMsg("B: left flipper  A: right");
     }
     else
     {
@@ -708,6 +945,11 @@ void runMini(u8 k)
         {
             tennisUpdate(pad, pressed);
             tennisDraw();
+        }
+        else if (mgKind == MINI_PIN)
+        {
+            pinUpdate(pad);
+            pinDraw();
         }
         else
         {

@@ -317,6 +317,8 @@ const bossArt = vm.runInContext(`(function(){
    out.minibg={
      bat:bg(()=>drawBat({t:0,n:0,hits:0,hr:0,ball:null,swing:0})),
      hoops:bg(()=>MINI.hoops.draw({n:0,made:0,ph:0,ball:null})),
+     pin:bg(()=>{const st0=g.stroke.bind(g);g.stroke=function(){if(g.strokeStyle!='#f2c14e')st0();};   // the flippers move: sprites
+       drawPin({t:0,fl:[0,0],lit:[0,0,0,0,0],bumps:[[92,60,9],[164,60,9],[128,92,10],[60,104,7],[196,104,7]],ball:null,score:0,balls:3});}),
      tennis:bg(()=>{const di=g.drawImage.bind(g);g.drawImage=(im,...r)=>{if(im!==HERO.up[0].r.c)di(im,...r);};MINI.tennis.draw({x:128,ball:null,sw:0,ret:0,miss:0});})};}
   // The scrolling-road races (derby, trail, raceway): each course as a 256x512 strip that loops on BG1, its repeats
   // chosen to divide 512 (the web game's 24 px dashes become 32), then the player and the obstacles, 32x32 each.
@@ -344,6 +346,9 @@ const bossArt = vm.runInContext(`(function(){
           car2:box(()=>{const x=16,y=16;R(x-7,y-10,14,20,'#1a1423');R(x-6,y-9,12,18,'#f2c14e');R(x-4,y-6,8,5,'#a8c8e0');R(x-6,y-1,12,2,'#ffffff');}),
           oil:box(()=>{const x=16,y=16;R(x-11,y-4,22,8,'#14101e');R(x-5,y-2,5,1,'#5a3a8a');})}}};
    out.raceInfo=['derby','trail','race'].map(k=>({k,gold:MINI[k].gold,silver:MINI[k].silver,who:MINI[k].who,name:MINI[k].name,label:MINI[k].label}));}
+  // pinball: a lit bumper (radius 9, 10, 7) to lay over the dark one when it's hit
+  out.pinlit=(()=>{const c=mkCanvas(96,32),old=g;g=c.getContext('2d');[9,10,7].forEach((r,i)=>{const x=i*32+16,y=16;
+    g.fillStyle='#fff2a8';g.beginPath();g.arc(x,y,r,0,6.283);g.fill();g.fillStyle='#ffffff';g.beginPath();g.arc(x-2,y-2,r/2.5,0,6.283);g.fill();});g=old;return c;})();
   out.chal=Object.entries(CHAL).map(([id,d])=>({id,name:d.name,type:d.type,time:d.time||0,ic:d.ic||null,foe:d.foe||null,n:d.n||0,needs:d.needs||null,intro:d.intro}));
   out.lore=LORE.map(([id,t,s])=>{const sn=s.split('. ')[0];return {id,title:t,quote:sn.length>95?sn.slice(0,92)+'...':sn+'.'};});
   out.keynames=KEYNAME;
@@ -370,6 +375,7 @@ const bossArt = vm.runInContext(`(function(){
     fs.writeFileSync(path.join(OUT, 'combat', 'race_' + k + '_spr.png'), c.toBuffer('image/png'));
   }
   fs.writeFileSync(path.join(OUT, 'combat', 'race.json'), JSON.stringify({ info: bossArt.raceInfo, obs: Object.fromEntries(Object.entries(bossArt.race).map(([k, r]) => [k, Object.keys(r.obs)])) }, null, 1));
+  fs.writeFileSync(path.join(OUT, 'combat', 'pinlit.png'), bossArt.pinlit.toBuffer('image/png'));
   for (const k in bossArt.minibg) fs.writeFileSync(path.join(OUT, 'combat', 'mini_' + k + '.png'), bossArt.minibg[k].toBuffer('image/png'));
   for (const name of ['turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']) {
     const ts = createCanvas(48 * bossArt[name].length, 48), tx2 = ts.getContext('2d');

@@ -254,7 +254,17 @@ void askChoose(u8 i)
     if (askKind == ASK_MINI)
     {
         askKind = 0;
-        if (i == 0) runMini(askChal);
+        if (i) return;
+        if (askChal == MINI_PIN)
+        {
+            if (!coins)
+            {
+                openTextAt((u8 *)&sys_txt + TXT_NEEDCOIN);
+                return;
+            }
+            coins--;
+        }
+        runMini(askChal);
         return;
     }
     if (askKind == ASK_CHAL)

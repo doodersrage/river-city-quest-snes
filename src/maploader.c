@@ -98,6 +98,7 @@ void rcqLoadMini(u8 k)
     case 0: rcqMiniUpload(&mini0_chr, &mini0_chrend - &mini0_chr, &mini0_map, &mini0_pal); break;
     case 1: rcqMiniUpload(&mini1_chr, &mini1_chrend - &mini1_chr, &mini1_map, &mini1_pal); break;
     case 2: rcqMiniUpload(&mini2_chr, &mini2_chrend - &mini2_chr, &mini2_map, &mini2_pal); break;
+    case 6: rcqMiniUpload(&mini6_chr, &mini6_chrend - &mini6_chr, &mini6_map, &mini6_pal); break;
     }
 }
 
