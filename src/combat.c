@@ -310,10 +310,9 @@ void collectPickup(u8 k)
 {
     u8 kind = pkKind[k];
     pkKind[k] = 0;
-    if (kind == 1) { if (coins < 999) coins++; sfx(SFX_COIN); }
-    else if (kind == 2) { hp += 2; if (hp > hpMax) hp = hpMax; sfx(SFX_HEART); }
-    else if (kind == 4 || kind == 13) sfx(SFX_COIN);
-    else sfx(SFX_JING);
+    sfx(kind == 1 || kind == 4 || kind == 13 ? SFX_COIN : kind == 2 ? SFX_HEART : SFX_JING);
+    if (kind == 1) { if (coins < 999) coins++; }
+    else if (kind == 2) { hp += 2; if (hp > hpMax) hp = hpMax; }
     else if (kind == 3)
     {
         if (hpMax < 20) hpMax += 2;
