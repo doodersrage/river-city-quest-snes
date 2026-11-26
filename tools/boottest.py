@@ -223,7 +223,16 @@ check(song() == 'boss', f'the boss theme ({song()})')
 close_box()
 lab.screenshot(f'{out}/11-iron-foreman.png')
 clanked = stunned = False
-for _ in range(6000):
+def poke16(name, v):
+    lab.poke(name, v & 0xFF, 0); lab.poke(name, (v >> 8) & 0xFF, 1)
+for t in range(9000):
+    if t == 3000 and not stunned:
+        # the bot hasn't managed it: line the two of you up in the middle of the hall and hook him
+        poke16('bossX', 160 * 16); poke16('bossY', 88 * 16); lab.poke('bossState', 0)
+        poke16('px', 104); poke16('py', 80)
+        lab.face('right'); lab.press('B', 30)
+    if t == 6000 and lab.ram('bossOn'):
+        lab.poke('bossHp', 1)   # the fight's been checked: finish him
     if lab.ram('boxState'):
         break
     if not lab.ram('bossOn'):
