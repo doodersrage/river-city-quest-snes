@@ -1394,4 +1394,93 @@ lab.run(None, 60)
 check(not lab.ram('miniOn') and lab.ram('pbBalls') == 0 and score > 0, f'three balls: {score} points, {flips} flips')
 check(lab.ram('coins', 2) == coins - 1 + score // 500 and lab.ram('boxState'), f"the machine pays a coin per 500 ({lab.ram('coins', 2)} coins)")
 close_box()
+
+# Stage 10, part 3: landmark cards, fishing, frogs.
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()   # out of the arcade
+def ncards(): return bin(lab.ram('cards', 2)).count('1')
+check(ncards() == 5, f'five landmark cards from the five bosses ({ncards()})')
+travel(lab, N('Carytown'), close_box)
+walk((6, 17)); lab.run('UP', 30); lab.run(None, 40); close_box()
+lab.poke('coins', 200, 0); lab.poke('coins', 0, 1)
+walk((8, 5)); lab.face('up'); lab.press('A', 10)
+for idx in (5, 6):   # the Fishing Rod, a Landmark Card Pack
+    while lab.ram('shopCur') < idx: lab.press('DOWN', 3)
+    while lab.ram('shopCur') > idx: lab.press('UP', 3)
+    lab.press('A', 60); lab.press('A', 10)
+lab.press('B', 10); close_box()
+check(lab.ram('hasRod') and ncards() == 6, f'Carytown Goods sells a Fishing Rod and landmark card packs ({ncards()} cards)')
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+# the cards in the START menu
+lab.press('START', 10)
+items = [lab.ram('menuList', 1, False, i) for i in range(lab.ram('menuN'))]
+for _ in range(12):
+    if lab.ram('menuCur') >= len(items) - 1: break
+    lab.press('DOWN', 4)
+lab.press('A', 6)
+check(lab.ram('boxState') == 8, 'START, then Landmark Cards: the collection')
+for _ in range(12):
+    if lab.ram('cards', 2) & (1 << lab.ram('cardCur')): break
+    lab.press('DOWN', 4)
+lab.press('A', 30)
+lab.screenshot(f'{out}/71-landmark-card.png')
+check(lab.ram('boxState') not in (0, 8), 'A reads the card')
+close_box(); lab.press('B', 6); close_box()
+# Fishing in Byrd Park: find the water's edge, cast, wait for the bite, then reel without snapping the line
+travel(lab, N('Byrd Park & Maymont'), close_box)
+menu_pick(11)
+g = lab.solid_grid()
+wram = None
+def cell(x, y):
+    return lab.ram('colRam', 1, False, y * 32 + x)
+spots = [(x, y, d) for y in range(1, 21) for x in range(1, 31) for d, (dx, dy) in (('up', (0, -1)), ('down', (0, 1)), ('left', (-1, 0)), ('right', (1, 0)))
+         if not g[y][x] and cell(x + dx, y + dy) == 12]
+px0, py0 = lab.pos
+spots.sort(key=lambda q: abs(q[0] * 16 + 8 - px0) + abs(q[1] * 16 + 8 - py0))
+caught = 0
+for x, y, d in spots[:6]:
+    try: walk((x, y))
+    except RuntimeError: continue
+    lab.face(d)
+    for _ in range(3):   # a few casts: clear the bait-stealers
+        close_box()
+        lab.press('B', 4)
+        if lab.ram('boxState') != 7: break
+        for f in range(900):
+            ph = lab.ram('fishPh')
+            if lab.ram('boxState') != 7: break
+            if ph == 1: lab.press('A', 1)
+            elif ph == 2 and lab.ram('fishTen', 2) < 60 * 256: lab.press('A', 2)
+            else: lab.run(None, 1)
+            if f == 300: lab.screenshot(f'{out}/72-fishing.png')
+        caught = sum(lab.ram('fishN', 1, False, k) for k in range(5))
+        if caught: break
+    if caught: break
+lab.screenshot(f'{out}/73-a-catch.png')
+check(caught >= 1, f"cast into the lake and reel one in ({[lab.ram('fishN', 1, False, k) for k in range(5)]})")
+close_box()
+# Frogs: out near the water when it rains
+lab.poke('wx', 1); lab.poke('wxK', 255); lab.poke('wxNext', 255)
+got = 0
+for t in range(60):
+    lab.run(None, 30)
+    for k in range(10):
+        if lab.ram('pkKind', 1, False, k) == 17:
+            back = lab.pos
+            poke16('px', lab.ram('pkX', 2, True, k)); poke16('py', lab.ram('pkY', 2, True, k)); lab.run(None, 6)
+            poke16('px', back[0]); poke16('py', back[1]); lab.run(None, 2)
+            if lab.ram('boxState'):
+                if lab.ram('frogs') == 1: lab.screenshot(f'{out}/74-a-frog.png')
+                close_box()
+    if lab.ram('frogs') >= 5: break
+check(lab.ram('frogs') >= 5, f"frogs come out in the rain: {lab.ram('frogs')} caught")
+coins, before = lab.ram('coins', 2), ncards()
+for _ in range(3):
+    talk_to(2)
+    for _ in range(20):
+        if not lab.ram('boxState'): break
+        lab.press('A', 6)
+    if lab.ram('frogsDone'): break
+check(lab.ram('frogsDone') and lab.ram('coins', 2) == min(999, coins + 40) and ncards() == before + 1,
+      f"the naturalist counts them: 40 coins and the Maymont card ({ncards()} cards)")
+lab.poke('wx', 0); lab.poke('wxK', 0)
 sys.exit(0 if ok else 1)
