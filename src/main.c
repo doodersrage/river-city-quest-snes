@@ -801,7 +801,7 @@ void useDoor(u8 tx, u8 ty)
     {
         d = doors + 1 + k * 4;
         if (d[0] != tx || d[1] != ty) continue;
-        if (d[2] != 255 && (d[3] == DOOR_OPEN || (d[3] == DOOR_CARKEY && hasCarkey)))
+        if (d[2] != 255 && (d[3] == DOOR_OPEN || (d[3] == DOOR_CARKEY && hasCarkey) || (d[3] == DOOR_KEYSTONES && keystones == 15)))
         {
             retMap = curMap;
             retX = tx;
