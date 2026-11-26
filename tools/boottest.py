@@ -1440,8 +1440,8 @@ check(not lab.ram('miniOn') and lab.map == N('Carytown'), 'B closes the album')
 # the cards in the START menu
 lab.press('START', 10)
 items = [lab.ram('menuList', 1, False, i) for i in range(lab.ram('menuN'))]
-for _ in range(12):
-    if lab.ram('menuCur') >= len(items) - 1: break
+for _ in range(14):
+    if lab.ram('menuCur') >= items.index(99): break
     lab.press('DOWN', 4)
 lab.press('A', 6)
 check(lab.ram('boxState') == 8, 'START, then Landmark Cards: the collection')
