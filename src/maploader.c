@@ -100,3 +100,14 @@ void rcqLoadMini(u8 k)
     case 2: rcqMiniUpload(&mini2_chr, &mini2_chrend - &mini2_chr, &mini2_map, &mini2_pal); break;
     }
 }
+
+void rcqRaceUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *och, u16 ochSize, u8 *opl);
+void rcqLoadRace(u8 k)
+{
+    switch (k)
+    {
+    case 0: rcqRaceUpload(&race0_chr, &race0_chrend - &race0_chr, &race0_map, &race0_pal, &race0_och, &race0_ochend - &race0_och, &race0_opl); break;
+    case 1: rcqRaceUpload(&race1_chr, &race1_chrend - &race1_chr, &race1_map, &race1_pal, &race1_och, &race1_ochend - &race1_och, &race1_opl); break;
+    case 2: rcqRaceUpload(&race2_chr, &race2_chrend - &race2_chr, &race2_map, &race2_pal, &race2_och, &race2_ochend - &race2_och, &race2_opl); break;
+    }
+}

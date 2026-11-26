@@ -234,7 +234,8 @@ def encode_text(title, pages):
 GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug', 'can', 'balls', 'shoes', 'bike', 'bottle']   # ITEM_* in the ROM, from 1
 NPC_REC = 15
 MINIS = ['bat', 'hoops', 'tennis', 'derby', 'trail', 'race', 'pin']   # minigame kind 1, 2, ... (NPC byte 13)
-MINI_BUILT = ['bat', 'hoops', 'tennis']
+MINI_BUILT = ['bat', 'hoops', 'tennis', 'derby', 'trail', 'race']
+RACES = ['derby', 'trail', 'race']   # the scrolling-road games, MINI_DERBY on
 CHAL_IDS = ['flies', 'bus', 'taps', 'lamps', 'melons', 'tenk', 'quiz', 'rats', 'lures', 'ghosts', 'cleanup', 'crabs', 'trolley', 'murals']
 RADII = [15, 32, 38, 44, 46, 48, 54, 68]   # windows, night, dark room, brazier, torch, lamp, night+lantern, dark+lantern
 
@@ -714,6 +715,7 @@ def convert_mini_sprites():
 def convert_minis(exp, out, asm, hdr):
     loader = ['void rcqMiniUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal);', 'void rcqLoadMini(u8 k)', '{', '    switch (k)', '    {']
     for k, name in enumerate(MINI_BUILT):
+        if name in RACES: continue
         src = Image.open(os.path.join(exp, 'combat', f'mini_{name}.png')).convert('RGB')
         full = Image.new('RGB', (256, 224), (0, 0, 0)); full.paste(src, (0, 12))
         path = os.path.join(exp, f'mini_{name}_full.png'); full.save(path)
@@ -726,6 +728,7 @@ def convert_minis(exp, out, asm, hdr):
         hdr.insert(end, f'extern char mini{k}_chr, mini{k}_chrend, mini{k}_map, mini{k}_pal;  /* {name}: {nt} tiles, {npal} palettes */')
         loader.append(f'    case {k}: rcqMiniUpload(&mini{k}_chr, &mini{k}_chrend - &mini{k}_chr, &mini{k}_map, &mini{k}_pal); break;')
     loader += ['    }', '}', '']
+    loader += convert_races(exp, out, asm, hdr)
     mchr, mpal, mdefs = convert_mini_sprites()
     open(os.path.join(out, 'minispr.chr'), 'wb').write(mchr)
     open(os.path.join(out, 'minispr.pal'), 'wb').write(mpal)
@@ -734,6 +737,72 @@ def convert_minis(exp, out, asm, hdr):
     end = len(hdr) - 1 - hdr[::-1].index('#endif')
     hdr[end:end] = ['extern char minispr_chr, minispr_chrend, minispr_pal;'] + mdefs + \
                    [f'#define MINI_{n.upper()} {i + 1}' for i, n in enumerate(MINIS)]
+    return loader
+
+
+RACE_LEN = {'derby': 3100, 'trail': 4200, 'race': 3900}     # web startMini
+RACE_STEP = {'derby': 90, 'trail': 80, 'race': 70}
+RACE_KINDS = {'derby': ['hay', 'cone', 'puddle', 'hay'], 'trail': ['goose', 'jogger', 'puddle', 'goose'], 'race': ['car', 'car', 'oil', 'car']}
+
+
+def convert_races(exp, out, asm, hdr):
+    """Each course: a 256x512 strip on BG1 (the whole 64x64 map, so it loops as it scrolls) and its player and obstacles
+    as 16x16 cells from OBJ tile 64 (up to 16 cells), sprite palettes 2-4."""
+    info = json.load(open(os.path.join(exp, 'combat', 'race.json')))
+    loader = ['void rcqRaceUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *och, u16 ochSize, u8 *opl);', 'void rcqLoadRace(u8 k)', '{', '    switch (k)', '    {']
+    tiles, pals_out, defs = [], [], []
+    for k, name in enumerate(RACES):
+        chr_, tm, pal, nt, npal, _ = convert_bg(os.path.join(exp, 'combat', f'race_{name}_bg.png'))
+        im = Image.open(os.path.join(exp, 'combat', f'race_{name}_spr.png')).convert('RGBA')
+        objs = ['player'] + info['obs'][name]
+        cells = []   # (object, corner, 16x16 pixels)
+        for o in range(len(objs)):
+            for c in range(4):
+                x0, y0 = o * 32 + (c % 2) * 16, (c // 2) * 16
+                px_ = [im.getpixel((x0 + x, y0 + y)) for y in range(16) for x in range(16)]
+                if any(q[3] > 96 for q in px_): cells.append((o, c, px_))
+        if len(cells) > 16: raise SystemExit(f'{name}: {len(cells)} sprite cells')
+        sets = [frozenset(c15(q) for q in px_ if q[3] > 96) for o in range(len(objs))
+                for px_ in [[q for (oo, cc, pp) in cells if oo == o for q in pp]]]
+        pals, which = pack_sprite_palettes(sets, 3)
+        sheet = [bytes(32)] * 64
+        tile_of = [[0] * 4 for _ in objs]
+        for i, (o, c, px_) in enumerate(cells):
+            t = obj_tile_of_frame(0, i)
+            pl = pals[which[o]]
+            for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+                sheet[t + qy * 16 + qx] = tile4bpp([pl.index(c15(q)) + 1 if q[3] > 96 else 0
+                    for q in (px_[(qy * 8 + y) * 16 + qx * 8 + x] for y in range(8) for x in range(8))])
+            tile_of[o][c] = 64 + t
+        used = max(obj_tile_of_frame(0, i) for i in range(len(cells))) + 18
+        och = b''.join(sheet[:used])
+        opl = b''.join(sprite_palette(p) for p in pals) + bytes(32 * (3 - len(pals)))
+        for ext, data in (('chr', chr_), ('map', tm), ('pal', pal), ('och', och), ('opl', opl)):
+            open(os.path.join(out, f'race{k}.{ext}'), 'wb').write(data)
+        asm += [f'.section ".race{k}" superfree', f'race{k}_chr:', f'.incbin "data/race{k}.chr"', f'race{k}_chrend:',
+                f'race{k}_map:', f'.incbin "data/race{k}.map"', f'race{k}_pal:', f'.incbin "data/race{k}.pal"',
+                f'race{k}_och:', f'.incbin "data/race{k}.och"', f'race{k}_ochend:', f'race{k}_opl:', f'.incbin "data/race{k}.opl"', '.ends', '']
+        end = len(hdr) - 1 - hdr[::-1].index('#endif')
+        hdr.insert(end, f'extern char race{k}_chr, race{k}_chrend, race{k}_map, race{k}_pal, race{k}_och, race{k}_ochend, race{k}_opl;  /* {name}: {nt} tiles */')
+        loader.append(f'    case {k}: rcqRaceUpload(&race{k}_chr, &race{k}_chrend - &race{k}_chr, &race{k}_map, &race{k}_pal, &race{k}_och, &race{k}_ochend - &race{k}_och, &race{k}_opl); break;')
+        tiles.append(tile_of + [[0] * 4] * (4 - len(objs)))
+        pals_out.append([2 + which[o] for o in range(len(objs))] + [2] * (4 - len(objs)))
+    loader += ['    }', '}', '']
+    J = lambda a: ', '.join(map(str, a))
+    ri = info['info']
+    kinds = [[(info['obs'][n].index(kk) + 1) | (0x40 if kk in ('puddle', 'oil') else 0) | (0x80 if kk == 'car' else 0) for kk in RACE_KINDS[n]] for n in RACES]
+    defs += [f'static const u16 raceTile[{len(RACES) * 16}] = {{{J(t for r in tiles for o in r for t in o)}}};  /* course, object (0 player), corner */',
+             f'static const u8 racePal[{len(RACES) * 4}] = {{{J(p for r in pals_out for p in r)}}};',
+             f'static const u16 raceLen[{len(RACES)}] = {{{J(RACE_LEN[n] for n in RACES)}}};',
+             f'static const u8 raceStep[{len(RACES)}] = {{{J(RACE_STEP[n] for n in RACES)}}};',
+             f'static const u16 raceGold[{len(RACES)}] = {{{J(round(r["gold"] * 60) for r in ri)}}};  /* frames */',
+             f'static const u16 raceSilver[{len(RACES)}] = {{{J(round(r["silver"] * 60) for r in ri)}}};',
+             f'static const u8 raceKinds[{len(RACES) * 4}] = {{{J(v for r in kinds for v in r)}}};  /* object | 0x40 slows you | 0x80 drives */',
+             'static const char *const raceWho[%d] = {%s};' % (len(RACES), ', '.join('"%s"' % r['who'] for r in ri)),
+             'static const char *const raceLabel[%d] = {%s};' % (len(RACES), ', '.join('"%s"' % r['label'] for r in ri)),
+             'static const char *const raceName[%d] = {%s};' % (len(RACES), ', '.join('"%s"' % r['name'] for r in ri))]
+    end = len(hdr) - 1 - hdr[::-1].index('#endif')
+    hdr[end:end] = defs
     return loader
 
 

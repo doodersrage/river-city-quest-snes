@@ -533,6 +533,19 @@ static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11,
 extern char mini0_chr, mini0_chrend, mini0_map, mini0_pal;  /* bat: 97 tiles, 8 palettes */
 extern char mini1_chr, mini1_chrend, mini1_map, mini1_pal;  /* hoops: 91 tiles, 8 palettes */
 extern char mini2_chr, mini2_chrend, mini2_map, mini2_pal;  /* tennis: 24 tiles, 1 palettes */
+extern char race0_chr, race0_chrend, race0_map, race0_pal, race0_och, race0_ochend, race0_opl;  /* derby: 18 tiles */
+extern char race1_chr, race1_chrend, race1_map, race1_pal, race1_och, race1_ochend, race1_opl;  /* trail: 17 tiles */
+extern char race2_chr, race2_chrend, race2_map, race2_pal, race2_och, race2_ochend, race2_opl;  /* race: 34 tiles */
+static const u16 raceTile[48] = {64, 66, 68, 70, 72, 74, 76, 78, 96, 98, 100, 102, 104, 106, 108, 110, 64, 66, 68, 70, 72, 74, 76, 78, 96, 98, 100, 102, 104, 106, 108, 110, 64, 66, 68, 70, 72, 74, 76, 78, 96, 98, 100, 102, 104, 106, 108, 110};  /* course, object (0 player), corner */
+static const u8 racePal[12] = {2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 2};
+static const u16 raceLen[3] = {3100, 4200, 3900};
+static const u8 raceStep[3] = {90, 80, 70};
+static const u16 raceGold[3] = {930, 1260, 870};  /* frames */
+static const u16 raceSilver[3] = {1140, 1560, 1080};
+static const u8 raceKinds[12] = {1, 2, 67, 1, 1, 2, 67, 1, 129, 129, 67, 129};  /* object | 0x40 slows you | 0x80 drives */
+static const char *const raceWho[3] = {"The Derby Kid", "The cyclist", "The race official"};
+static const char *const raceLabel[3] = {"LIBBY HILL", "CAPITAL TRAIL", "RICHMOND RACEWAY"};
+static const char *const raceName[3] = {"Libby Hill Soapbox Derby", "Capital Trail Time Trial", "Richmond Raceway Dash"};
 extern char minispr_chr, minispr_chrend, minispr_pal;
 #define MT_BALL2 32
 #define MT_BALL3 33

@@ -1871,6 +1871,51 @@ mini2_pal:
 .incbin "data/mini2.pal"
 .ends
 
+.section ".race0" superfree
+race0_chr:
+.incbin "data/race0.chr"
+race0_chrend:
+race0_map:
+.incbin "data/race0.map"
+race0_pal:
+.incbin "data/race0.pal"
+race0_och:
+.incbin "data/race0.och"
+race0_ochend:
+race0_opl:
+.incbin "data/race0.opl"
+.ends
+
+.section ".race1" superfree
+race1_chr:
+.incbin "data/race1.chr"
+race1_chrend:
+race1_map:
+.incbin "data/race1.map"
+race1_pal:
+.incbin "data/race1.pal"
+race1_och:
+.incbin "data/race1.och"
+race1_ochend:
+race1_opl:
+.incbin "data/race1.opl"
+.ends
+
+.section ".race2" superfree
+race2_chr:
+.incbin "data/race2.chr"
+race2_chrend:
+race2_map:
+.incbin "data/race2.map"
+race2_pal:
+.incbin "data/race2.pal"
+race2_och:
+.incbin "data/race2.och"
+race2_ochend:
+race2_opl:
+.incbin "data/race2.opl"
+.ends
+
 .section ".minispr" superfree
 minispr_chr:
 .incbin "data/minispr.chr"
