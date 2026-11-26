@@ -38,9 +38,9 @@ lightCircle:
 
     ; base offset of this table
     lda 19
-    beq +
+    beq lcP1
     lda #451
-+:
+lcP1:
     sta 1
 
     ; headers
@@ -56,52 +56,52 @@ lightCircle:
     ; every line empty
     ldy #112
     lda #$00FF
--:
+lcM2:
     sta.l lightTab1+1,x
     sta.l lightTab1+226,x
     inx
     inx
     dey
-    bne -
+    bne lcM2
 
     ; table 1 keeps the HUD rows (0-23) lit
     lda 19
-    bne +
+    bne lcP4
     ldx #0
     lda #$FF00
---:
+lcM3:
     sta.l lightTab1+1,x
     inx
     inx
     cpx #48
-    bne --
-+:
+    bne lcM3
+lcP4:
 
     lda 25
-    beq _done
+    beq lcDone
     eor #$FFFF
     inc a
     sta 3                   ; dy = -r
 
-_line:
+lcLine:
     lda 23
     clc
     adc 3
-    bmi _next               ; above the screen
+    bmi lcNext               ; above the screen
     cmp #224
-    bcs _next               ; below it
+    bcs lcNext               ; below it
     sta 5                   ; line
     lda 19
-    bne +
+    bne lcP5
     lda 5
     cmp #24
-    bcc _next               ; the HUD rows are already lit
-+:
+    bcc lcNext               ; the HUD rows are already lit
+lcP5:
     lda 3
-    bpl +
+    bpl lcP6
     eor #$FFFF
     inc a
-+:
+lcP6:
     tay
     lda [15],y
     and #$00FF
@@ -110,20 +110,20 @@ _line:
     lda 21
     clc
     adc 7
-    bmi _next               ; right edge off the left of the screen
+    bmi lcNext               ; right edge off the left of the screen
     cmp #256
-    bcc +
+    bcc lcP7
     lda #255
-+:
+lcP7:
     tay                     ; Y = right
     lda 21
     sec
     sbc 7
-    bpl +
+    bpl lcP8
     lda #0                  ; left edge clipped to the screen
-+:
+lcP8:
     cmp #256
-    bcs _next               ; left edge off the right of the screen
+    bcs lcNext               ; left edge off the right of the screen
     sta 7                   ; left
     tya
     xba
@@ -138,22 +138,22 @@ _line:
     tax                     ; base + 1 + 2 * line
     lda 5
     cmp #112
-    bcc +
+    bcc lcP9
     inx                     ; the second block has its own header byte
-+:
+lcP9:
     pla
     sta.l lightTab1,x
 
-_next:
+lcNext:
     lda 3
     inc a
     sta 3
     sec
     sbc 25
-    bmi _line
-    beq _line
+    bmi lcLine
+    beq lcLine
 
-_done:
+lcDone:
     tsc
     clc
     adc #8
