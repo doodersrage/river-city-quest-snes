@@ -922,7 +922,7 @@ void drawBlocks(void)
             sprHide(OAM_BLOCKS + k);
             continue;
         }
-        sprPut(OAM_BLOCKS + k, 1, blkX[k] - camX, blkY[k] - camY - 1, 1, 0, OBJ_I_BLOCK, PAL_BLOCK);
+        sprPut(OAM_BLOCKS + k, 1, blkX[k] - camX, blkY[k] - camY - 1, 2, 0, OBJ_I_BLOCK, PAL_BLOCK);
     }
 }
 

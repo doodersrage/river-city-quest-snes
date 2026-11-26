@@ -96,7 +96,7 @@ lab.screenshot(f'{out}/7-row-house.png')
 lab.walk_to_cell(7, 8)
 lab.run('DOWN', 40)
 lab.run(None, 40)
-check(lab.map == 11 and lab.pos[1] // 16 == 17, f'the stairs lead back out to the Fan (map {lab.map}, {lab.pos})')
+check(lab.map == 11 and abs(lab.pos[0] - 72) < 24 and abs(lab.pos[1] - 280) < 24, f'the stairs lead back out to the Fan, by the door (map {lab.map}, {lab.pos})')  # a rat may bump you
 
 # Stage 4: Carytown Goods. Buy a heart charm.
 lab.walk_to_cell(0, 11)

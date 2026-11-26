@@ -88,6 +88,8 @@ class Lab:
         walls = {1, 2, 3, 4, 5, 6, 7, 8, 9} | (set() if self.ram('hasKayak') else {10})
         grid = [[1 if (x >= w or y >= h or col[y * MAP_W + x] in walls) else 0
                  for x in range(MAP_W)] for y in range(MAP_H)]
+        for k in range(self.ram('blkN')):
+            grid[self.ram('blkTY', 1, False, k)][self.ram('blkTX', 1, False, k)] = 1
         for k in range(self.ram('npcCount')):
             nx, ny = self.ram('npcX', 2, True, k), self.ram('npcY', 2, True, k)
             grid[ny // 16][nx // 16] = 1
