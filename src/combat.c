@@ -306,6 +306,13 @@ void bombHitsEnemies(s16 x, s16 y)
         }
 }
 
+static u16 partText(u8 gid)
+{
+    if (gid == PART_GID0) return parts == 1 ? TXT_PART0_1 : parts == 2 ? TXT_PART0_2 : TXT_PART0_3;
+    if (gid == PART_GID1) return parts == 1 ? TXT_PART1_1 : parts == 2 ? TXT_PART1_2 : TXT_PART1_3;
+    return parts == 1 ? TXT_PART2_1 : parts == 2 ? TXT_PART2_2 : TXT_PART2_3;
+}
+
 void collectPickup(u8 k)
 {
     u8 kind = pkKind[k];
@@ -322,6 +329,12 @@ void collectPickup(u8 k)
     }
     else if (kind == 4) { if (powder < capPowder) powder++; }
     else if (kind == 13) { balls = balls + 3 > capBalls ? capBalls : balls + 3; }
+    else if (kind == 14)
+    {
+        /* a bateau part for the river historian (web collect 'part') */
+        parts++;
+        openTextAt((u8 *)&sys_txt + partText(pkId[k]));
+    }
     else if (kind == 12)
     {
         hasBib = 1;
@@ -675,7 +688,7 @@ void combatDraw(void)
         if (pkKind[k] >= 3)
         {
             tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : pkKind[k] == 9 ? OBJ_I_KEY : pkKind[k] == 10 ? OBJ_I_CARKEY :
-                   pkKind[k] == 11 ? OBJ_I_PIECE : pkKind[k] == 12 ? OBJ_I_BIB : pkKind[k] == 13 ? OBJ_I_BALL : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
+                   pkKind[k] == 11 ? OBJ_I_PIECE : pkKind[k] == 12 ? OBJ_I_BIB : pkKind[k] == 13 ? OBJ_I_BALL : pkKind[k] == 14 ? OBJ_I_OAR : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
             sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, PAL_ITEM);
             continue;
         }

@@ -81,6 +81,8 @@ extern u8 heroDir, step;
 extern u16 frameCount;
 extern u8 npcCount;
 extern s16 npcX[], npcY[];
+extern u8 npcDir[];
+extern u8 *wld;
 
 /* hero combat state */
 extern u8 hp, hpMax, inv, atk, charging, charge, spin, kt;
@@ -115,6 +117,12 @@ u8 enemyCount(u8 type);
 extern u8 *brazPtr, *pickPtr;
 extern u8 pickupGot[];
 extern u8 hasBug, hasCarkey, pieces, hasKayak, tradeItem, melonTaken;
+extern u8 parts, bateauDone, hasLure;   /* stage 9: the bateau quest */
+/* stage 9: town life (life.c) */
+void lifeLoad(void);
+void lifeUpdate(void);
+void lifeDraw(void);
+u8 carHit(s16 x, s16 y);
 extern u8 *blkPtr;
 u8 blockAtCell(s16 tx, s16 ty);
 void tryPush(void);
