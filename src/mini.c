@@ -522,8 +522,14 @@ static void raceDraw(void)
 
 /* Called from rcqVBlank straight after the VBlank starts: a changed score line or message goes to BG3 then
    (after the sound driver's turn it would land outside VBlank and be lost). */
+u16 dbgLine;
 void miniVBlank(void)
 {
+    u8 lo, hi;
+    lo = *(vu8 *)0x2137; /* latch the beam position (debug) */
+    lo = *(vu8 *)0x213D;
+    hi = *(vu8 *)0x213D;
+    dbgLine = lo | ((hi & 1) << 8);
     if (topDirty)
     {
         bg3Row(0, top, FONT_GOLD);
