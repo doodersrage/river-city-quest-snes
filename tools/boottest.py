@@ -1334,4 +1334,35 @@ check(play_mini(0, hoops), 'the Rams Coach hands you the ball')
 check(lab.ram('mgMade') >= 8, f"{lab.ram('mgMade')} of 10 from the line")
 check(lab.ram('coins', 2) == min(999, coins + 2 * lab.ram('mgMade')), f"two coins a basket ({coins} -> {lab.ram('coins', 2)})")
 close_box()
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()   # back out to VCU
+
+# The scrolling-road races: steer around what's ahead.
+def racer(f):
+    if f % 2:
+        lab.run(None, 1); return
+    y, x, n = lab.ram('rcY', 2), lab.ram('rcX', 2, True) >> 4, lab.ram('rcN')
+    target = 128
+    for i in range(n):
+        sy = lab.ram('obsY', 2, False, i) - y
+        if 100 < sy < 220 and not lab.ram('obsHit', 1, False, i):
+            ox = lab.ram('obsX', 1, False, i)
+            target = ox + 34 if ox < 128 else ox - 34
+            break
+    lab.run('RIGHT' if target > x + 2 else 'LEFT' if target < x - 2 else None, 2)
+MEDAL = ['gold', 'silver', 'bronze']
+for name, place, k, shotname in (('Derby Kid', 'Church Hill', 2, '67-soapbox-derby'), ('Trail Cyclist', 'Rocketts Landing', 2, '68-capital-trail'),
+                                 ('Race Official', 'Richmond Raceway', 0, '69-raceway')):
+    travel(lab, N(place), close_box)
+    coins = lab.ram('coins', 2)
+    shot.discard('race')
+    def step(f):
+        if f == 240: lab.screenshot(f'{out}/{shotname}.png')
+        racer(f)
+    started = play_mini(k, step, 6000)
+    medal = lab.ram('rcMedal')
+    won = {0: 20, 1: 10, 2: 5}.get(medal, 0)
+    check(started and lab.ram('rcY', 2) >= lab.ram('rcLen', 2), f"{name}: down the course in {lab.ram('rcTime', 2) / 60:.1f} s, a {MEDAL[medal] if medal < 3 else '?'} medal")
+    check(lab.ram('coins', 2) == min(999, coins + won) and lab.ram('miniBest', 2, False, lab.ram('mgKind')) == lab.ram('rcTime', 2),
+          f"{won} coins and a best time ({coins} -> {lab.ram('coins', 2)})")
+    close_box()
 sys.exit(0 if ok else 1)

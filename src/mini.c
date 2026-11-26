@@ -16,7 +16,7 @@ u8 miniOn;
 u16 miniBest[8];              /* best score per game (higher is better) */
 
 u8 mgKind, mgDone, mgQuit;
-static u16 t;
+u16 mgT;
 /* shared game state */
 u8 mgN, mgHits, mgHr, mgMade, mgRet, mgMiss, mgWait, mgSwing, mgRes;
 u8 mgBallOn, mgBallUp, mgAge, mgArr;
@@ -26,13 +26,23 @@ u16 mgPh;                /* free-throw needle phase */
 u8 mgSx0, mgSx1, mgBt;       /* free-throw flight: start/end x, frames */
 static char msg[33], top[33];
 static u8 msgDirty, topDirty;
-static u16 row[32];
+static u16 row[32], rowTop[32], rowMsg[32];
+static u8 topReady, msgReady;
 
 /* ---------- text on BG3 rows 0 (score) and 27 (messages), outside the picture ---------- */
+/* lay a line out centred in buf, as BG3 map words */
+static void bg3Fill(u16 *buf, const char *s, u16 font)
+{
+    u8 c, k = 0;
+    while (s[k] && k < 32) k++;
+    for (c = 0; c < 32; c++) buf[c] = 0;
+    for (c = 0; c < k; c++) buf[(32 - k) / 2 + c] = (font + s[c] - 32) | 0x2000;
+}
+
 static void bg3Row(u8 r, const char *s, u16 font)
 {
     u8 c, k = 0;
-    while (s[k]) k++;
+    while (s[k] && k < 32) k++;
     for (c = 0; c < 32; c++) row[c] = 0;
     for (c = 0; c < k && c < 32; c++) row[(32 - k) / 2 + c] = (font + s[c] - 32) | 0x2000;
     dmaCopyVram((u8 *)row, VRAM_BG3_MAP + r * 32, 64);
@@ -376,8 +386,171 @@ static void tennisDraw(void)
     stick(1, x + 4, 150 + MY, tenA[mgSwing], 4, 13, 9, MT_RACKET, MT_RACKETHEAD);
 }
 
+/* ---------- the soapbox derby, the Capital Trail, the Raceway (web derbyUpdate, drawDerby/drawTrail/drawRace) ---------- */
+#define MAX_OBS 64
+extern void rcqLoadRace(u8 k);
+u8 rcK;                        /* course: 0 derby, 1 trail, 2 raceway */
+u16 rcY, rcV, rcTime, rcLen;   /* distance (px), speed (1/256 px a frame), frames */
+u8 rcFrac, rcBump, rcN, rcMedal;
+s16 rcX;                       /* 1/16 px */
+u16 obsY[MAX_OBS];
+u8 obsX[MAX_OBS], obsK[MAX_OBS], obsV[MAX_OBS], obsF[MAX_OBS], obsHit[MAX_OBS];
+static u16 rcShown;
+
+static char *putTime(char *d, u16 f)
+{
+    u16 tt = f / 6, sec = tt / 10;
+    d = putNum(d, sec / 60);
+    *d++ = ':';
+    *d++ = '0' + (sec % 60) / 10;
+    *d++ = '0' + (sec % 60) % 10;
+    *d++ = '.';
+    *d++ = '0' + tt % 10;
+    *d = 0;
+    return d;
+}
+
+static void raceTop(void)
+{
+    char *d = putTime(top, rcTime);
+    d = putStr(d, "      ");
+    putStr(d, raceLabel[rcK]);
+    topDirty = 1;
+}
+
+static void raceStart(void)
+{
+    u16 y;
+    u8 k;
+    rcK = mgKind - MINI_DERBY;
+    rcLen = raceLen[rcK];
+    rcY = rcV = rcTime = 0;
+    rcFrac = rcBump = 0;
+    rcX = 128 * 16;
+    rcN = 0;
+    for (y = 260; y < rcLen - 100 && rcN < MAX_OBS; y += raceStep[rcK] + rnd() % 70)
+    {
+        k = raceKinds[rcK * 4 + (rnd() & 3)];
+        obsY[rcN] = y;
+        obsX[rcN] = 76 + rnd() % 100;
+        obsK[rcN] = k;
+        obsV[rcN] = (k & 0x80) ? 77 + rnd() % 90 : 0; /* a car: 1.2-2.6 px a frame, in 1/64 */
+        obsF[rcN] = 0;
+        obsHit[rcN] = 0;
+        rcN++;
+    }
+    rcShown = 0xFFFF;
+}
+
+static void raceUpdate(u16 pad)
+{
+    u8 i, k;
+    u16 vmax;
+    s16 sy, dx;
+    rcTime++;
+    vmax = rcBump ? 410 : rcK == 2 ? 1331 : 1075;   /* 1.6 while bumped, else 5.2 (raceway) or 4.2 */
+    if (rcBump) rcBump--;
+    rcV += rcK == 2 ? 13 : 10;                     /* .05 or .04 a frame */
+    if (rcV > vmax) rcV = vmax;
+    rcFrac += rcV & 255;
+    rcY += (rcV >> 8) + (rcFrac < (rcV & 255) ? 1 : 0);
+    if (pad & KEY_LEFT) rcX -= 29;
+    if (pad & KEY_RIGHT) rcX += 29;
+    if (rcX < 64 * 16) rcX = 64 * 16;
+    if (rcX > 192 * 16) rcX = 192 * 16;
+    for (i = 0; i < rcN; i++)
+    {
+        if (obsV[i])
+        {
+            k = obsF[i];
+            obsF[i] += obsV[i];
+            obsY[i] += obsF[i] >> 6;
+            obsF[i] &= 63;
+            (void)k;
+        }
+        if (obsHit[i]) continue;
+        sy = (s16)(obsY[i] - rcY);
+        if (sy <= 120 || sy >= 150) continue;
+        dx = (s16)obsX[i] - (rcX >> 4);
+        if (ABS(dx) >= 14) continue;
+        obsHit[i] = 1;
+        if (obsK[i] & 0x40)
+        {
+            rcV = (rcV * 3) / 5; /* a puddle or oil: slide, slower */
+            sfx(SFX_HEART);
+        }
+        else
+        {
+            rcBump = 40;
+            rcV = 256;
+            sfx(SFX_HURT);
+        }
+    }
+    if (rcTime / 6 != rcShown)
+    {
+        rcShown = rcTime / 6;
+        raceTop();
+    }
+    if (rcY >= rcLen)
+    {
+        rcMedal = rcTime < raceGold[rcK] ? 0 : rcTime < raceSilver[rcK] ? 1 : 2;
+        mgDone = 1;
+    }
+}
+
+static void raceDraw(void)
+{
+    u8 i, c, slot = 0, o, pal;
+    s16 sy, sx, cy;
+    u16 t;
+    bgSetScroll(0, 0, rcY & 511);
+    /* the player, bouncing a pixel while bumped */
+    cy = 138 + MY + ((rcBump && (mgT & 2)) ? 1 : 0);
+    sx = (rcX >> 4) - 16;
+    for (c = 0; c < 4; c++)
+    {
+        t = raceTile[rcK * 16 + c];
+        if (t) sprPut(OAM_M + slot++, 1, sx + (c & 1) * 16, cy - 18 + (c >> 1) * 16, 3, 0, t, racePal[rcK * 4]);
+    }
+    /* what's on the road ahead */
+    for (i = 0; i < rcN && slot < 36; i++)
+    {
+        sy = (s16)(obsY[i] - rcY);
+        if (sy < -40 || sy > 230) continue;
+        o = obsK[i] & 3;
+        pal = racePal[rcK * 4 + o];
+        for (c = 0; c < 4; c++)
+        {
+            t = raceTile[rcK * 16 + o * 4 + c];
+            if (t) sprPut(OAM_M + slot++, 1, obsX[i] - 16 + (c & 1) * 16, sy + MY - 16 + (c >> 1) * 16, 2, 0, t, pal);
+        }
+    }
+    while (slot < 36) sprHide(OAM_M + slot++);
+    /* how far down the course: a marker up the right-hand edge */
+    put8(40, 245, 30 + MY + 138 - ((rcY >> 4) * 138) / (rcLen >> 4), MT_NEEDLE, 1);
+}
+
+/* Called from rcqVBlank straight after the VBlank starts: a changed score line or message goes to BG3 then
+   (after the sound driver's turn it would land outside VBlank and be lost). */
+void miniVBlank(void)
+{
+    /* only the copy happens here: the lines are laid out in the main loop */
+    if (topReady)
+    {
+        dmaCopyVram((u8 *)rowTop, VRAM_BG3_MAP, 64);
+        topReady = 0;
+    }
+    else if (msgReady)
+    {
+        dmaCopyVram((u8 *)rowMsg, VRAM_BG3_MAP + 27 * 32, 64);
+        msgReady = 0;
+    }
+}
+
 /* ---------- the frame around them ---------- */
 static const char *const miniName[4] = {"", "Batting Practice", "Rams Free Throws", "Ashe Center Tennis"};
+static const char *const medalName[3] = {"gold", "silver", "bronze"};
+static const u8 medalCoins[3] = {20, 10, 5};
 static u8 endTxt[200];
 
 static void fadeTo(u8 in)
@@ -395,7 +568,7 @@ static void endText(void)
 {
     char *d = (char *)endTxt;
     u16 coinsWon = 0, score = 0;
-    d = putStr(d, miniName[mgKind]) + 1;
+    d = putStr(d, mgKind >= MINI_DERBY ? raceName[mgKind - MINI_DERBY] : miniName[mgKind]) + 1;
     if (mgQuit)
         d = putStr(d, "You walk away from the game.");
     else if (mgKind == MINI_BAT)
@@ -409,6 +582,25 @@ static void endText(void)
         d = putStr(d, " home runs.\fThe coach slips you\n");
         d = putNum(d, coinsWon);
         d = putStr(d, " coins.");
+    }
+    else if (mgKind >= MINI_DERBY)
+    {
+        /* lower is better: keep the best time */
+        coinsWon = medalCoins[rcMedal];
+        d = putStr(d, "Finished in ");
+        d = putTime(d, rcTime);
+        d = putStr(d, "!\nThat's a ");
+        d = putStr(d, medalName[rcMedal]);
+        d = putStr(d, " medal.\f");
+        d = putStr(d, raceWho[rcK]);
+        d = putStr(d, " hands\nover ");
+        d = putNum(d, coinsWon);
+        d = putStr(d, " coins.");
+        if (!miniBest[mgKind] || rcTime < miniBest[mgKind])
+        {
+            miniBest[mgKind] = rcTime;
+            d = putStr(d, "\nA new best time!");
+        }
     }
     else if (mgKind == MINI_HOOPS)
     {
@@ -430,7 +622,7 @@ static void endText(void)
         d = putStr(d, " coins.");
         if (mgRet >= 15) d = putStr(d, "\nArthur Ashe would be proud.");
     }
-    if (!mgQuit && score > miniBest[mgKind])
+    if (!mgQuit && mgKind < MINI_DERBY && score > miniBest[mgKind])
     {
         miniBest[mgKind] = score;
         d = putStr(d, "\nYour best yet!");
@@ -444,13 +636,16 @@ void runMini(u8 k)
     u16 pad, pressed, lastPad = 0xFFFF;
     u8 i;
     mgKind = k;
+    topDirty = msgDirty = topReady = msgReady = 0; /* (work RAM starts as noise) */
+    top[0] = msg[0] = 0;
     miniOn = 1;
     fadeTo(0);
     setBrightness(0);
     closeText();
     flushText(); /* the question box off BG3 */
     for (i = 0; i < 128; i++) sprHide(i);
-    rcqLoadMini(k - 1);
+    if (k >= MINI_DERBY) rcqLoadRace(k - MINI_DERBY);
+    else rcqLoadMini(k - 1);
     dmaCopyVram(&minispr_chr, VRAM_OBJ_CHR + 32 * 16, (&minispr_chrend - &minispr_chr));
     dmaCopyCGram(&minispr_pal, 128 + 16, 32);
     bgSetScroll(0, 0, 0);
@@ -472,10 +667,16 @@ void runMini(u8 k)
         hoopsTop();
         setMsg("A: shoot   START: quit");
     }
-    else
+    else if (k == MINI_TENNIS)
     {
         tennisTop();
         setMsg("A: swing   START: quit");
+    }
+    else
+    {
+        raceStart();
+        raceTop();
+        setMsg("Steer with left and right");
     }
     WaitForVBlank();
     bg3Row(0, top, FONT_GOLD);
@@ -503,29 +704,37 @@ void runMini(u8 k)
             hoopsUpdate(pressed);
             hoopsDraw();
         }
-        else
+        else if (mgKind == MINI_TENNIS)
         {
             tennisUpdate(pad, pressed);
             tennisDraw();
         }
-        t++;
-        WaitForVBlank();
-        if (topDirty)
+        else
         {
-            bg3Row(0, top, FONT_GOLD);
+            raceUpdate(pad);
+            raceDraw();
+        }
+        mgT++;
+        if (topDirty && !topReady)
+        {
+            bg3Fill(rowTop, top, FONT_GOLD);
             topDirty = 0;
+            topReady = 1;
         }
-        else if (msgDirty)
+        if (msgDirty && !msgReady)
         {
-            bg3Row(27, msg, FONT_WHITE);
+            bg3Fill(rowMsg, msg, FONT_WHITE);
             msgDirty = 0;
+            msgReady = 1;
         }
+        WaitForVBlank();
     }
     /* the result, then back to the neighbourhood */
     for (i = 0; i < 40; i++) WaitForVBlank();
     fadeTo(0);
     setBrightness(0);
     for (i = 0; i < 128; i++) sprHide(i);
+    bgSetScroll(0, 0, 0);
     bg3Row(0, "", FONT_WHITE);
     bg3Row(27, "", FONT_WHITE);
     miniOn = 0;
@@ -541,4 +750,14 @@ void rcqMiniUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal)
     dmaCopyVram(chr, VRAM_BG1_CHR, chrSize);
     dmaCopyVram(map, VRAM_BG1_MAP, 2048);
     dmaCopyCGram(pal, 0, 8 * 16 * 2);
+}
+
+/* a race course: BG1 tiles, its whole 64x64 map (it loops as it scrolls), palettes, and its sprites at tile 64 */
+void rcqRaceUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *och, u16 ochSize, u8 *opl)
+{
+    dmaCopyVram(chr, VRAM_BG1_CHR, chrSize);
+    dmaCopyVram(map, VRAM_BG1_MAP, 64 * 64 * 2);
+    dmaCopyCGram(pal, 0, 8 * 16 * 2);
+    dmaCopyVram(och, VRAM_OBJ_CHR + 64 * 16, ochSize);
+    dmaCopyCGram(opl, 128 + 32, 3 * 32);
 }

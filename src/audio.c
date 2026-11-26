@@ -46,5 +46,6 @@ void rcqVBlank(void)
 {
     WaitForVBlank();
     lightVBlank();
+    if (miniOn) miniVBlank(); /* its score line, while still in VBlank */
     spcProcess();
 }

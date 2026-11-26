@@ -318,6 +318,32 @@ const bossArt = vm.runInContext(`(function(){
      bat:bg(()=>drawBat({t:0,n:0,hits:0,hr:0,ball:null,swing:0})),
      hoops:bg(()=>MINI.hoops.draw({n:0,made:0,ph:0,ball:null})),
      tennis:bg(()=>{const di=g.drawImage.bind(g);g.drawImage=(im,...r)=>{if(im!==HERO.up[0].r.c)di(im,...r);};MINI.tennis.draw({x:128,ball:null,sw:0,ret:0,miss:0});})};}
+  // The scrolling-road races (derby, trail, raceway): each course as a 256x512 strip that loops on BG1, its repeats
+  // chosen to divide 512 (the web game's 24 px dashes become 32), then the player and the obstacles, 32x32 each.
+  {const strip=(fn)=>{const c=mkCanvas(256,512),old=g;g=c.getContext('2d');try{fn();}finally{g=old;}return c;};
+   const box=(fn)=>{const c=mkCanvas(32,32),old=g;g=c.getContext('2d');frame=0;try{fn();}finally{g=old;}return c;};
+   const H=512;
+   out.race={
+    derby:{bg:strip(()=>{R(0,0,W,H,'#58a848');for(let y=0;y<H;y+=32){R(0,y,48,30,'#a85040');R(2,y+2,44,4,'#c46a58');R(208,y,48,30,'#94483a');R(210,y+2,44,4,'#b06254');R(10,y+12,10,8,'#f8d868');R(228,y+16,10,8,'#28406a');}
+       R(56,0,144,H,'#8a8e9c');R(56,0,4,H,'#e4e0d4');R(196,0,4,H,'#e4e0d4');for(let y=0;y<H;y+=32)R(127,y,2,12,'#f2c14e');}),
+     player:box(()=>{const cx=16,cy=18;R(cx-9,cy-10,18,22,'#1a1423');R(cx-8,cy-9,16,20,'#e83048');R(cx-8,cy-9,16,3,'#f890a0');R(cx-11,cy-7,4,6,'#1a1423');R(cx+7,cy-7,4,6,'#1a1423');R(cx-11,cy+5,4,6,'#1a1423');R(cx+7,cy+5,4,6,'#1a1423');g.drawImage(HERO.up[0].r.c,cx-8,cy-8);}),
+     obs:{hay:box(()=>{const x=16,y=16;R(x-10,y-6,20,12,'#1a1423');R(x-9,y-5,18,10,'#d8b048');R(x-9,y-2,18,1,'#a88830');}),
+          cone:box(()=>{const x=16,y=16;R(x-4,y-6,8,12,'#1a1423');R(x-3,y-5,6,10,'#f08030');R(x-3,y-2,6,2,'#ffffff');}),
+          puddle:box(()=>{const x=16,y=16;R(x-12,y-4,24,8,'#2a4a8a');R(x-6,y-2,6,1,'#a8c8f0');})}},
+    trail:{bg:strip(()=>{R(0,0,W,H,'#58a848');R(0,0,52,H,'#4a6e62');for(let y=0;y<H;y+=32){R(6,y,10,1,'#b8d4c0');R(26,y+14,12,1,'#7a9e8a');}R(50,0,6,H,'#c8b890');
+       for(let y=0;y<H;y+=64){blob(212,y,'#2f7a3c','#1f5a30','#143c22');blob(228,y+32,'#2f7a3c','#1f5a30','#143c22');}
+       R(56,0,144,H,'#5e5a62');R(56,0,3,H,'#e8e4dc');R(197,0,3,H,'#e8e4dc');for(let y=0;y<H;y+=32)R(127,y,2,12,'#e8e4dc');}),
+     player:box(()=>{const cx=16,cy=18;R(cx-2,cy-6,4,18,'#1a1423');R(cx-1,cy-5,2,16,'#8e909c');R(cx-5,cy+1,10,2,'#e83048');g.drawImage(HERO.up[0].r.c,cx-8,cy-10);}),
+     obs:{goose:box(()=>g.drawImage(SPR.goose.r.c,8,7)),
+          jogger:box(()=>{const x=16,y=15;R(x-3,y-8,6,6,'#f2c698');R(x-4,y-2,8,7,'#e83048');R(x-3,y+5,2,4,'#3c3c54');R(x+1,y+5,2,4,'#3c3c54');}),
+          puddle:box(()=>{const x=16,y=16;R(x-12,y-4,24,8,'#2a4a8a');})}},
+    race:{bg:strip(()=>{R(0,0,W,H,'#58a848');R(0,0,48,H,'#c8ccd4');for(let y=0;y<H;y+=8)for(let i=0;i<5;i++){const q=HH(i,y/8|0,3);R(4+i*9,y+2,3,3,['#e83048','#f2c14e','#3d63c8','#ffffff'][q%4]);}R(48,0,6,H,'#ffffff');
+       R(54,0,152,H,'#4a4a54');R(206,0,6,H,'#e83048');for(let y=0;y<H;y+=16)R(206,y,6,8,'#ffffff');R(212,0,44,H,'#58a848');for(let y=0;y<H;y+=32){R(104,y,2,12,'#e8e4dc');R(154,y,2,12,'#e8e4dc');}}),
+     player:box(()=>{const cx=16,cy=17;R(cx-8,cy-11,16,22,'#1a1423');R(cx-7,cy-10,14,20,'#e83048');R(cx-5,cy-7,10,5,'#a8c8e0');R(cx-7,cy+1,14,2,'#ffffff');R(cx-1,cy+3,2,5,'#ffffff');}),
+     obs:{car:box(()=>{const x=16,y=16;R(x-7,y-10,14,20,'#1a1423');R(x-6,y-9,12,18,'#3d63c8');R(x-4,y-6,8,5,'#a8c8e0');R(x-6,y-1,12,2,'#ffffff');}),
+          car2:box(()=>{const x=16,y=16;R(x-7,y-10,14,20,'#1a1423');R(x-6,y-9,12,18,'#f2c14e');R(x-4,y-6,8,5,'#a8c8e0');R(x-6,y-1,12,2,'#ffffff');}),
+          oil:box(()=>{const x=16,y=16;R(x-11,y-4,22,8,'#14101e');R(x-5,y-2,5,1,'#5a3a8a');})}}};
+   out.raceInfo=['derby','trail','race'].map(k=>({k,gold:MINI[k].gold,silver:MINI[k].silver,who:MINI[k].who,name:MINI[k].name,label:MINI[k].label}));}
   out.chal=Object.entries(CHAL).map(([id,d])=>({id,name:d.name,type:d.type,time:d.time||0,ic:d.ic||null,foe:d.foe||null,n:d.n||0,needs:d.needs||null,intro:d.intro}));
   out.lore=LORE.map(([id,t,s])=>{const sn=s.split('. ')[0];return {id,title:t,quote:sn.length>95?sn.slice(0,92)+'...':sn+'.'};});
   out.keynames=KEYNAME;
@@ -336,6 +362,14 @@ const bossArt = vm.runInContext(`(function(){
   fs.writeFileSync(path.join(OUT, 'combat', 'block.png'), bossArt.block.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'town.png'), bossArt.town.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'tokens.png'), bossArt.tokens.toBuffer('image/png'));
+  for (const k in bossArt.race) {
+    const r = bossArt.race[k];
+    fs.writeFileSync(path.join(OUT, 'combat', 'race_' + k + '_bg.png'), r.bg.toBuffer('image/png'));
+    const names = Object.keys(r.obs), c = createCanvas(32 * (1 + names.length), 32), x = c.getContext('2d');
+    x.drawImage(r.player, 0, 0); names.forEach((n, i) => x.drawImage(r.obs[n], 32 * (i + 1), 0));
+    fs.writeFileSync(path.join(OUT, 'combat', 'race_' + k + '_spr.png'), c.toBuffer('image/png'));
+  }
+  fs.writeFileSync(path.join(OUT, 'combat', 'race.json'), JSON.stringify({ info: bossArt.raceInfo, obs: Object.fromEntries(Object.entries(bossArt.race).map(([k, r]) => [k, Object.keys(r.obs)])) }, null, 1));
   for (const k in bossArt.minibg) fs.writeFileSync(path.join(OUT, 'combat', 'mini_' + k + '.png'), bossArt.minibg[k].toBuffer('image/png'));
   for (const name of ['turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']) {
     const ts = createCanvas(48 * bossArt[name].length, 48), tx2 = ts.getContext('2d');
