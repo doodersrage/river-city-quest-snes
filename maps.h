@@ -87,6 +87,7 @@ extern char shops_bin;
 #define SHOP_MSGS 736
 #define MAX_SHOP_ITEMS 16
 #define CHEST_COUNT 29
+#define CELL_OPEN 0
 #define CELL_SOLID 1
 #define CELL_DOOR 2
 #define CELL_EXIT 3
