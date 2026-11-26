@@ -827,7 +827,9 @@ for _ in range(60):
     if lab.pos[0] != x0: moved += lab.pos[0] - x0; frames += 1
 lab.screenshot(f'{out}/39-bike.png')
 check(lab.ram('riding') and frames and moved / frames >= 1.9, f'B hops on the bike: {moved / max(frames, 1):.2f} px a frame (walking is 1.5)')
-lab.press('A', 4)
+for _ in range(3):
+    lab.press('A', 4); close_box()
+    if not lab.ram('riding'): break
 check(not lab.ram('riding'), 'A hops off')
 check(menu_pick(10), 'Ginger Beer on B')
 lab.poke('hp', 1); lab.press('B', 10); close_box()

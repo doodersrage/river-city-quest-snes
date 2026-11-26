@@ -951,6 +951,7 @@ int main(void)
     drawNpcs();
     combatDraw();
     hudDraw();
+    songForMap();
     WaitForVBlank();
     for (spd = 1; spd <= 15; spd++)
     {
