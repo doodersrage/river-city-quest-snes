@@ -163,6 +163,10 @@ class Lab:
             if ok:
                 self.run(None, 2)
                 return
+            # a message that popped up on the way (a frog caught in the rain, say): read it through
+            for _ in range(30):
+                if self.ram('boxState') not in (1, 2, 3): break
+                self.run('A', 1); self.run(None, 5)
             # something in the way: an animal close by gets the paddle, otherwise wait for traffic
             x, y = self.pos
             near = [k for k in range(self.ram('enCount')) if self.enemy(k)['alive']
