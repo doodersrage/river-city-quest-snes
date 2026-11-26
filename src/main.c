@@ -119,6 +119,7 @@ void boxDrawFrame(void)
 /* Open a text entry (title NUL, then pages): gold title, then typed-out pages. */
 void openTextAt(u8 *p)
 {
+    sfx(SFX_TALK);
     u8 c;
     txt = p;
     /* Keep the hero visible: box at the top when they stand low on screen. */
@@ -300,12 +301,14 @@ void updateShop(u16 pressed)
     if (pressed & KEY_UP && shopCur > 0)
     {
         shopCur--;
+        sfx(SFX_MENU);
         if (shopCur < shopTop) shopTop = shopCur;
         drawShop();
     }
     else if (pressed & KEY_DOWN && shopCur + 1 < shopCount)
     {
         shopCur++;
+        sfx(SFX_MENU);
         if (shopCur >= shopTop + 4) shopTop = shopCur - 3;
         drawShop();
     }
@@ -614,6 +617,7 @@ void enterMap(u8 i)
     drawNpcs();
     combatDraw();
     WaitForVBlank();
+    songForMap();
     for (b = 1; b <= 15; b++)
     {
         setBrightness(b);
@@ -758,6 +762,7 @@ u8 interact(void)
             if (chestOpen[t >> 3] & (1 << (t & 7)))
                 return 0; /* already open: swing instead */
             chestOpen[t >> 3] |= 1 << (t & 7);
+            sfx(SFX_JING);
             if (rec[3] == 0)
             {
                 coins += rec[4];
@@ -916,6 +921,7 @@ int main(void)
         shopOwned[0][i] = 0;
         shopOwned[1][i] = 0;
     }
+    audioInit();
     combatInit();
     dungeonInit();
     gearInit();
@@ -977,6 +983,10 @@ int main(void)
         else if ((pressed & KEY_A) && !heroBusy() && !charging && interact())
         {
             step = 0;
+        }
+        else if (curSong == SONG_BOSS && !bossOn && !endingPending)
+        {
+            songForMap(); /* the boss is down and its last words are read: back to this place's song */
         }
         else if ((pressed & KEY_START) && !heroBusy() && !charging && !dying)
         {

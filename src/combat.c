@@ -310,8 +310,10 @@ void collectPickup(u8 k)
 {
     u8 kind = pkKind[k];
     pkKind[k] = 0;
-    if (kind == 1) { if (coins < 999) coins++; }
-    else if (kind == 2) { hp += 2; if (hp > hpMax) hp = hpMax; }
+    if (kind == 1) { if (coins < 999) coins++; sfx(SFX_COIN); }
+    else if (kind == 2) { hp += 2; if (hp > hpMax) hp = hpMax; sfx(SFX_HEART); }
+    else if (kind == 4 || kind == 13) sfx(SFX_COIN);
+    else sfx(SFX_JING);
     else if (kind == 3)
     {
         if (hpMax < 20) hpMax += 2;
@@ -351,10 +353,14 @@ void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy)
     if (enHp[k] <= dmg)
     {
         enAlive[k] = 0;
+        sfx(SFX_KILL);
         dropAt(enX[k] >> 4, enY[k] >> 4);
     }
     else
+    {
         enHp[k] -= dmg;
+        sfx(SFX_HIT);
+    }
 }
 
 void hurtHero(s16 sx, s16 sy)
@@ -367,6 +373,7 @@ void hurtHeroBy(s16 sx, s16 sy, u8 dmg)
     s16 dx, dy, d;
     if (inv || hp == 0 || dying || hookSt == 3 || dash) return;
     riding = 0;
+    sfx(SFX_HURT);
     hp = hp > dmg ? hp - dmg : 0;
     inv = 50;
     dx = px - sx;
@@ -516,6 +523,7 @@ void combatUpdate(u16 pad, u16 pressed)
         else
         {
             atk = 14;
+            sfx(SFX_SWING);
             charging = 0;
         }
     }
@@ -562,7 +570,11 @@ void combatUpdate(u16 pad, u16 pressed)
         }
         else
         {
-            if (charge >= 40) spin = 22;
+            if (charge >= 40)
+            {
+                spin = 22;
+                sfx(SFX_SWING);
+            }
             charging = 0;
             charge = 0;
         }

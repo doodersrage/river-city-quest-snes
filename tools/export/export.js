@@ -236,6 +236,9 @@ const extra = vm.runInContext(`(function(){
   return {gives,shops:{shop:shopOf(SHOP,'CARYTOWN GOODS'),market:shopOf(MARKET,'17TH STREET MARKET')}};
 })()`, sb);
 fs.writeFileSync(path.join(OUT, 'extra.json'), JSON.stringify(extra, null, 1));
+// Music and jingles (web music.js SONGS, core.js JING/SECRET, extras.js FANFARE) for tools/mkaudio.py.
+fs.writeFileSync(path.join(OUT, 'music.json'), JSON.stringify(vm.runInContext(`({songs:Object.fromEntries(Object.entries(SONGS).map(([k,s])=>[k,{bpm:s.bpm,lt:s.lt||'square',lv:s.lv||.022,lead:s.lead,bass:s.bass,drum:s.drum}])),
+  jing:JING,secret:SECRET,fanfare:FANFARE})`, sb), null, 1));
 console.log('chest items', Object.keys(extra.gives).join(' '));
 
 // ---------- Stage 5: bosses, projectiles, the hook ----------

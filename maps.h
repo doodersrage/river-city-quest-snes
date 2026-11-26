@@ -143,6 +143,7 @@ extern char sys_txt;
 #define TXT_KEY3_2 4430
 #define TXT_KEY3_3 4512
 #define TXT_KEY3_4 4594
+static const u8 mapSong[MAP_COUNT] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 1, 3, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 3, 3, 1, 3, 1, 1, 3, 1, 1, 1, 5, 5, 5, 5, 3, 3, 3, 3, 1, 3};
 #define RELIGHT_N 5
 #define MAP_WIN 8
 #define WIN_X 72

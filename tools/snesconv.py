@@ -232,6 +232,8 @@ def encode_text(title, pages):
 
 GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug', 'can', 'balls', 'shoes', 'bike', 'bottle']   # ITEM_* in the ROM, from 1
 NPC_REC = 12
+LIT_AREAS = {'bank', 'byrd', 'capitol', 'vmfa', 'taproom', 'tearoom', 'hippo', 'stjohn', 'shop', 'rowhouse', 'station',
+             'mansion', 'boathouse', 'studio'}   # web maps with lit:true (the Conservatory is lit but plays the dungeon song)
 TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4, 'bib': 5, 'shoes': 6}
 
 
@@ -878,6 +880,11 @@ def main():
     if pg: pages.append(pg)
     credit_lines = [l for p_ in pages for l in p_ + ['\f']]
     hdr += ['extern char sys_txt;'] + defs + [
+            # web wantSong(): outdoors 'south' below the river (ay 3) else 'city'; the Tredegar works 'forge';
+            # lit interiors 'city'; every other dungeon, cave and museum 'dungeon' (song numbers from tools/mkaudio.py)
+            'static const u8 mapSong[MAP_COUNT] = {%s};' % ', '.join(str(
+                (2 if m['ay'] == 3 else 1) if m['ow'] else 5 if m['area'] == 'tredegar' else
+                1 if m['area'] in LIT_AREAS else 3) for m in maps),
             '#define RELIGHT_N %d' % len(relight),
             '#define MAP_WIN %d' % index_of['ow:3,0'],
             '#define WIN_X %d' % (win_door['ret'][0] * 16 + 8), '#define WIN_Y %d' % (win_door['ret'][1] * 16 + 8),
