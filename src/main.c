@@ -832,6 +832,7 @@ void useDoor(u8 tx, u8 ty)
 
 /* Doors and the way out of interiors are checked under the hero's feet. */
 u16 lastCell = 0xFFFF; /* doors and exits fire when you step onto them, not while knocked onto one */
+u16 lastPad;
 
 void checkCells(void)
 {
@@ -961,11 +962,15 @@ int main(void)
         WaitForVBlank();
     }
 
+    lastPad = 0xFFFF; /* nothing held at the start counts as a press */
     while (1)
     {
         frameCount++;
+        /* new presses since our last look (not padsDown, which only holds a press for one frame:
+           when a busy frame runs long, that press would be lost) */
         pad = padsCurrent(0);
-        pressed = padsDown(0);
+        pressed = pad & ~lastPad;
+        lastPad = pad;
 
         if (boxState != BOX_CLOSED)
         {
