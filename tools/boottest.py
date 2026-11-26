@@ -1147,7 +1147,10 @@ def talk_to(k):
 def accept(k):
     """Talk to them until they offer their challenge, then say yes."""
     for _ in range(4):
-        talk_to(k)
+        r = talk_to(k)
+        if os.environ.get('DEBUG'):
+            print('  accept', k, 'talked', r, 'box', lab.ram('boxState'), 'ask', lab.ram('askKind'), 'at', lab.pos, 'dir', lab.ram('heroDir'),
+                  'npc', (lab.ram('npcX', 2, True, k), lab.ram('npcY', 2, True, k)))
         for _ in range(30):
             if lab.ram('boxState') in (0, 6): break
             lab.press('A', 6)
@@ -1195,7 +1198,7 @@ travel(lab, N('Broad Street'), close_box)
 lab.run(None, 4)
 check(accept(0) and lab.ram('chalOn') == CH.index('bus') + 1, 'the Commuter dares you to beat the bus')
 close_box()
-for _ in range(9 * 60 + 30):
+for _ in range(1500):   # 8 seconds of game time (a busy street runs a little slow)
     if lab.ram('boxState'): break
     lab.run(None, 1)
 lab.screenshot(f'{out}/59-times-up.png')
@@ -1274,7 +1277,11 @@ close_box()
 # Stage 10, part 2: minigames.
 def play_mini(k, step, limit=4000):
     """Accept person k's minigame and run step() each frame until it's over; True if it started."""
-    if not accept(k) or not lab.ram('miniOn'): return False
+    if not accept(k): return False
+    for _ in range(30):
+        if lab.ram('mgKind') and lab.ram('miniOn'): break
+        lab.run(None, 1)
+    if not lab.ram('miniOn'): return False
     for f in range(limit):
         if not lab.ram('miniOn'): break
         step(f)

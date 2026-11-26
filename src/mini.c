@@ -444,12 +444,12 @@ void runMini(u8 k)
     u16 pad, pressed, lastPad = 0xFFFF;
     u8 i;
     mgKind = k;
+    miniOn = 1;
     fadeTo(0);
     setBrightness(0);
     closeText();
     flushText(); /* the question box off BG3 */
     for (i = 0; i < 128; i++) sprHide(i);
-    miniOn = 1;
     rcqLoadMini(k - 1);
     dmaCopyVram(&minispr_chr, VRAM_OBJ_CHR + 32 * 16, (&minispr_chrend - &minispr_chr));
     dmaCopyCGram(&minispr_pal, 128 + 16, 32);
