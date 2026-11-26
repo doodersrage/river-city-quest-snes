@@ -646,6 +646,12 @@ talk_until((25, 18), 'up', lambda: lab.ram('tradeItem') == 1)
 check(lab.ram('tradeItem') == 1, 'a Carytown vendor hands over a melon')
 travel(lab, N('Jackson Ward'), close_box)
 talk_until((12, 4), 'up', lambda: lab.ram('tradeItem') == 2)
+if lab.ram('tradeItem') != 2:   # say why
+    print('  musician:', [(lab.ram('npcX', 2, True, k), lab.ram('npcY', 2, True, k)) for k in range(lab.ram('npcCount'))],
+          'dir', lab.ram('heroDir'), 'atk', lab.ram('atk'), 'spin', lab.ram('spin'), 'kt', lab.ram('kt'), 'hook', lab.ram('hookSt'),
+          'dash', lab.ram('dash'), 'charging', lab.ram('charging'), 'dying', lab.ram('dying'), 'melonTaken', lab.ram('melonTaken'), 'kayak', lab.ram('hasKayak'))
+    lab.face('up'); f0 = lab.ram('frameCount', 2); lab.press('A', 2)
+    print('  pressed A: box', lab.ram('boxState'), 'frames', lab.ram('frameCount', 2) - f0, 'dir', lab.ram('heroDir'), 'atk', lab.ram('atk'))
 check(lab.map == N('Jackson Ward') and lab.ram('tradeItem') == 2, f"the Jackson Ward musician trades sheet music for it (map {lab.map}, trade {lab.ram('tradeItem')}, challenge {lab.ram('chalOn')}, at {lab.pos}, box {lab.ram('boxState')})")
 travel(lab, N('Carytown'), close_box)
 walk((22, 17)); lab.run('UP', 20); lab.run(None, 60)
