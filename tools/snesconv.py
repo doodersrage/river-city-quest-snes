@@ -104,7 +104,11 @@ def pack_palettes(tiles, allow_remap):
     return out, [assign[s] for s in sets]
 
 
-def convert_bg(path, flip_dedup=True):
+def convert_bg(path, extra=(), flip_dedup=True):
+    """Tiles, 64x64 tilemap and palettes for one map. Tile 0 is left blank (colour 0, so the
+    backdrop shows) for the area outside rooms smaller than the screen. `extra` is a list of
+    8x8 tiles (64 15-bit colours each) to add with the same palettes, e.g. opened chests;
+    their tilemap entries are returned in the same order."""
     src = Image.open(path).convert('RGB')
     result = None
     for n in (128, 112, 96, 84, 72, 64, 56, 48):
@@ -119,13 +123,11 @@ def convert_bg(path, flip_dedup=True):
         result = (tiles, tw, th, pack_palettes(tiles, allow_remap=True))
     tiles, tw, th, (pals, assign) = result
 
-    chr_data, lookup, entries = [], {}, []
-    for t, pi in zip(tiles, assign):
-        pal = pals[pi]
-        idx = [pal.index(c) + 1 if c in pal else nearest(c, pal) + 1 for c in t]
+    chr_data, lookup = [bytes(32)], {}
+
+    def add(idx):
         key = tuple(idx)
-        hit = lookup.get(key)
-        if hit is None:
+        if key not in lookup:
             n = len(chr_data)
             chr_data.append(tile4bpp(idx))
             lookup[key] = (n, 0, 0)
@@ -135,18 +137,29 @@ def convert_bg(path, flip_dedup=True):
                 v = tuple(v for r in rows[::-1] for v in r)
                 hv = tuple(v for r in rows[::-1] for v in r[::-1])
                 lookup.setdefault(h, (n, 1, 0)); lookup.setdefault(v, (n, 0, 1)); lookup.setdefault(hv, (n, 1, 1))
-            hit = lookup[key]
-        n, hf, vf = hit
-        entries.append(n | (pi << 10) | (hf << 14) | (vf << 15))
+        return lookup[key]
+
+    def entry(idx, pi):
+        n, hf, vf = add(idx)
+        return n | (pi << 10) | (hf << 14) | (vf << 15)
+
+    entries = []
+    for t, pi in zip(tiles, assign):
+        pal = pals[pi]
+        entries.append(entry([pal.index(c) + 1 if c in pal else nearest(c, pal) + 1 for c in t], pi))
+    extra_entries = []
+    for t in extra:
+        pi = min(range(len(pals)), key=lambda i: sum(min(dist(c, q) for q in pals[i]) for c in t))
+        extra_entries.append(entry([nearest(c, pals[pi]) + 1 for c in t], pi))
     if len(chr_data) > MAX_TILES:
         raise SystemExit(f'{path}: {len(chr_data)} tiles, over the {MAX_TILES} limit')
 
-    # 64x64 tilemap in four 32x32 screens: TL, TR, BL, BR.
+    # 64x64 tilemap in four 32x32 screens: TL, TR, BL, BR. Unused cells stay tile 0 (blank).
     tm = bytearray(64 * 64 * 2)
     for cy in range(th):
         for cx in range(tw):
             e = entries[cy * tw + cx]
-            off = ((cy // 32) * 2 + (cx // 32)) * 1024 + (cy % 32) * 32 + (cx % 32)
+            off = tm_offset(cx, cy)
             tm[off * 2] = e & 0xFF; tm[off * 2 + 1] = e >> 8
     palbin = bytearray()
     for i in range(MAX_PALS):
@@ -154,7 +167,11 @@ def convert_bg(path, flip_dedup=True):
         palbin += bgr555((0, 0, 0))
         for j in range(PAL_COLORS):
             palbin += bgr555(p[j] if j < len(p) else (0, 0, 0))
-    return b''.join(chr_data), bytes(tm), bytes(palbin), len(chr_data), len(pals)
+    return b''.join(chr_data), bytes(tm), bytes(palbin), len(chr_data), len(pals), extra_entries
+
+
+def tm_offset(cx, cy):
+    return ((cy // 32) * 2 + (cx // 32)) * 1024 + (cy % 32) * 32 + (cx % 32)
 
 
 def convert_sprite_strip(path):
@@ -213,7 +230,7 @@ def encode_text(title, pages):
     return bytes(out)
 
 
-def build_world(w):
+def build_world(w, extra_texts=()):
     """Per-map blob: read grid, NPC records, text offset table, texts (see WLD_* in maps.h)."""
     texts, tindex = [], {}
 
@@ -232,7 +249,11 @@ def build_world(w):
         first = len(texts)
         for t in n['talks']:  # each talk gets its own entry, in order
             texts.append(encode_text(n['who'], t))
-        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, 0))
+        shop = {'shop': 1, 'market': 2}.get(n.get('shop'), 0)
+        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, shop))
+    extra_ids = []
+    for title, pages in extra_texts:
+        extra_ids.append(text_id(title, pages))
     if len(texts) > 255: raise SystemExit('too many texts in one map')
     if len(w['npcs']) > MAX_NPCS: raise SystemExit(f"{len(w['npcs'])} NPCs, over {MAX_NPCS}")
     head = bytearray(WLD_TOFS + 2 * len(texts))
@@ -243,7 +264,7 @@ def build_world(w):
     for i, t in enumerate(texts):
         head[WLD_TOFS + 2 * i] = off & 0xFF; head[WLD_TOFS + 2 * i + 1] = off >> 8
         off += len(t)
-    return bytes(head) + b''.join(texts), npcs
+    return bytes(head) + b''.join(texts), npcs, extra_ids
 
 
 def sprite_palette(colors):
@@ -440,34 +461,117 @@ def convert_combat(exp):
     return b''.join(sheet), pals, tables
 
 
+# ---------- Stage 4: shops ----------
+SHOP_NAME, SHOP_LOCK, SHOP_HEAD, SHOP_ITEM = 21, 9, 26, 36
+ONCE, REPEAT, LOCKED = 0, 1, 2
+EFFECT_NONE, EFFECT_HEART = 0, 1
+
+
+def convert_shops(extra):
+    """Fixed records the ROM can index: header (title[24], count, pad), then items
+    (name[21], lock[9], price, kind, requires, effect, message offset u16). Messages follow."""
+    blob, msgs, offsets = bytearray(), bytearray(), {}
+    order = ['shop', 'market']
+    recs = []
+    for key in order:
+        sh = extra['shops'][key]
+        offsets[key] = len(blob)
+        head = ascii_text(sh['title'])[:23].encode().ljust(24, b'\0') + bytes((len(sh['items']), 0))
+        blob += head
+        names = [it['name'] for it in sh['items']]
+        for it in sh['items']:
+            why = it['whyAtStart']
+            kind, req, lock = ONCE, 255, ''
+            if it['name'] in ('Virginia Ham', 'Bag of Flour', 'Bag of Sugar', 'Landmark Card Pack'):
+                kind = REPEAT
+            if it['name'] == 'Cupcake':
+                kind, req, lock = REPEAT, names.index('Picnic Basket'), '???'
+            elif why:
+                kind, lock = LOCKED, why           # needs something from a later stage
+            msg = it['msg']
+            if it['name'] == 'Heart Charm': msg = 'A heart charm! Your hearts grew by one.'
+            if it['name'] == 'Landmark Card Pack': msg = 'You got a landmark card!'
+            msg = msg.split(' You have ')[0] or 'Thank you!'
+            effect = EFFECT_HEART if it['name'] == 'Heart Charm' else EFFECT_NONE
+            mo = len(msgs)
+            msgs += encode_text(it['name'], [msg])
+            blob += (ascii_text(it['name'])[:SHOP_NAME - 1].encode().ljust(SHOP_NAME, b'\0') +
+                     ascii_text(lock)[:SHOP_LOCK - 1].encode().ljust(SHOP_LOCK, b'\0') +
+                     bytes((min(255, it['price']), kind, req, effect, mo & 0xFF, mo >> 8)))
+    defs = [f'#define SHOP_HEAD {SHOP_HEAD}', f'#define SHOP_ITEM {SHOP_ITEM}', f'#define SHOP_NAME {SHOP_NAME}',
+            f'#define SHOP_LOCK {SHOP_LOCK}', '#define SHOP_ONCE 0', '#define SHOP_REPEAT 1', '#define SHOP_LOCKED 2',
+            '#define EFFECT_HEART 1', f'#define SHOP_OFS_SHOP {offsets["shop"]}', f'#define SHOP_OFS_MARKET {offsets["market"]}',
+            f'#define SHOP_MSGS {len(blob)}', '#define MAX_SHOP_ITEMS 16']
+    return bytes(blob + msgs), defs
+
+
+DOOR_OPEN, DOOR_KEYSTONES, DOOR_CARKEY, DOOR_LATER = 0, 1, 2, 3
+CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT = 0, 1, 2, 3
+
+
 def main():
     exp, root = sys.argv[1], sys.argv[2]
     out = os.path.join(root, 'data')
     os.makedirs(out, exist_ok=True)
     os.makedirs(os.path.join(root, 'src'), exist_ok=True)
-    maps = [m for m in json.load(open(os.path.join(exp, 'maps.json'))) if m['ow']]
-    maps.sort(key=lambda m: (m['ay'], m['ax']))
+    allmaps = json.load(open(os.path.join(exp, 'maps.json')))
+    maps = sorted([m for m in allmaps if m['ow']], key=lambda m: (m['ay'], m['ax']))
+    maps += sorted([m for m in allmaps if m['port'] and not m['ow']], key=lambda m: m['id'])
     solid = json.load(open(os.path.join(exp, 'solid.json')))['solid']
-    pos = {(m['ax'], m['ay']): i for i, m in enumerate(maps)}
+    pos = {(m['ax'], m['ay']): i for i, m in enumerate(maps) if m['ow']}
+    index_of = {m['id']: i for i, m in enumerate(maps)}
+    extra = json.load(open(os.path.join(exp, 'extra.json')))
+    chest_gid = {}
 
     asm = ['.include "hdr.asm"', '']
     hdr = ['/* Generated by tools/snesconv.py. Do not edit. */', '#ifndef MAPS_H', '#define MAPS_H', '',
-           f'#define MAP_COUNT {len(maps)}', '#define MAP_W 32', '#define MAP_H 22', '']
+           f'#define MAP_COUNT {len(maps)}', '#define COL_STRIDE 32', '']
     nb = {k: [] for k in 'NSEW'}
     report = []
     world = json.load(open(os.path.join(exp, 'world.json')))
     combat = json.load(open(os.path.join(exp, 'combat', 'combat.json')))
     for i, m in enumerate(maps):
-        chr_, tm, pal, nt, npal = convert_bg(os.path.join(exp, m['file']))
-        col = bytes(1 if ch in solid else 0 for row in m['grid'] for ch in row)
-        assert len(col) == 32 * 22, (m['id'], len(col))
-        wld, npcs = build_world(world[m['id']])
+        # Opened-chest tiles: the 2x2 cells of each chest in the all-open render.
+        chests = m.get('chests') or []
+        extra_tiles = []
+        if chests:
+            op = Image.open(os.path.join(exp, m['openFile'])).convert('RGB')
+            for q in chests:
+                for qy in (0, 1):
+                    for qx in (0, 1):
+                        x0, y0 = q['tx'] * 16 + qx * 8, q['ty'] * 16 + qy * 8
+                        extra_tiles.append([c15(op.getpixel((x0 + x, y0 + y))) for y in range(8) for x in range(8)])
+        chr_, tm, pal, nt, npal, open_entries = convert_bg(os.path.join(exp, m['file']), extra_tiles)
+        def cell(ch):
+            return CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
+        col = bytearray(32 * 22)
+        for y, row in enumerate(m['grid']):
+            for x, ch in enumerate(row):
+                col[y * 32 + x] = cell(ch)
+        col = bytes(col)
+        chest_texts = [('Treasure', extra['gives'].get(q['item']) or ['You found something!']) for q in chests]
+        wld, npcs, chest_txt = build_world(world[m['id']], chest_texts)
+        # Doors, then chests (see maps.h XTR_*).
+        xtr = bytearray((m['w'], m['h'], len(m['doors'])))
+        for d in m['doors']:
+            tgt = index_of.get(d['to'], 255)
+            need = DOOR_KEYSTONES if d['need'] == 'keystones' else DOOR_CARKEY if d['need'] == 'carkey' else DOOR_OPEN
+            if tgt == 255: need = DOOR_LATER if need == DOOR_OPEN else need
+            xtr += bytes((d['tx'], d['ty'], tgt, need))
+        xtr.append(len(chests))
+        for k, q in enumerate(chests):
+            gid = chest_gid.setdefault(q['id'] + ':' + str(q['tx']) + ',' + str(q['ty']), len(chest_gid))
+            item = q['item']
+            effect, amount = (0, int(item[5:])) if item.startswith('coins') else (1, 2) if item == 'hc' else (2, 0)
+            xtr += bytes((q['tx'], q['ty'], gid, effect, amount, chest_txt[k]))
+            for e in open_entries[k * 4:k * 4 + 4]:
+                xtr += bytes((e & 0xFF, e >> 8))
         ene = bytes([len(combat['enemies'][m['id']])]) + b''.join(
             bytes((ENEMY_TYPES.index(t), tx, ty)) for t, tx, ty in combat['enemies'][m['id']])
         ochr, opal = convert_npcs(exp, npcs)
-        for ext, data in (('chr', chr_), ('map', tm), ('pal', pal), ('col', col), ('wld', wld), ('och', ochr), ('opl', opal), ('ene', ene)):
+        for ext, data in (('chr', chr_), ('map', tm), ('pal', pal), ('col', col), ('wld', wld), ('och', ochr), ('opl', opal), ('ene', ene), ('xtr', xtr)):
             open(os.path.join(out, f'm{i}.{ext}'), 'wb').write(data)
-        size = sum(map(len, (chr_, tm, pal, col, wld, ochr, opal, ene)))
+        size = sum(map(len, (chr_, tm, pal, col, wld, ochr, opal, ene, xtr)))
         if size > 0x8000: raise SystemExit(f'{m["id"]}: {size} bytes, over one 32 KB bank')
         asm += [f'.section ".map{i}" superfree',
                 f'm{i}_chr:', f'.incbin "data/m{i}.chr"', f'm{i}_chrend:',
@@ -477,12 +581,13 @@ def main():
                 f'm{i}_wld:', f'.incbin "data/m{i}.wld"',
                 f'm{i}_och:', f'.incbin "data/m{i}.och"',
                 f'm{i}_opl:', f'.incbin "data/m{i}.opl"',
-                f'm{i}_ene:', f'.incbin "data/m{i}.ene"', '.ends', '']
-        hdr.append(f'extern char m{i}_chr, m{i}_chrend, m{i}_map, m{i}_pal, m{i}_col, m{i}_wld, m{i}_och, m{i}_opl, m{i}_ene;  /* {m["name"]} */')
+                f'm{i}_ene:', f'.incbin "data/m{i}.ene"',
+                f'm{i}_xtr:', f'.incbin "data/m{i}.xtr"', '.ends', '']
+        hdr.append(f'extern char m{i}_chr, m{i}_chrend, m{i}_map, m{i}_pal, m{i}_col, m{i}_wld, m{i}_och, m{i}_opl, m{i}_ene, m{i}_xtr;  /* {m["name"]} */')
         ax, ay = m['ax'], m['ay']
         for k, (dx, dy) in zip('NSEW', ((0, -1), (0, 1), (1, 0), (-1, 0))):
-            nb[k].append(pos.get((ax + dx, ay + dy), 255))
-        report.append(f'{i:2} {m["id"]:8} {m["name"]:32} tiles {nt:4}  palettes {npal}  npcs {len(npcs)}  bytes {size}')
+            nb[k].append(pos.get((ax + dx, ay + dy), 255) if m['ow'] else 255)
+        report.append(f'{i:2} {m["id"]:14} {m["name"]:32} tiles {nt:4}  palettes {npal}  npcs {len(npcs)}  bytes {size}')
 
     hero_chr, hero_pal = convert_sprite_strip(os.path.join(exp, 'hero.png'))
     open(os.path.join(out, 'hero.chr'), 'wb').write(hero_chr)
@@ -490,7 +595,13 @@ def main():
     asm += ['.section ".hero" superfree', 'hero_chr:', '.incbin "data/hero.chr"', 'hero_chrend:',
             'hero_pal:', '.incbin "data/hero.pal"', 'hero_palend:', '.ends', '']
     # System texts, from the web game's hurt() and the swing tutorial.
-    sys_texts = [('DEAD', '', ['The fog takes you...', 'You wake by the fountain in Capitol Square.'])]
+    sys_texts = [('DEAD', '', ['The fog takes you...', 'You wake by the fountain in Capitol Square.']),
+                 # door bounces, from the web game
+                 ('KEYSTONES', '', ['The tunnel mouth is sealed. Four hollows in the stone wait for keystones.']),
+                 ('CARKEY', '', ['The Carillon door is locked. The caretaker nearby might know where the key went.']),
+                 ('LATER', '', ["The way in is dark. This part of Richmond isn't open yet in the SNES version."]),
+                 ('NOCOINS', '', ["You don't have enough coins."]),
+                 ('SOLDOUT', '', ['Sold out.'])]
     blob, defs = b'', []
     for name, title, pages in sys_texts:
         defs.append(f'#define TXT_{name} {len(blob)}')
@@ -498,6 +609,12 @@ def main():
     open(os.path.join(out, 'sys.txt'), 'wb').write(blob)
     asm += ['.section ".systext" superfree', 'sys_txt:', '.incbin "data/sys.txt"', '.ends', '']
     hdr += ['extern char sys_txt;'] + defs + [f'#define MAP_CAPITOL {pos[(2, 1)]}', '']
+    shops, shop_defs = convert_shops(extra)
+    open(os.path.join(out, 'shops.bin'), 'wb').write(shops)
+    asm += ['.section ".shops" superfree', 'shops_bin:', '.incbin "data/shops.bin"', '.ends', '']
+    hdr += ['extern char shops_bin;'] + shop_defs + [f'#define CHEST_COUNT {len(chest_gid)}',
+            '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3',
+            '#define DOOR_OPEN 0', '#define DOOR_KEYSTONES 1', '#define DOOR_CARKEY 2', '#define DOOR_LATER 3', '']
     cobj, cpal, ctables = convert_combat(exp)
     open(os.path.join(out, 'combat.chr'), 'wb').write(cobj)
     open(os.path.join(out, 'combat.pal'), 'wb').write(cpal)
@@ -520,10 +637,10 @@ def main():
 
     # One loader per map so the C side never needs a table of far pointers.
     loader = ['/* Generated by tools/snesconv.py. Do not edit. */', '#include <snes.h>', '#include "maps.h"', '',
-              'extern void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl, u8 *ene);', '',
+              'extern void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl, u8 *ene, u8 *xtr);', '',
               'void rcqLoadMap(u8 i)', '{', '    switch (i)', '    {']
     for i in range(len(maps)):
-        loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_chrend - &m{i}_chr, &m{i}_map, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl, &m{i}_ene); break;')
+        loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_chrend - &m{i}_chr, &m{i}_map, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl, &m{i}_ene, &m{i}_xtr); break;')
     loader += ['    }', '}', '']
 
     open(os.path.join(root, 'maps.asm'), 'w').write('\n'.join(asm))

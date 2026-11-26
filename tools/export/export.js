@@ -37,7 +37,11 @@ for (const f of files) {
 }
 
 // Top-level consts (SC, TS, g...) live in the context's shared script scope.
+// Scenes for the SNES port so far: the outdoor maps plus every single-room area (interiors, caves).
+vm.runInContext(`var SNES_AREAN={};for(const id in SC){const a=SC[id].area;SNES_AREAN[a]=(SNES_AREAN[a]||0)+1;}
+  function portScene(s){return s.ow||SNES_AREAN[s.area]==1;}`, sb);
 const dump = vm.runInContext(`(function(){
+  st=newState();p=newPlayer();   // a fresh game: chests closed, rubble in place
   const out=[];
   for(const id in SC){
     const s=SC[id];
@@ -46,8 +50,15 @@ const dump = vm.runInContext(`(function(){
     let c; try{ c=renderMap(s,0); const old=g; g=c.getContext('2d');
       try{drawLandmarks(s,0);}catch(e){} try{drawDecor(s);}catch(e){} g=old; }
     catch(e){ out.push({id,err:String(e)}); continue; }
-    out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,w:s.w,h:s.h,ax:s.ax,ay:s.ay,
-      grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c});
+    // Same map with every chest open, for the tiles the ROM swaps in when you open one.
+    let opened=null;
+    if((s.chests||[]).length){const keep=s.chests.map(q=>s.g[q.ty][q.tx]);s.chests.forEach(q=>s.g[q.ty][q.tx]='o');
+      opened=renderMap(s,0);const o2=g;g=opened.getContext('2d');try{drawLandmarks(s,0);}catch(e){}try{drawDecor(s);}catch(e){}g=o2;
+      s.chests.forEach((q,i)=>s.g[q.ty][q.tx]=keep[i]);}
+    out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
+      grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,
+      doors:(s.doors||[]).map(d=>({tx:d.tx,ty:d.ty,to:d.to,need:d.need||null,ret:d.ret})),
+      chests:(s.chests||[]).map(q=>({id:q.id,tx:q.tx,ty:q.ty,item:q.item}))});
   }
   return out;
 })()`, sb);
@@ -57,8 +68,9 @@ for (const m of dump) {
   if (m.err) { console.log('skip', m.id, m.err); continue; }
   const safe = m.id.replace(/[^a-z0-9_-]+/gi, '_');
   fs.writeFileSync(path.join(OUT, 'maps', safe + '.png'), m.canvas.toBuffer('image/png'));
-  const { canvas, ...meta } = m;
-  index.push({ ...meta, file: 'maps/' + safe + '.png' });
+  if (m.opened) fs.writeFileSync(path.join(OUT, 'maps', safe + '.open.png'), m.opened.toBuffer('image/png'));
+  const { canvas, opened, ...meta } = m;
+  index.push({ ...meta, file: 'maps/' + safe + '.png', openFile: opened ? 'maps/' + safe + '.open.png' : null });
 }
 fs.writeFileSync(path.join(OUT, 'maps.json'), JSON.stringify(index, null, 1));
 
@@ -83,7 +95,7 @@ const world = vm.runInContext(`(function(){
   st=newState();
   const out={};
   const pages=r=>Array.isArray(r)?r.map(String):[String(r)];
-  for(const id in SC){const s=SC[id];if(!s.ow)continue;
+  for(const id in SC){const s=SC[id];if(!portScene(s))continue;
     const reads=[];
     for(let ty=0;ty<s.h;ty++)for(let tx=0;tx<s.w;tx++){
       const t=s.g[ty][tx];let title=null,text=null;
@@ -101,9 +113,11 @@ const world = vm.runInContext(`(function(){
       else{const n=Object.assign({},n0);for(let i=0;i<4;i++){let r;SAID=null;try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;if(DEBUG)console.log(n.who,String(e));}
         if(!r)continue;const pg=pages(r),k=pg.join('|');if(!seen.has(k)){seen.add(k);talks.push(pg);}}}
       if(!talks.length&&n0.lines)for(const l of n0.lines)talks.push([String(l)]);
+      if(!talks.length&&n0.talk=='shop')talks.push(['What can I get you?']);
+      if(!talks.length&&n0.talk=='grocer')talks.push(['Fresh from the farms!']);
       if(!talks.length)talks.push(['...']);
       let sp;try{sp=n0.spr&&n0.spr.down?n0.spr:npcSpr(n0);}catch(e){sp=npcSpr(Object.assign({hat:['#888','#666','#aaa'],shirt:['#888','#666','#aaa']},n0));}
-      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
+      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
     });
     out[id]={reads,npcs};
   }
@@ -117,7 +131,7 @@ for (const id in world) {
     n.spr.forEach((f, i) => x.drawImage(f, i * 16 + Math.floor((16 - f.width) / 2), 16 - f.height));
     const file = 'npcs/' + safe + '_' + k + '.png';
     fs.writeFileSync(path.join(OUT, file), c.toBuffer('image/png'));
-    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, file };
+    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, shop: n.shop, file };
   }) };
 }
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1));
@@ -138,7 +152,7 @@ console.log('world: reads', Object.values(worldOut).reduce((a, w) => a + w.reads
 fs.mkdirSync(path.join(OUT, 'combat'), { recursive: true });
 const combat = vm.runInContext(`(function(){
   st=newState();p=newPlayer();
-  const en={};for(const id in SC){const s=SC[id];if(s.ow)en[id]=s.en.map(e=>e.slice());}
+  const en={};for(const id in SC){const s=SC[id];if(portScene(s))en[id]=s.en.map(e=>e.slice());}
   // Enemy frames, facing right (the ROM flips them for left).
   const frames=[['rat',SPR.rat.r.c],['squirrel',SPR.squirrel.r.c],['goose',SPR.goose.r.c],['scooter',SPR.scooter.r.c],
     ['crab',SPR.crab.r.c],['bat0',SPR.bat[0].r.c],['bat1',SPR.bat[1].r.c],['ghost',SPR.ghost.r.c]];
@@ -161,3 +175,18 @@ const combat = vm.runInContext(`(function(){
     enemies: combat.en, frames: combat.frames.map(f => f[0]) }, null, 1));
   console.log('combat: enemies', Object.values(combat.en).reduce((a, e) => a + e.length, 0));
 }
+
+// ---------- Stage 4: what chests give, and the two shops ----------
+const extra = vm.runInContext(`(function(){
+  const gives={};
+  for(const id in SC)for(const q of SC[id].chests||[]){if(gives[q.item])continue;
+    st=newState();p=newPlayer();let L;try{L=give(q.item);}catch(e){L=['You found something!'];}
+    gives[q.item]=(L||[]).map(String);}
+  const shopOf=(list,title)=>({title,items:list.map(it=>{st=newState();p=newPlayer();st.items.basket=1;st.items.bottle=1;st.items.balls=1;st.items.powder=1;
+    let msg='';try{const r=it.buy();msg=r?String(r):'';}catch(e){}
+    st=newState();p=newPlayer();let why='';try{why=it.why();}catch(e){}
+    return {name:it.name,price:it.price,msg,whyAtStart:why};})});
+  return {gives,shops:{shop:shopOf(SHOP,'CARYTOWN GOODS'),market:shopOf(MARKET,'17TH STREET MARKET')}};
+})()`, sb);
+fs.writeFileSync(path.join(OUT, 'extra.json'), JSON.stringify(extra, null, 1));
+console.log('chest items', Object.keys(extra.gives).join(' '));

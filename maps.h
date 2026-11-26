@@ -2,37 +2,87 @@
 #ifndef MAPS_H
 #define MAPS_H
 
-#define MAP_COUNT 24
-#define MAP_W 32
-#define MAP_H 22
+#define MAP_COUNT 48
+#define COL_STRIDE 32
 
-extern char m0_chr, m0_chrend, m0_map, m0_pal, m0_col, m0_wld, m0_och, m0_opl, m0_ene;  /* Richmond Raceway */
-extern char m1_chr, m1_chrend, m1_map, m1_pal, m1_col, m1_wld, m1_och, m1_opl, m1_ene;  /* Bryan Park */
-extern char m2_chr, m2_chrend, m2_map, m2_pal, m2_col, m2_wld, m2_och, m2_opl, m2_ene;  /* Lewis Ginter Botanical Garden */
-extern char m3_chr, m3_chrend, m3_map, m3_pal, m3_col, m3_wld, m3_och, m3_opl, m3_ene;  /* VCU & Court End */
-extern char m4_chr, m4_chrend, m4_map, m4_pal, m4_col, m4_wld, m4_och, m4_opl, m4_ene;  /* Arthur Ashe Boulevard */
-extern char m5_chr, m5_chrend, m5_map, m5_pal, m5_col, m5_wld, m5_och, m5_opl, m5_ene;  /* Scott's Addition */
-extern char m6_chr, m6_chrend, m6_map, m6_pal, m6_col, m6_wld, m6_och, m6_opl, m6_ene;  /* Broad Street */
-extern char m7_chr, m7_chrend, m7_map, m7_pal, m7_col, m7_wld, m7_och, m7_opl, m7_ene;  /* Jackson Ward */
-extern char m8_chr, m8_chrend, m8_map, m8_pal, m8_col, m8_wld, m8_och, m8_opl, m8_ene;  /* Church Hill */
-extern char m9_chr, m9_chrend, m9_map, m9_pal, m9_col, m9_wld, m9_och, m9_opl, m9_ene;  /* Chimborazo */
-extern char m10_chr, m10_chrend, m10_map, m10_pal, m10_col, m10_wld, m10_och, m10_opl, m10_ene;  /* Carytown */
-extern char m11_chr, m11_chrend, m11_map, m11_pal, m11_col, m11_wld, m11_och, m11_opl, m11_ene;  /* The Fan */
-extern char m12_chr, m12_chrend, m12_map, m12_pal, m12_col, m12_wld, m12_och, m12_opl, m12_ene;  /* Capitol Square */
-extern char m13_chr, m13_chrend, m13_map, m13_pal, m13_col, m13_wld, m13_och, m13_opl, m13_ene;  /* Shockoe Bottom */
-extern char m14_chr, m14_chrend, m14_map, m14_pal, m14_col, m14_wld, m14_och, m14_opl, m14_ene;  /* Canal Walk & Brown's Island */
-extern char m15_chr, m15_chrend, m15_map, m15_pal, m15_col, m15_wld, m15_och, m15_opl, m15_ene;  /* Texas Beach & Agecroft */
-extern char m16_chr, m16_chrend, m16_map, m16_pal, m16_col, m16_wld, m16_och, m16_opl, m16_ene;  /* Byrd Park & Maymont */
-extern char m17_chr, m17_chrend, m17_map, m17_pal, m17_col, m17_wld, m17_och, m17_opl, m17_ene;  /* Hollywood Cemetery */
-extern char m18_chr, m18_chrend, m18_map, m18_pal, m18_col, m18_wld, m18_och, m18_opl, m18_ene;  /* Belle Isle */
-extern char m19_chr, m19_chrend, m19_map, m19_pal, m19_col, m19_wld, m19_och, m19_opl, m19_ene;  /* Rocketts Landing */
-extern char m20_chr, m20_chrend, m20_map, m20_pal, m20_col, m20_wld, m20_och, m20_opl, m20_ene;  /* Pony Pasture */
-extern char m21_chr, m21_chrend, m21_map, m21_pal, m21_col, m21_wld, m21_och, m21_opl, m21_ene;  /* Forest Hill Park */
-extern char m22_chr, m22_chrend, m22_map, m22_pal, m22_col, m22_wld, m22_och, m22_opl, m22_ene;  /* Manchester */
-extern char m23_chr, m23_chrend, m23_map, m23_pal, m23_col, m23_wld, m23_och, m23_opl, m23_ene;  /* Ancarrow's Landing */
+extern char m0_chr, m0_chrend, m0_map, m0_pal, m0_col, m0_wld, m0_och, m0_opl, m0_ene, m0_xtr;  /* Richmond Raceway */
+extern char m1_chr, m1_chrend, m1_map, m1_pal, m1_col, m1_wld, m1_och, m1_opl, m1_ene, m1_xtr;  /* Bryan Park */
+extern char m2_chr, m2_chrend, m2_map, m2_pal, m2_col, m2_wld, m2_och, m2_opl, m2_ene, m2_xtr;  /* Lewis Ginter Botanical Garden */
+extern char m3_chr, m3_chrend, m3_map, m3_pal, m3_col, m3_wld, m3_och, m3_opl, m3_ene, m3_xtr;  /* VCU & Court End */
+extern char m4_chr, m4_chrend, m4_map, m4_pal, m4_col, m4_wld, m4_och, m4_opl, m4_ene, m4_xtr;  /* Arthur Ashe Boulevard */
+extern char m5_chr, m5_chrend, m5_map, m5_pal, m5_col, m5_wld, m5_och, m5_opl, m5_ene, m5_xtr;  /* Scott's Addition */
+extern char m6_chr, m6_chrend, m6_map, m6_pal, m6_col, m6_wld, m6_och, m6_opl, m6_ene, m6_xtr;  /* Broad Street */
+extern char m7_chr, m7_chrend, m7_map, m7_pal, m7_col, m7_wld, m7_och, m7_opl, m7_ene, m7_xtr;  /* Jackson Ward */
+extern char m8_chr, m8_chrend, m8_map, m8_pal, m8_col, m8_wld, m8_och, m8_opl, m8_ene, m8_xtr;  /* Church Hill */
+extern char m9_chr, m9_chrend, m9_map, m9_pal, m9_col, m9_wld, m9_och, m9_opl, m9_ene, m9_xtr;  /* Chimborazo */
+extern char m10_chr, m10_chrend, m10_map, m10_pal, m10_col, m10_wld, m10_och, m10_opl, m10_ene, m10_xtr;  /* Carytown */
+extern char m11_chr, m11_chrend, m11_map, m11_pal, m11_col, m11_wld, m11_och, m11_opl, m11_ene, m11_xtr;  /* The Fan */
+extern char m12_chr, m12_chrend, m12_map, m12_pal, m12_col, m12_wld, m12_och, m12_opl, m12_ene, m12_xtr;  /* Capitol Square */
+extern char m13_chr, m13_chrend, m13_map, m13_pal, m13_col, m13_wld, m13_och, m13_opl, m13_ene, m13_xtr;  /* Shockoe Bottom */
+extern char m14_chr, m14_chrend, m14_map, m14_pal, m14_col, m14_wld, m14_och, m14_opl, m14_ene, m14_xtr;  /* Canal Walk & Brown's Island */
+extern char m15_chr, m15_chrend, m15_map, m15_pal, m15_col, m15_wld, m15_och, m15_opl, m15_ene, m15_xtr;  /* Texas Beach & Agecroft */
+extern char m16_chr, m16_chrend, m16_map, m16_pal, m16_col, m16_wld, m16_och, m16_opl, m16_ene, m16_xtr;  /* Byrd Park & Maymont */
+extern char m17_chr, m17_chrend, m17_map, m17_pal, m17_col, m17_wld, m17_och, m17_opl, m17_ene, m17_xtr;  /* Hollywood Cemetery */
+extern char m18_chr, m18_chrend, m18_map, m18_pal, m18_col, m18_wld, m18_och, m18_opl, m18_ene, m18_xtr;  /* Belle Isle */
+extern char m19_chr, m19_chrend, m19_map, m19_pal, m19_col, m19_wld, m19_och, m19_opl, m19_ene, m19_xtr;  /* Rocketts Landing */
+extern char m20_chr, m20_chrend, m20_map, m20_pal, m20_col, m20_wld, m20_och, m20_opl, m20_ene, m20_xtr;  /* Pony Pasture */
+extern char m21_chr, m21_chrend, m21_map, m21_pal, m21_col, m21_wld, m21_och, m21_opl, m21_ene, m21_xtr;  /* Forest Hill Park */
+extern char m22_chr, m22_chrend, m22_map, m22_pal, m22_col, m22_wld, m22_och, m22_opl, m22_ene, m22_xtr;  /* Manchester */
+extern char m23_chr, m23_chrend, m23_map, m23_pal, m23_col, m23_wld, m23_och, m23_opl, m23_ene, m23_xtr;  /* Ancarrow's Landing */
+extern char m24_chr, m24_chrend, m24_map, m24_pal, m24_col, m24_wld, m24_och, m24_opl, m24_ene, m24_xtr;  /* Agecroft Hall */
+extern char m25_chr, m25_chrend, m25_map, m25_pal, m25_col, m25_wld, m25_och, m25_opl, m25_ene, m25_xtr;  /* St. Luke Penny Savings Bank */
+extern char m26_chr, m26_chrend, m26_map, m26_pal, m26_col, m26_wld, m26_och, m26_opl, m26_ene, m26_xtr;  /* Black History Museum */
+extern char m27_chr, m27_chrend, m27_map, m27_pal, m27_col, m27_wld, m27_och, m27_opl, m27_ene, m27_xtr;  /* Rocketts Boathouse */
+extern char m28_chr, m28_chrend, m28_map, m28_pal, m28_col, m28_wld, m28_och, m28_opl, m28_ene, m28_xtr;  /* The Byrd Theatre */
+extern char m29_chr, m29_chrend, m29_map, m29_pal, m29_col, m29_wld, m29_och, m29_opl, m29_ene, m29_xtr;  /* Capitol Rotunda */
+extern char m30_chr, m30_chrend, m30_map, m30_pal, m30_col, m30_wld, m30_och, m30_opl, m30_ene, m30_xtr;  /* The Hippodrome */
+extern char m31_chr, m31_chrend, m31_map, m31_pal, m31_col, m31_wld, m31_och, m31_opl, m31_ene, m31_xtr;  /* The Jefferson Hotel */
+extern char m32_chr, m32_chrend, m32_map, m32_pal, m32_col, m32_wld, m32_och, m32_opl, m32_ene, m32_xtr;  /* Cave Under Libby Hill */
+extern char m33_chr, m33_chrend, m33_map, m33_pal, m33_col, m33_wld, m33_och, m33_opl, m33_ene, m33_xtr;  /* Maymont House */
+extern char m34_chr, m34_chrend, m34_map, m34_pal, m34_col, m34_wld, m34_och, m34_opl, m34_ene, m34_xtr;  /* John Marshall House */
+extern char m35_chr, m35_chrend, m35_map, m35_pal, m35_col, m35_wld, m35_och, m35_opl, m35_ene, m35_xtr;  /* Your Row House */
+extern char m36_chr, m36_chrend, m36_map, m36_pal, m36_col, m36_wld, m36_och, m36_opl, m36_ene, m36_xtr;  /* Power Plant Ruins */
+extern char m37_chr, m37_chrend, m37_map, m37_pal, m37_col, m37_wld, m37_och, m37_opl, m37_ene, m37_xtr;  /* Science Museum of Virginia */
+extern char m38_chr, m38_chrend, m38_map, m38_pal, m38_col, m38_wld, m38_och, m38_opl, m38_ene, m38_xtr;  /* Carytown Goods */
+extern char m39_chr, m39_chrend, m39_map, m39_pal, m39_col, m39_wld, m39_och, m39_opl, m39_ene, m39_xtr;  /* The Siegel Center */
+extern char m40_chr, m40_chrend, m40_map, m40_pal, m40_col, m40_wld, m40_och, m40_opl, m40_ene, m40_xtr;  /* Main Street Station */
+extern char m41_chr, m41_chrend, m41_map, m41_pal, m41_col, m41_wld, m41_och, m41_opl, m41_ene, m41_xtr;  /* St. John's Church */
+extern char m42_chr, m42_chrend, m42_map, m42_pal, m42_col, m42_wld, m42_och, m42_opl, m42_ene, m42_xtr;  /* Stone House Arcade */
+extern char m43_chr, m43_chrend, m43_map, m43_pal, m43_col, m43_wld, m43_och, m43_opl, m43_ene, m43_xtr;  /* Manchester Art Studio */
+extern char m44_chr, m44_chrend, m44_map, m44_pal, m44_col, m44_wld, m44_och, m44_opl, m44_ene, m44_xtr;  /* Scott's Addition Taproom */
+extern char m45_chr, m45_chrend, m45_map, m45_pal, m45_col, m45_wld, m45_och, m45_opl, m45_ene, m45_xtr;  /* Miller & Rhoads Tea Room */
+extern char m46_chr, m46_chrend, m46_map, m46_pal, m46_col, m46_wld, m46_och, m46_opl, m46_ene, m46_xtr;  /* Virginia Museum of Fine Arts */
+extern char m47_chr, m47_chrend, m47_map, m47_pal, m47_col, m47_wld, m47_och, m47_opl, m47_ene, m47_xtr;  /* Virginia Museum of History & Culture */
 extern char sys_txt;
 #define TXT_DEAD 0
+#define TXT_KEYSTONES 66
+#define TXT_CARKEY 141
+#define TXT_LATER 223
+#define TXT_NOCOINS 302
+#define TXT_SOLDOUT 332
 #define MAP_CAPITOL 12
+
+extern char shops_bin;
+#define SHOP_HEAD 26
+#define SHOP_ITEM 36
+#define SHOP_NAME 21
+#define SHOP_LOCK 9
+#define SHOP_ONCE 0
+#define SHOP_REPEAT 1
+#define SHOP_LOCKED 2
+#define EFFECT_HEART 1
+#define SHOP_OFS_SHOP 0
+#define SHOP_OFS_MARKET 458
+#define SHOP_MSGS 736
+#define MAX_SHOP_ITEMS 16
+#define CHEST_COUNT 26
+#define CELL_SOLID 1
+#define CELL_DOOR 2
+#define CELL_EXIT 3
+#define DOOR_OPEN 0
+#define DOOR_KEYSTONES 1
+#define DOOR_CARKEY 2
+#define DOOR_LATER 3
 
 extern char combat_chr, combat_chrend, combat_pal;
 
@@ -81,10 +131,10 @@ extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;
 #define FRAME_BR 200
 #define FRAME_MORE 201
 
-static const u8 nbN[MAP_COUNT] = {255, 255, 255, 255, 0, 1, 2, 3, 255, 255, 5, 6, 7, 8, 9, 255, 10, 11, 12, 13, 16, 17, 18, 19};
-static const u8 nbS[MAP_COUNT] = {4, 5, 6, 7, 255, 10, 11, 12, 13, 14, 16, 17, 18, 19, 255, 255, 20, 21, 22, 23, 255, 255, 255, 255};
-static const u8 nbE[MAP_COUNT] = {1, 2, 3, 255, 5, 6, 7, 8, 9, 255, 11, 12, 13, 14, 255, 16, 17, 18, 19, 255, 21, 22, 23, 255};
-static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11, 12, 13, 255, 15, 16, 17, 18, 255, 20, 21, 22};
+static const u8 nbN[MAP_COUNT] = {255, 255, 255, 255, 0, 1, 2, 3, 255, 255, 5, 6, 7, 8, 9, 255, 10, 11, 12, 13, 16, 17, 18, 19, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
+static const u8 nbS[MAP_COUNT] = {4, 5, 6, 7, 255, 10, 11, 12, 13, 14, 16, 17, 18, 19, 255, 255, 20, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
+static const u8 nbE[MAP_COUNT] = {1, 2, 3, 255, 5, 6, 7, 8, 9, 255, 11, 12, 13, 14, 255, 16, 17, 18, 19, 255, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
+static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11, 12, 13, 255, 15, 16, 17, 18, 255, 20, 21, 22, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
 
 #define MAP_START 11  /* The Fan */
 

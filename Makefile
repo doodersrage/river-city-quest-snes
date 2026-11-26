@@ -2,11 +2,11 @@ ifeq ($(strip $(PVSNESLIB_HOME)),)
 $(error "Set PVSNESLIB_HOME to a built PVSnesLib checkout: https://github.com/alekmaul/pvsneslib/wiki/Installation")
 endif
 
-# 1 MB LoROM: room for all 24 neighborhoods now, the dungeons and interiors later.
+# 2 MB LoROM: the outdoor maps, interiors and caves now, the dungeons later.
 export ROMNAME := RiverCityQuest
 export ROMTITLE := RIVER CITY QUEST
-export ROMBANKS := 32
-export ROMSIZE := 0A
+export ROMBANKS := 64
+export ROMSIZE := 0B
 
 include ${PVSNESLIB_HOME}/devkitsnes/snes_rules
 

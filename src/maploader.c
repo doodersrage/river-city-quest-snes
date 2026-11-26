@@ -2,35 +2,59 @@
 #include <snes.h>
 #include "maps.h"
 
-extern void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl, u8 *ene);
+extern void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl, u8 *ene, u8 *xtr);
 
 void rcqLoadMap(u8 i)
 {
     switch (i)
     {
-    case 0: rcqUpload(&m0_chr, &m0_chrend - &m0_chr, &m0_map, &m0_pal, &m0_col, &m0_wld, &m0_och, &m0_opl, &m0_ene); break;
-    case 1: rcqUpload(&m1_chr, &m1_chrend - &m1_chr, &m1_map, &m1_pal, &m1_col, &m1_wld, &m1_och, &m1_opl, &m1_ene); break;
-    case 2: rcqUpload(&m2_chr, &m2_chrend - &m2_chr, &m2_map, &m2_pal, &m2_col, &m2_wld, &m2_och, &m2_opl, &m2_ene); break;
-    case 3: rcqUpload(&m3_chr, &m3_chrend - &m3_chr, &m3_map, &m3_pal, &m3_col, &m3_wld, &m3_och, &m3_opl, &m3_ene); break;
-    case 4: rcqUpload(&m4_chr, &m4_chrend - &m4_chr, &m4_map, &m4_pal, &m4_col, &m4_wld, &m4_och, &m4_opl, &m4_ene); break;
-    case 5: rcqUpload(&m5_chr, &m5_chrend - &m5_chr, &m5_map, &m5_pal, &m5_col, &m5_wld, &m5_och, &m5_opl, &m5_ene); break;
-    case 6: rcqUpload(&m6_chr, &m6_chrend - &m6_chr, &m6_map, &m6_pal, &m6_col, &m6_wld, &m6_och, &m6_opl, &m6_ene); break;
-    case 7: rcqUpload(&m7_chr, &m7_chrend - &m7_chr, &m7_map, &m7_pal, &m7_col, &m7_wld, &m7_och, &m7_opl, &m7_ene); break;
-    case 8: rcqUpload(&m8_chr, &m8_chrend - &m8_chr, &m8_map, &m8_pal, &m8_col, &m8_wld, &m8_och, &m8_opl, &m8_ene); break;
-    case 9: rcqUpload(&m9_chr, &m9_chrend - &m9_chr, &m9_map, &m9_pal, &m9_col, &m9_wld, &m9_och, &m9_opl, &m9_ene); break;
-    case 10: rcqUpload(&m10_chr, &m10_chrend - &m10_chr, &m10_map, &m10_pal, &m10_col, &m10_wld, &m10_och, &m10_opl, &m10_ene); break;
-    case 11: rcqUpload(&m11_chr, &m11_chrend - &m11_chr, &m11_map, &m11_pal, &m11_col, &m11_wld, &m11_och, &m11_opl, &m11_ene); break;
-    case 12: rcqUpload(&m12_chr, &m12_chrend - &m12_chr, &m12_map, &m12_pal, &m12_col, &m12_wld, &m12_och, &m12_opl, &m12_ene); break;
-    case 13: rcqUpload(&m13_chr, &m13_chrend - &m13_chr, &m13_map, &m13_pal, &m13_col, &m13_wld, &m13_och, &m13_opl, &m13_ene); break;
-    case 14: rcqUpload(&m14_chr, &m14_chrend - &m14_chr, &m14_map, &m14_pal, &m14_col, &m14_wld, &m14_och, &m14_opl, &m14_ene); break;
-    case 15: rcqUpload(&m15_chr, &m15_chrend - &m15_chr, &m15_map, &m15_pal, &m15_col, &m15_wld, &m15_och, &m15_opl, &m15_ene); break;
-    case 16: rcqUpload(&m16_chr, &m16_chrend - &m16_chr, &m16_map, &m16_pal, &m16_col, &m16_wld, &m16_och, &m16_opl, &m16_ene); break;
-    case 17: rcqUpload(&m17_chr, &m17_chrend - &m17_chr, &m17_map, &m17_pal, &m17_col, &m17_wld, &m17_och, &m17_opl, &m17_ene); break;
-    case 18: rcqUpload(&m18_chr, &m18_chrend - &m18_chr, &m18_map, &m18_pal, &m18_col, &m18_wld, &m18_och, &m18_opl, &m18_ene); break;
-    case 19: rcqUpload(&m19_chr, &m19_chrend - &m19_chr, &m19_map, &m19_pal, &m19_col, &m19_wld, &m19_och, &m19_opl, &m19_ene); break;
-    case 20: rcqUpload(&m20_chr, &m20_chrend - &m20_chr, &m20_map, &m20_pal, &m20_col, &m20_wld, &m20_och, &m20_opl, &m20_ene); break;
-    case 21: rcqUpload(&m21_chr, &m21_chrend - &m21_chr, &m21_map, &m21_pal, &m21_col, &m21_wld, &m21_och, &m21_opl, &m21_ene); break;
-    case 22: rcqUpload(&m22_chr, &m22_chrend - &m22_chr, &m22_map, &m22_pal, &m22_col, &m22_wld, &m22_och, &m22_opl, &m22_ene); break;
-    case 23: rcqUpload(&m23_chr, &m23_chrend - &m23_chr, &m23_map, &m23_pal, &m23_col, &m23_wld, &m23_och, &m23_opl, &m23_ene); break;
+    case 0: rcqUpload(&m0_chr, &m0_chrend - &m0_chr, &m0_map, &m0_pal, &m0_col, &m0_wld, &m0_och, &m0_opl, &m0_ene, &m0_xtr); break;
+    case 1: rcqUpload(&m1_chr, &m1_chrend - &m1_chr, &m1_map, &m1_pal, &m1_col, &m1_wld, &m1_och, &m1_opl, &m1_ene, &m1_xtr); break;
+    case 2: rcqUpload(&m2_chr, &m2_chrend - &m2_chr, &m2_map, &m2_pal, &m2_col, &m2_wld, &m2_och, &m2_opl, &m2_ene, &m2_xtr); break;
+    case 3: rcqUpload(&m3_chr, &m3_chrend - &m3_chr, &m3_map, &m3_pal, &m3_col, &m3_wld, &m3_och, &m3_opl, &m3_ene, &m3_xtr); break;
+    case 4: rcqUpload(&m4_chr, &m4_chrend - &m4_chr, &m4_map, &m4_pal, &m4_col, &m4_wld, &m4_och, &m4_opl, &m4_ene, &m4_xtr); break;
+    case 5: rcqUpload(&m5_chr, &m5_chrend - &m5_chr, &m5_map, &m5_pal, &m5_col, &m5_wld, &m5_och, &m5_opl, &m5_ene, &m5_xtr); break;
+    case 6: rcqUpload(&m6_chr, &m6_chrend - &m6_chr, &m6_map, &m6_pal, &m6_col, &m6_wld, &m6_och, &m6_opl, &m6_ene, &m6_xtr); break;
+    case 7: rcqUpload(&m7_chr, &m7_chrend - &m7_chr, &m7_map, &m7_pal, &m7_col, &m7_wld, &m7_och, &m7_opl, &m7_ene, &m7_xtr); break;
+    case 8: rcqUpload(&m8_chr, &m8_chrend - &m8_chr, &m8_map, &m8_pal, &m8_col, &m8_wld, &m8_och, &m8_opl, &m8_ene, &m8_xtr); break;
+    case 9: rcqUpload(&m9_chr, &m9_chrend - &m9_chr, &m9_map, &m9_pal, &m9_col, &m9_wld, &m9_och, &m9_opl, &m9_ene, &m9_xtr); break;
+    case 10: rcqUpload(&m10_chr, &m10_chrend - &m10_chr, &m10_map, &m10_pal, &m10_col, &m10_wld, &m10_och, &m10_opl, &m10_ene, &m10_xtr); break;
+    case 11: rcqUpload(&m11_chr, &m11_chrend - &m11_chr, &m11_map, &m11_pal, &m11_col, &m11_wld, &m11_och, &m11_opl, &m11_ene, &m11_xtr); break;
+    case 12: rcqUpload(&m12_chr, &m12_chrend - &m12_chr, &m12_map, &m12_pal, &m12_col, &m12_wld, &m12_och, &m12_opl, &m12_ene, &m12_xtr); break;
+    case 13: rcqUpload(&m13_chr, &m13_chrend - &m13_chr, &m13_map, &m13_pal, &m13_col, &m13_wld, &m13_och, &m13_opl, &m13_ene, &m13_xtr); break;
+    case 14: rcqUpload(&m14_chr, &m14_chrend - &m14_chr, &m14_map, &m14_pal, &m14_col, &m14_wld, &m14_och, &m14_opl, &m14_ene, &m14_xtr); break;
+    case 15: rcqUpload(&m15_chr, &m15_chrend - &m15_chr, &m15_map, &m15_pal, &m15_col, &m15_wld, &m15_och, &m15_opl, &m15_ene, &m15_xtr); break;
+    case 16: rcqUpload(&m16_chr, &m16_chrend - &m16_chr, &m16_map, &m16_pal, &m16_col, &m16_wld, &m16_och, &m16_opl, &m16_ene, &m16_xtr); break;
+    case 17: rcqUpload(&m17_chr, &m17_chrend - &m17_chr, &m17_map, &m17_pal, &m17_col, &m17_wld, &m17_och, &m17_opl, &m17_ene, &m17_xtr); break;
+    case 18: rcqUpload(&m18_chr, &m18_chrend - &m18_chr, &m18_map, &m18_pal, &m18_col, &m18_wld, &m18_och, &m18_opl, &m18_ene, &m18_xtr); break;
+    case 19: rcqUpload(&m19_chr, &m19_chrend - &m19_chr, &m19_map, &m19_pal, &m19_col, &m19_wld, &m19_och, &m19_opl, &m19_ene, &m19_xtr); break;
+    case 20: rcqUpload(&m20_chr, &m20_chrend - &m20_chr, &m20_map, &m20_pal, &m20_col, &m20_wld, &m20_och, &m20_opl, &m20_ene, &m20_xtr); break;
+    case 21: rcqUpload(&m21_chr, &m21_chrend - &m21_chr, &m21_map, &m21_pal, &m21_col, &m21_wld, &m21_och, &m21_opl, &m21_ene, &m21_xtr); break;
+    case 22: rcqUpload(&m22_chr, &m22_chrend - &m22_chr, &m22_map, &m22_pal, &m22_col, &m22_wld, &m22_och, &m22_opl, &m22_ene, &m22_xtr); break;
+    case 23: rcqUpload(&m23_chr, &m23_chrend - &m23_chr, &m23_map, &m23_pal, &m23_col, &m23_wld, &m23_och, &m23_opl, &m23_ene, &m23_xtr); break;
+    case 24: rcqUpload(&m24_chr, &m24_chrend - &m24_chr, &m24_map, &m24_pal, &m24_col, &m24_wld, &m24_och, &m24_opl, &m24_ene, &m24_xtr); break;
+    case 25: rcqUpload(&m25_chr, &m25_chrend - &m25_chr, &m25_map, &m25_pal, &m25_col, &m25_wld, &m25_och, &m25_opl, &m25_ene, &m25_xtr); break;
+    case 26: rcqUpload(&m26_chr, &m26_chrend - &m26_chr, &m26_map, &m26_pal, &m26_col, &m26_wld, &m26_och, &m26_opl, &m26_ene, &m26_xtr); break;
+    case 27: rcqUpload(&m27_chr, &m27_chrend - &m27_chr, &m27_map, &m27_pal, &m27_col, &m27_wld, &m27_och, &m27_opl, &m27_ene, &m27_xtr); break;
+    case 28: rcqUpload(&m28_chr, &m28_chrend - &m28_chr, &m28_map, &m28_pal, &m28_col, &m28_wld, &m28_och, &m28_opl, &m28_ene, &m28_xtr); break;
+    case 29: rcqUpload(&m29_chr, &m29_chrend - &m29_chr, &m29_map, &m29_pal, &m29_col, &m29_wld, &m29_och, &m29_opl, &m29_ene, &m29_xtr); break;
+    case 30: rcqUpload(&m30_chr, &m30_chrend - &m30_chr, &m30_map, &m30_pal, &m30_col, &m30_wld, &m30_och, &m30_opl, &m30_ene, &m30_xtr); break;
+    case 31: rcqUpload(&m31_chr, &m31_chrend - &m31_chr, &m31_map, &m31_pal, &m31_col, &m31_wld, &m31_och, &m31_opl, &m31_ene, &m31_xtr); break;
+    case 32: rcqUpload(&m32_chr, &m32_chrend - &m32_chr, &m32_map, &m32_pal, &m32_col, &m32_wld, &m32_och, &m32_opl, &m32_ene, &m32_xtr); break;
+    case 33: rcqUpload(&m33_chr, &m33_chrend - &m33_chr, &m33_map, &m33_pal, &m33_col, &m33_wld, &m33_och, &m33_opl, &m33_ene, &m33_xtr); break;
+    case 34: rcqUpload(&m34_chr, &m34_chrend - &m34_chr, &m34_map, &m34_pal, &m34_col, &m34_wld, &m34_och, &m34_opl, &m34_ene, &m34_xtr); break;
+    case 35: rcqUpload(&m35_chr, &m35_chrend - &m35_chr, &m35_map, &m35_pal, &m35_col, &m35_wld, &m35_och, &m35_opl, &m35_ene, &m35_xtr); break;
+    case 36: rcqUpload(&m36_chr, &m36_chrend - &m36_chr, &m36_map, &m36_pal, &m36_col, &m36_wld, &m36_och, &m36_opl, &m36_ene, &m36_xtr); break;
+    case 37: rcqUpload(&m37_chr, &m37_chrend - &m37_chr, &m37_map, &m37_pal, &m37_col, &m37_wld, &m37_och, &m37_opl, &m37_ene, &m37_xtr); break;
+    case 38: rcqUpload(&m38_chr, &m38_chrend - &m38_chr, &m38_map, &m38_pal, &m38_col, &m38_wld, &m38_och, &m38_opl, &m38_ene, &m38_xtr); break;
+    case 39: rcqUpload(&m39_chr, &m39_chrend - &m39_chr, &m39_map, &m39_pal, &m39_col, &m39_wld, &m39_och, &m39_opl, &m39_ene, &m39_xtr); break;
+    case 40: rcqUpload(&m40_chr, &m40_chrend - &m40_chr, &m40_map, &m40_pal, &m40_col, &m40_wld, &m40_och, &m40_opl, &m40_ene, &m40_xtr); break;
+    case 41: rcqUpload(&m41_chr, &m41_chrend - &m41_chr, &m41_map, &m41_pal, &m41_col, &m41_wld, &m41_och, &m41_opl, &m41_ene, &m41_xtr); break;
+    case 42: rcqUpload(&m42_chr, &m42_chrend - &m42_chr, &m42_map, &m42_pal, &m42_col, &m42_wld, &m42_och, &m42_opl, &m42_ene, &m42_xtr); break;
+    case 43: rcqUpload(&m43_chr, &m43_chrend - &m43_chr, &m43_map, &m43_pal, &m43_col, &m43_wld, &m43_och, &m43_opl, &m43_ene, &m43_xtr); break;
+    case 44: rcqUpload(&m44_chr, &m44_chrend - &m44_chr, &m44_map, &m44_pal, &m44_col, &m44_wld, &m44_och, &m44_opl, &m44_ene, &m44_xtr); break;
+    case 45: rcqUpload(&m45_chr, &m45_chrend - &m45_chr, &m45_map, &m45_pal, &m45_col, &m45_wld, &m45_och, &m45_opl, &m45_ene, &m45_xtr); break;
+    case 46: rcqUpload(&m46_chr, &m46_chrend - &m46_chr, &m46_map, &m46_pal, &m46_col, &m46_wld, &m46_och, &m46_opl, &m46_ene, &m46_xtr); break;
+    case 47: rcqUpload(&m47_chr, &m47_chrend - &m47_chr, &m47_map, &m47_pal, &m47_col, &m47_wld, &m47_och, &m47_opl, &m47_ene, &m47_xtr); break;
     }
 }

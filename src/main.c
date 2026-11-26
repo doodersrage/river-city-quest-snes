@@ -22,7 +22,17 @@
 extern void rcqLoadMap(u8 i);
 void drawHero(void);
 
-u8 *colGrid;  /* 32x22 bytes, 1 = solid, for the current map */
+u8 *colGrid;  /* 32x22 cells (stride 32): CELL_SOLID, CELL_DOOR, CELL_EXIT */
+u8 mapW, mapH;
+u8 *doors;    /* count, then tx, ty, target map, need */
+u8 *chests;   /* count, then tx, ty, id, effect, amount, text, 4 tilemap words */
+u8 retMap, retX, retY; /* where an interior's exit leads */
+u8 chestOpen[(CHEST_COUNT + 7) / 8];
+
+/* tile changes to copy into the BG1 tilemap during the next vblank (an opened chest) */
+u16 patchWords[4];
+u16 patchAddr0, patchAddr1;
+u8 patchPending;
 u8 *wld;      /* reads, NPCs and texts for the current map */
 u8 curMap;
 s16 px, py;   /* player centre in map pixels */
@@ -40,6 +50,11 @@ u8 npcDir[MAX_NPCS], npcTalk[MAX_NPCS];
 #define BOX_TYPING 1
 #define BOX_PAGE 2 /* page full, waiting for A */
 #define BOX_END 3  /* text done, waiting for A */
+#define BOX_SHOP 4 /* shop list */
+
+u8 shopId, shopCur, shopTop, shopCount, shopReturn;
+u8 *shopBase;
+u8 shopOwned[2][MAX_SHOP_ITEMS];
 
 u16 boxMap[BOX_ROWS * 32];
 u8 boxState, boxTop, boxDirty;
@@ -112,13 +127,149 @@ void openText(u8 i)
     openTextAt(wld + ofs);
 }
 
+void drawShop(void);
+
 void closeText(void)
 {
     u16 i;
+    if (shopReturn)
+    {
+        shopReturn = 0;
+        drawShop();
+        return;
+    }
     for (i = 0; i < BOX_ROWS * 32; i++)
         boxMap[i] = 0;
     boxDirty = 1;
     boxState = BOX_CLOSED;
+}
+
+/* ---------- shops (Carytown Goods, the 17th Street Market) ---------- */
+
+void boxText(u8 row, u8 col, u8 *s, u16 font)
+{
+    while (*s && col <= 29)
+    {
+        boxPut(row, col, font + *s - 32);
+        s++;
+        col++;
+    }
+}
+
+/* text right-aligned so its last letter is at column `right` */
+void boxTextRight(u8 row, u8 right, u8 *s, u16 font)
+{
+    u8 n = 0;
+    while (s[n]) n++;
+    boxText(row, right + 1 - n, s, font);
+}
+
+/* number right-aligned so its last digit is at column `right` */
+void boxNum(u8 row, u8 right, u16 v)
+{
+    do
+    {
+        boxPut(row, right, FONT_WHITE + '0' + (v % 10) - 32);
+        v /= 10;
+        right--;
+    } while (v);
+}
+
+u8 *shopItem(u8 j)
+{
+    return shopBase + SHOP_HEAD + j * SHOP_ITEM;
+}
+
+/* 0 buyable, 1 sold out, 2 locked (shows its lock text) */
+u8 shopStatus(u8 j)
+{
+    u8 *it = shopItem(j);
+    u8 kind = it[SHOP_NAME + SHOP_LOCK + 1], req = it[SHOP_NAME + SHOP_LOCK + 2];
+    if (kind == SHOP_LOCKED) return 2;
+    if (req != 255 && !shopOwned[shopId][req]) return 2;
+    if (kind == SHOP_ONCE && shopOwned[shopId][j]) return 1;
+    return 0;
+}
+
+void drawShop(void)
+{
+    u8 r, j, st;
+    u8 *it;
+    boxDrawFrame();
+    boxText(1, 2, shopBase, FONT_GOLD);
+    for (r = 0; r < 4; r++)
+    {
+        j = shopTop + r;
+        if (j >= shopCount) break;
+        it = shopItem(j);
+        boxPut(2 + r, 2, j == shopCur ? FONT_GOLD + '>' - 32 : FILL);
+        boxText(2 + r, 3, it, FONT_WHITE);
+        st = shopStatus(j);
+        if (st == 1) boxText(2 + r, 22, (u8 *)"SOLD OUT", FONT_GOLD);
+        else if (st == 2) boxTextRight(2 + r, 29, it + SHOP_NAME, FONT_GOLD);
+        else boxNum(2 + r, 29, it[SHOP_NAME + SHOP_LOCK]);
+    }
+    boxText(6, 2, (u8 *)"A: BUY   B: LEAVE", FONT_GOLD);
+    boxState = BOX_SHOP;
+}
+
+void openShop(u8 id)
+{
+    shopId = id;
+    shopBase = (u8 *)&shops_bin + (id ? SHOP_OFS_MARKET : SHOP_OFS_SHOP);
+    shopCount = shopBase[24];
+    shopCur = 0;
+    shopTop = 0;
+    shopReturn = 0;
+    boxTop = (py - camY > 120) ? 0 : 20;
+    drawShop();
+}
+
+void shopBuy(void)
+{
+    u8 *it = shopItem(shopCur);
+    u8 st = shopStatus(shopCur), price = it[SHOP_NAME + SHOP_LOCK];
+    u16 mo;
+    shopReturn = 1;
+    if (st)
+    {
+        openTextAt((u8 *)&sys_txt + TXT_SOLDOUT);
+        return;
+    }
+    if (coins < price)
+    {
+        openTextAt((u8 *)&sys_txt + TXT_NOCOINS);
+        return;
+    }
+    coins -= price;
+    if (shopOwned[shopId][shopCur] < 255) shopOwned[shopId][shopCur]++;
+    if (it[SHOP_NAME + SHOP_LOCK + 3] == EFFECT_HEART && hpMax < 20)
+    {
+        hpMax += 2;
+        hp = hpMax;
+    }
+    mo = it[SHOP_NAME + SHOP_LOCK + 4] | (it[SHOP_NAME + SHOP_LOCK + 5] << 8);
+    openTextAt((u8 *)&shops_bin + SHOP_MSGS + mo);
+}
+
+void updateShop(u16 pressed)
+{
+    if (pressed & KEY_UP && shopCur > 0)
+    {
+        shopCur--;
+        if (shopCur < shopTop) shopTop = shopCur;
+        drawShop();
+    }
+    else if (pressed & KEY_DOWN && shopCur + 1 < shopCount)
+    {
+        shopCur++;
+        if (shopCur >= shopTop + 4) shopTop = shopCur - 3;
+        drawShop();
+    }
+    else if (pressed & KEY_A)
+        shopBuy();
+    else if (pressed & KEY_B)
+        closeText();
 }
 
 /* Reveal up to n characters, stopping at the end of a page or of the text. */
@@ -153,6 +304,11 @@ void typeChars(u8 n)
 
 void updateText(u16 pressed)
 {
+    if (boxState == BOX_SHOP)
+    {
+        updateShop(pressed);
+        return;
+    }
     if (boxState == BOX_TYPING)
     {
         typeChars((pressed & KEY_A) ? 255 : 1); /* A finishes the page at once */
@@ -181,6 +337,12 @@ void updateText(u16 pressed)
 /* Call right after WaitForVBlank: copy the box rows to VRAM. */
 void flushText(void)
 {
+    if (patchPending)
+    {
+        dmaCopyVram((u8 *)&patchWords[0], patchAddr0, 4);
+        dmaCopyVram((u8 *)&patchWords[2], patchAddr1, 4);
+        patchPending = 0;
+    }
     if (!boxDirty)
         return;
     dmaCopyVram((u8 *)boxMap, VRAM_BG3_MAP + boxTop * 32, BOX_ROWS * 32 * 2);
@@ -190,9 +352,32 @@ void flushText(void)
 /* ---------- maps ---------- */
 
 /* Called by the generated rcqLoadMap(), during forced blank. */
-void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, u8 *opl, u8 *ene)
+u16 cellAddr(u8 cx, u8 cy)
 {
-    u8 k;
+    return VRAM_BG1_MAP + ((cy >> 5) * 2 + (cx >> 5)) * 1024 + (cy & 31) * 32 + (cx & 31);
+}
+
+u8 *chestRec(u8 k)
+{
+    return chests + 1 + k * 14;
+}
+
+/* Queue (or, during forced blank, write now) the opened-chest tiles for chest k. */
+void chestTiles(u8 k, u8 now)
+{
+    u8 *r = chestRec(k);
+    u8 i;
+    for (i = 0; i < 4; i++)
+        patchWords[i] = r[6 + i * 2] | (r[7 + i * 2] << 8);
+    patchAddr0 = cellAddr(r[0] * 2, r[1] * 2);
+    patchAddr1 = cellAddr(r[0] * 2, r[1] * 2 + 1);
+    patchPending = 1;
+    if (now) flushText();
+}
+
+void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, u8 *opl, u8 *ene, u8 *xtr)
+{
+    u8 k, gid;
     u8 *rec;
     dmaCopyVram(chr, VRAM_BG1_CHR, chrSize);
     dmaCopyVram(map, VRAM_BG1_MAP, 64 * 64 * 2);
@@ -201,6 +386,16 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     dmaCopyCGram(opl, 128 + 16, MAX_NPCS * 16 * 2);
     colGrid = col;
     wld = w;
+    mapW = xtr[0];
+    mapH = xtr[1];
+    doors = xtr + 2;
+    chests = doors + 1 + doors[0] * 4;
+    for (k = 0; k < chests[0]; k++)
+    {
+        gid = chestRec(k)[2];
+        if (chestOpen[gid >> 3] & (1 << (gid & 7)))
+            chestTiles(k, 1);
+    }
     npcCount = wld[WLD_NNPC];
     for (k = 0; k < npcCount; k++)
     {
@@ -220,7 +415,7 @@ u8 solidAt(s16 x, s16 y)
         return 0; /* off-map: handled as a map exit */
     tx = x >> 4;
     ty = y >> 4;
-    return colGrid[ty * MAP_W + tx];
+    return colGrid[ty * COL_STRIDE + tx] == CELL_SOLID;
 }
 
 u8 blocked(s16 x, s16 y)
@@ -260,6 +455,9 @@ void updateCamera(void)
     if (camY < 0) camY = 0;
     if (camX > MAP_PX_W - SCREEN_W) camX = MAP_PX_W - SCREEN_W;
     if (camY > MAP_PX_H - SCREEN_H) camY = MAP_PX_H - SCREEN_H;
+    /* rooms smaller than the screen sit in the middle (the area around them is blank tile 0) */
+    if (MAP_PX_W < SCREEN_W) camX = -(SCREEN_W - MAP_PX_W) / 2;
+    if (MAP_PX_H < SCREEN_H) camY = -(SCREEN_H - MAP_PX_H) / 2;
     bgSetScroll(0, camX, camY);
 }
 
@@ -381,6 +579,11 @@ u8 interact(void)
         {
             rec = wld + WLD_NPCS + k * 6;
             npcDir[k] = heroDir == 0 ? 1 : heroDir == 1 ? 0 : heroDir == 2 ? 3 : 2;
+            if (rec[5])
+            {
+                openShop(rec[5] - 1);
+                return 1;
+            }
             openText(rec[2] + npcTalk[k]);
             npcTalk[k]++;
             if (npcTalk[k] >= rec[3]) npcTalk[k] = 0;
@@ -388,17 +591,90 @@ u8 interact(void)
         }
     if (fx < 0 || fy < 0 || fx >= MAP_PX_W || fy >= MAP_PX_H)
         return 0;
-    t = wld[WLD_GRID + (fy >> 4) * MAP_W + (fx >> 4)];
+    for (k = 0; k < chests[0]; k++)
+    {
+        rec = chestRec(k);
+        if (rec[0] == (fx >> 4) && rec[1] == (fy >> 4))
+        {
+            t = rec[2];
+            if (chestOpen[t >> 3] & (1 << (t & 7)))
+                return 0; /* already open: swing instead */
+            chestOpen[t >> 3] |= 1 << (t & 7);
+            if (rec[3] == 0)
+            {
+                coins += rec[4];
+                if (coins > 999) coins = 999;
+            }
+            else if (rec[3] == 1 && hpMax < 20)
+            {
+                hpMax += 2;
+                hp = hpMax;
+            }
+            chestTiles(k, 0);
+            openText(rec[5]);
+            return 1;
+        }
+    }
+    t = wld[WLD_GRID + (fy >> 4) * COL_STRIDE + (fx >> 4)];
     if (!t)
         return 0;
     openText(t - 1);
     return 1;
 }
 
+/* Step onto a door: go in, or get turned back with a message. */
+void useDoor(u8 tx, u8 ty)
+{
+    u8 k;
+    u8 *d;
+    for (k = 0; k < doors[0]; k++)
+    {
+        d = doors + 1 + k * 4;
+        if (d[0] != tx || d[1] != ty) continue;
+        if (d[2] != 255 && d[3] == DOOR_OPEN)
+        {
+            retMap = curMap;
+            retX = tx;
+            retY = ty + 1;
+            px = 128;
+            py = 8 * 16 + 6;
+            heroDir = 1;
+            enterMap(d[2]);
+            return;
+        }
+        px = tx * 16 + 8;
+        py = (ty + 1) * 16 + 8;
+        heroDir = 0;
+        updateCamera();
+        openTextAt((u8 *)&sys_txt + (d[3] == DOOR_KEYSTONES ? TXT_KEYSTONES : d[3] == DOOR_CARKEY ? TXT_CARKEY : TXT_LATER));
+        return;
+    }
+}
+
+/* Doors and the way out of interiors are checked under the hero's feet. */
+void checkCells(void)
+{
+    u8 c, m;
+    if (px < 0 || py < 0 || px >= MAP_PX_W || py >= MAP_PX_H) return;
+    c = colGrid[(py >> 4) * COL_STRIDE + (px >> 4)];
+    if (c == CELL_DOOR)
+        useDoor(px >> 4, py >> 4);
+    else if (c == CELL_EXIT && retMap != 255)
+    {
+        px = retX * 16 + 8;
+        py = retY * 16 + 8;
+        heroDir = 0;
+        m = retMap;
+        retMap = 255;
+        enterMap(m);
+    }
+}
+
 /* After "The fog takes you...": wake by the fountain in Capitol Square (web: 7,8 facing left). */
 void respawn(void)
 {
     dying = 0;
+    retMap = 255;
     hp = hpMax;
     inv = 60;
     px = 7 * 16 + 8;
@@ -436,6 +712,16 @@ int main(void)
     boxTop = 20;
     boxLine = 0;
     boxCol = 0;
+    retMap = 255;
+    patchPending = 0;
+    shopReturn = 0;
+    for (i = 0; i < sizeof(chestOpen); i++)
+        chestOpen[i] = 0;
+    for (i = 0; i < MAX_SHOP_ITEMS; i++)
+    {
+        shopOwned[0][i] = 0;
+        shopOwned[1][i] = 0;
+    }
     combatInit();
     setBrightness(0); /* forced blank while loading */
 
@@ -509,6 +795,7 @@ int main(void)
                 if (dx && !blocked(px + dx, py)) px += dx;
                 if (dy && !blocked(px, py + dy)) py += dy;
                 checkExits();
+                checkCells();
             }
             else if (!charging)
                 step = 0;

@@ -4,8 +4,9 @@
 #include <snes.h>
 #include "maps.h"
 
-#define MAP_PX_W (MAP_W * 16)
-#define MAP_PX_H (MAP_H * 16)
+extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
+#define MAP_PX_W ((s16)mapW * 16)
+#define MAP_PX_H ((s16)mapH * 16)
 #define SCREEN_W 256
 #define SCREEN_H 224
 #define HALF 5 /* collision box half-size, as in the web game */
@@ -48,6 +49,7 @@ void combatUpdate(u16 pad, u16 pressed);
 void combatDraw(void);
 void hudDraw(void);
 u8 heroBusy(void);
+void openShop(u8 id);
 u16 rnd(void);
 
 #endif
