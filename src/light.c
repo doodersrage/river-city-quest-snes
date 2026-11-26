@@ -39,7 +39,9 @@ u8 lightR1, lightR2;    /* radii drawn (0 none) */
 s16 lightX1, lightY1, lightX2, lightY2;
 u8 lightDirty;
 u8 srcMap, srcR;     /* the light chosen for window 2, in map pixels */
-s16 srcX, srcY;
+s16 srcX, srcY, scanX, scanY;
+u16 scanI, scanBest;
+u8 scanR;
 
 static const u8 *hwFor(u8 r)
 {
@@ -98,7 +100,7 @@ static u8 nightLevel(void)
 void lightFrame(void)
 {
     u8 kind = mapDark[curMap], r1, r2, k;
-    u16 i, best, d;
+    u16 d;
     s16 hx, hy, x, y, bx, by;
     u8 *b;
     if (boxState != BOX_MENU && ++dayClock >= DAY) dayClock = 0;
@@ -110,16 +112,19 @@ void lightFrame(void)
     if (darkLevel)
     {
         r1 = kind >= 2 ? (hasLantern ? 68 : 38) : (hasLantern ? 54 : 32);
-        /* every 8 frames (or on a new map) look for the nearest light: lit braziers, then the map's
-           torches, lamps and lit windows; in between it just follows the camera */
-        k = 0;
-        if (srcMap != curMap) k = 1;
-        if ((frameCount & 7) == 0) k = 1;
-        if (k)
+        /* the nearest light: lit braziers, then the map's torches, lamps and lit windows. The search
+           runs a few lights a frame (it's slow C on this CPU) and commits after each full pass. */
+        if (srcMap != curMap)
         {
             srcMap = curMap;
             srcR = 0;
-            best = 0xFFFF;
+            scanI = 0xFFFF;
+        }
+        if (scanI == 0xFFFF)
+        {
+            scanI = lightOff[curMap];
+            scanBest = 0xFFFF;
+            scanR = 0;
             if (kind >= 2 && brazPtr)
                 for (k = 0; k < brazPtr[0]; k++)
                     if (roomBraz[curMap] & (1 << k))
@@ -128,27 +133,36 @@ void lightFrame(void)
                         x = b[0] * 16 + 8;
                         y = b[1] * 16 + 6;
                         d = ABS(x - px) + ABS(y - py);
-                        if (d < best)
+                        if (d < scanBest)
                         {
-                            best = d;
-                            srcX = x;
-                            srcY = y;
-                            srcR = 44;
+                            scanBest = d;
+                            scanX = x;
+                            scanY = y;
+                            scanR = 44;
                         }
                     }
-            for (i = lightOff[curMap]; i < lightOff[curMap + 1]; i++)
+        }
+        for (k = 0; k < 6; k++)
+        {
+            if (scanI >= lightOff[curMap + 1])
             {
-                b = (u8 *)lightData + i * 3;
-                x = b[0] << 1;
-                y = b[1] << 1;
-                d = ABS(x - px) + ABS(y - py);
-                if (d < best && d < 300)
-                {
-                    best = d;
-                    srcX = x;
-                    srcY = y;
-                    srcR = b[2] == 0 ? 46 : b[2] == 1 ? 48 : 15;
-                }
+                srcX = scanX;
+                srcY = scanY;
+                srcR = scanR;
+                scanI = 0xFFFF;
+                break;
+            }
+            b = (u8 *)lightData + scanI * 3;
+            scanI++;
+            x = b[0] << 1;
+            y = b[1] << 1;
+            d = ABS(x - px) + ABS(y - py);
+            if (d < scanBest && d < 300)
+            {
+                scanBest = d;
+                scanX = x;
+                scanY = y;
+                scanR = b[2] == 0 ? 46 : b[2] == 1 ? 48 : 15;
             }
         }
         if (srcR)
