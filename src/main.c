@@ -604,6 +604,7 @@ void enterMap(u8 i)
     }
     setBrightness(0); /* forced blank: safe to DMA into VRAM */
     kt = 0;           /* a hit taken at the edge doesn't carry you back across it */
+    lastCell = 0xFFFF;
     dash = 0;
     curMap = i;
     rcqLoadMap(i);
@@ -825,11 +826,17 @@ void useDoor(u8 tx, u8 ty)
 }
 
 /* Doors and the way out of interiors are checked under the hero's feet. */
+u16 lastCell = 0xFFFF; /* doors and exits fire when you step onto them, not while knocked onto one */
+
 void checkCells(void)
 {
     u8 c, m;
+    u16 at;
     if (px < 0 || py < 0 || px >= MAP_PX_W || py >= MAP_PX_H) return;
-    c = colGrid[(py >> 4) * COL_STRIDE + (px >> 4)];
+    at = (py >> 4) * COL_STRIDE + (px >> 4);
+    if (at == lastCell) return;
+    lastCell = at;
+    c = colGrid[at];
     if (c == CELL_DOOR)
         useDoor(px >> 4, py >> 4);
     else if (c == CELL_EXIT && retMap != 255)

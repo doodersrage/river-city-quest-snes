@@ -157,7 +157,7 @@ def clear_room():
         if lab.map != m0:
             # knocked out of the room: step straight back in
             nb = _neighbours(root)
-            back = next((k2 for d, k2 in (('N', 'UP'), ('S', 'DOWN'), ('W', 'LEFT'), ('E', 'RIGHT')) if nb[d][lab.map] == m0), 'DOWN')
+            back = next((k2 for d, k2 in (('N', 'UP'), ('S', 'DOWN'), ('W', 'LEFT'), ('E', 'RIGHT')) if nb[d][lab.map] == m0), 'UP')  # out the exit: back up through the door
             for _ in range(3):
                 close_box(); lab.run(back, 30); lab.run(None, 40)
                 if lab.map == m0: break
