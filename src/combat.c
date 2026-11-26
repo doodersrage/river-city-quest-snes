@@ -21,6 +21,10 @@ s16 pkX[MAX_PK], pkY[MAX_PK];
 u16 pkLife[MAX_PK];
 
 u16 seed;
+
+void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy);
+void collectPickup(u8 k);
+u8 bossNear(s16 x, s16 y);
 u16 rnd(void)
 {
     seed ^= seed << 7;
@@ -177,8 +181,6 @@ u8 hookHitsEnemy(s16 x, s16 y, s16 kx, s16 ky)
         }
     return 0;
 }
-
-void collectPickup(u8 k);
 
 /* ...and brings back what it touches */
 void hookGrabsPickup(s16 x, s16 y)
