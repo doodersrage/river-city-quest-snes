@@ -506,7 +506,7 @@ def convert_shops(extra):
 
 
 DOOR_OPEN, DOOR_KEYSTONES, DOOR_CARKEY, DOOR_LATER = 0, 1, 2, 3
-CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT, CELL_COUNTER = 0, 1, 2, 3, 4
+CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT, CELL_COUNTER, CELL_BUSH = 0, 1, 2, 3, 4, 5
 
 
 def main():
@@ -533,17 +533,18 @@ def main():
     for i, m in enumerate(maps):
         # Opened-chest tiles: the 2x2 cells of each chest in the all-open render.
         chests = m.get('chests') or []
+        bushes = (m.get('bushes') or [])[:64]
         extra_tiles = []
-        if chests:
+        if chests or bushes:
             op = Image.open(os.path.join(exp, m['openFile'])).convert('RGB')
-            for q in chests:
+            for cx_, cy_ in [(q['tx'], q['ty']) for q in chests] + [tuple(b) for b in bushes]:
                 for qy in (0, 1):
                     for qx in (0, 1):
-                        x0, y0 = q['tx'] * 16 + qx * 8, q['ty'] * 16 + qy * 8
+                        x0, y0 = cx_ * 16 + qx * 8, cy_ * 16 + qy * 8
                         extra_tiles.append([c15(op.getpixel((x0 + x, y0 + y))) for y in range(8) for x in range(8)])
         chr_, tm, pal, nt, npal, open_entries = convert_bg(os.path.join(exp, m['file']), extra_tiles)
         def cell(ch):
-            return CELL_COUNTER if ch == 'V' else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
+            return CELL_BUSH if ch == 'b' else CELL_COUNTER if ch == 'V' else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
         col = bytearray(32 * 22)
         for y, row in enumerate(m['grid']):
             for x, ch in enumerate(row):
@@ -565,6 +566,12 @@ def main():
             effect, amount = (0, int(item[5:])) if item.startswith('coins') else (1, 2) if item == 'hc' else (2, 0)
             xtr += bytes((q['tx'], q['ty'], gid, effect, amount, chest_txt[k]))
             for e in open_entries[k * 4:k * 4 + 4]:
+                xtr += bytes((e & 0xFF, e >> 8))
+        # Bushes: tx, ty and the four tilemap words of cut ground.
+        xtr.append(len(bushes))
+        for k, (bx, by) in enumerate(bushes):
+            xtr += bytes((bx, by))
+            for e in open_entries[(len(chests) + k) * 4:(len(chests) + k) * 4 + 4]:
                 xtr += bytes((e & 0xFF, e >> 8))
         ene = bytes([len(combat['enemies'][m['id']])]) + b''.join(
             bytes((ENEMY_TYPES.index(t), tx, ty)) for t, tx, ty in combat['enemies'][m['id']])
@@ -613,7 +620,7 @@ def main():
     open(os.path.join(out, 'shops.bin'), 'wb').write(shops)
     asm += ['.section ".shops" superfree', 'shops_bin:', '.incbin "data/shops.bin"', '.ends', '']
     hdr += ['extern char shops_bin;'] + shop_defs + [f'#define CHEST_COUNT {len(chest_gid)}',
-            '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4',
+            '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4', '#define CELL_BUSH 5',
             '#define DOOR_OPEN 0', '#define DOOR_KEYSTONES 1', '#define DOOR_CARKEY 2', '#define DOOR_LATER 3', '']
     cobj, cpal, ctables = convert_combat(exp)
     open(os.path.join(out, 'combat.chr'), 'wb').write(cobj)

@@ -80,6 +80,7 @@ extern char shops_bin;
 #define CELL_DOOR 2
 #define CELL_EXIT 3
 #define CELL_COUNTER 4
+#define CELL_BUSH 5
 #define DOOR_OPEN 0
 #define DOOR_KEYSTONES 1
 #define DOOR_CARKEY 2

@@ -70,7 +70,7 @@ class Lab:
     # ---------- movement ----------
     def solid_grid(self):
         col = open(os.path.join(self.root, 'data', f'm{self.map}.col'), 'rb').read()
-        grid = [[1 if col[y * MAP_W + x] in (1, 4) else 0 for x in range(MAP_W)] for y in range(MAP_H)]
+        grid = [[1 if col[y * MAP_W + x] in (1, 4, 5) else 0 for x in range(MAP_W)] for y in range(MAP_H)]
         for k in range(self.ram('npcCount')):
             nx, ny = self.ram('npcX', 2, True, k), self.ram('npcY', 2, True, k)
             grid[ny // 16][nx // 16] = 1

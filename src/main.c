@@ -29,10 +29,14 @@ u8 *chests;   /* count, then tx, ty, id, effect, amount, text, 4 tilemap words *
 u8 retMap, retX, retY; /* where an interior's exit leads */
 u8 chestOpen[(CHEST_COUNT + 7) / 8];
 
-/* tile changes to copy into the BG1 tilemap during the next vblank (an opened chest) */
-u16 patchWords[4];
-u16 patchAddr0, patchAddr1;
-u8 patchPending;
+u8 *bushes;   /* count, then tx, ty, 4 tilemap words of cut ground */
+u8 colRam[COL_STRIDE * 22]; /* the collision grid, copied to RAM so cut bushes open up */
+
+/* 2x2-cell tile changes to copy into the BG1 tilemap during the next vblank */
+#define MAX_PATCH 10
+u16 patchWords[MAX_PATCH][4];
+u16 patchAddr[MAX_PATCH];
+u8 patchCount;
 u8 *wld;      /* reads, NPCs and texts for the current map */
 u8 curMap;
 s16 px, py;   /* player centre in map pixels */
@@ -337,12 +341,13 @@ void updateText(u16 pressed)
 /* Call right after WaitForVBlank: copy the box rows to VRAM. */
 void flushText(void)
 {
-    if (patchPending)
+    u8 k;
+    for (k = 0; k < patchCount; k++)
     {
-        dmaCopyVram((u8 *)&patchWords[0], patchAddr0, 4);
-        dmaCopyVram((u8 *)&patchWords[2], patchAddr1, 4);
-        patchPending = 0;
+        dmaCopyVram((u8 *)&patchWords[k][0], patchAddr[k], 4);
+        dmaCopyVram((u8 *)&patchWords[k][2], patchAddr[k] + 32, 4);
     }
+    patchCount = 0;
     if (!boxDirty)
         return;
     dmaCopyVram((u8 *)boxMap, VRAM_BG3_MAP + boxTop * 32, BOX_ROWS * 32 * 2);
@@ -362,17 +367,47 @@ u8 *chestRec(u8 k)
     return chests + 1 + k * 14;
 }
 
+/* Queue a 2x2 tile change for 16px cell (tx, ty); w points at 4 little-endian words. */
+void queuePatch(u8 tx, u8 ty, u8 *w)
+{
+    u8 i;
+    if (patchCount >= MAX_PATCH) return;
+    for (i = 0; i < 4; i++)
+        patchWords[patchCount][i] = w[i * 2] | (w[i * 2 + 1] << 8);
+    patchAddr[patchCount] = cellAddr(tx * 2, ty * 2); /* the row below is +32 words */
+    patchCount++;
+}
+
 /* Queue (or, during forced blank, write now) the opened-chest tiles for chest k. */
 void chestTiles(u8 k, u8 now)
 {
     u8 *r = chestRec(k);
-    u8 i;
-    for (i = 0; i < 4; i++)
-        patchWords[i] = r[6 + i * 2] | (r[7 + i * 2] << 8);
-    patchAddr0 = cellAddr(r[0] * 2, r[1] * 2);
-    patchAddr1 = cellAddr(r[0] * 2, r[1] * 2 + 1);
-    patchPending = 1;
+    queuePatch(r[0], r[1], r + 6);
     if (now) flushText();
+}
+
+/* The paddle reached (x, y): cut a bush there (web cutAt), maybe dropping a coin or heart. */
+void cutAt(s16 x, s16 y)
+{
+    u8 tx, ty, k, r;
+    u8 *b;
+    if (x < 0 || y < 0 || x >= MAP_PX_W || y >= MAP_PX_H) return;
+    tx = x >> 4;
+    ty = y >> 4;
+    if (colRam[ty * COL_STRIDE + tx] != CELL_BUSH) return;
+    colRam[ty * COL_STRIDE + tx] = 0;
+    for (k = 0; k < bushes[0]; k++)
+    {
+        b = bushes + 1 + k * 10;
+        if (b[0] == tx && b[1] == ty)
+        {
+            queuePatch(tx, ty, b + 2);
+            break;
+        }
+    }
+    r = rnd() % 10;
+    if (r < 2) dropKind(tx * 16 + 8, ty * 16 + 8, 1);
+    else if (r < 3) dropKind(tx * 16 + 8, ty * 16 + 8, 2);
 }
 
 void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, u8 *opl, u8 *ene, u8 *xtr)
@@ -390,6 +425,11 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     mapH = xtr[1];
     doors = xtr + 2;
     chests = doors + 1 + doors[0] * 4;
+    bushes = chests + 1 + chests[0] * 14;
+    for (k = 0; k < COL_STRIDE * 22 - 1; k++)
+        colRam[k] = col[k];
+    colRam[COL_STRIDE * 22 - 1] = col[COL_STRIDE * 22 - 1];
+    colGrid = colRam;
     for (k = 0; k < chests[0]; k++)
     {
         gid = chestRec(k)[2];
@@ -416,7 +456,7 @@ u8 solidAt(s16 x, s16 y)
     tx = x >> 4;
     ty = y >> 4;
     tx = colGrid[ty * COL_STRIDE + tx];
-    return tx == CELL_SOLID || tx == CELL_COUNTER;
+    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH;
 }
 
 u8 blocked(s16 x, s16 y)
@@ -720,7 +760,7 @@ int main(void)
     boxLine = 0;
     boxCol = 0;
     retMap = 255;
-    patchPending = 0;
+    patchCount = 0;
     shopReturn = 0;
     for (i = 0; i < sizeof(chestOpen); i++)
         chestOpen[i] = 0;

@@ -137,12 +137,9 @@ void pickRandomDir(u8 k, s16 speed)
     enVY[k] = dirY[a] * speed;
 }
 
-void dropAt(s16 x, s16 y)
+void dropKind(s16 x, s16 y, u8 kind)
 {
-    u8 i, r = rnd() % 100, kind;
-    if (r < 30) kind = 1;
-    else if (r < 44) kind = 2;
-    else return;
+    u8 i;
     for (i = 0; i < MAX_PK; i++)
         if (!pkKind[i])
         {
@@ -152,6 +149,14 @@ void dropAt(s16 x, s16 y)
             pkLife[i] = 600;
             return;
         }
+}
+
+/* what a beaten enemy leaves behind (web kill()) */
+void dropAt(s16 x, s16 y)
+{
+    u8 r = rnd() % 100;
+    if (r < 30) dropKind(x, y, 1);
+    else if (r < 44) dropKind(x, y, 2);
 }
 
 void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy)
@@ -315,6 +320,18 @@ void combatUpdate(u16 pad, u16 pressed)
                 d = dist(dx, dy);
                 if (d < 24) hitEnemy(k, 2, dx * 48 / d, dy * 48 / d);
             }
+        /* web: every 4th spin frame, cut at 8 points 16px out */
+        if ((spin & 3) == 0)
+        {
+            cutAt(px + 16, py - 2);
+            cutAt(px + 11, py + 9);
+            cutAt(px, py + 14);
+            cutAt(px - 11, py + 9);
+            cutAt(px - 16, py - 2);
+            cutAt(px - 11, py - 13);
+            cutAt(px, py - 18);
+            cutAt(px + 11, py - 13);
+        }
     }
     else if (atk)
     {
@@ -351,6 +368,7 @@ void combatUpdate(u16 pad, u16 pressed)
                 if (ABS(ex - hx) < 11 && ABS(ey - hy) < 11)
                     hitEnemy(k, 1, dirX[heroDir] * 40, dirY[heroDir] * 40);
             }
+        if (atk == 10) cutAt(hx, hy);
     }
 
     for (k = 0; k < MAX_EN; k++)

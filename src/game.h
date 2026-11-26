@@ -51,5 +51,7 @@ void hudDraw(void);
 u8 heroBusy(void);
 void openShop(u8 id);
 u16 rnd(void);
+void dropKind(s16 x, s16 y, u8 kind);
+void cutAt(s16 x, s16 y);
 
 #endif

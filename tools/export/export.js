@@ -51,14 +51,17 @@ const dump = vm.runInContext(`(function(){
       try{drawLandmarks(s,0);}catch(e){} try{drawDecor(s);}catch(e){} g=old; }
     catch(e){ out.push({id,err:String(e)}); continue; }
     // Same map with every chest open, for the tiles the ROM swaps in when you open one.
-    let opened=null;
-    if((s.chests||[]).length){const keep=s.chests.map(q=>s.g[q.ty][q.tx]);s.chests.forEach(q=>s.g[q.ty][q.tx]='o');
+    // ...and with every bush cut (bushes become the map's base ground, as cutAt() does).
+    let opened=null;const bushes=[];
+    for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++)if(s.g[y][x]=='b')bushes.push([x,y]);
+    if((s.chests||[]).length||bushes.length){const keep=s.chests.map(q=>s.g[q.ty][q.tx]);s.chests.forEach(q=>s.g[q.ty][q.tx]='o');
+      bushes.forEach(([x,y])=>s.g[y][x]=s.base);
       opened=renderMap(s,0);const o2=g;g=opened.getContext('2d');try{drawLandmarks(s,0);}catch(e){}try{drawDecor(s);}catch(e){}g=o2;
-      s.chests.forEach((q,i)=>s.g[q.ty][q.tx]=keep[i]);}
+      s.chests.forEach((q,i)=>s.g[q.ty][q.tx]=keep[i]);bushes.forEach(([x,y])=>s.g[y][x]='b');}
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
       grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,
       doors:(s.doors||[]).map(d=>({tx:d.tx,ty:d.ty,to:d.to,need:d.need||null,ret:d.ret})),
-      chests:(s.chests||[]).map(q=>({id:q.id,tx:q.tx,ty:q.ty,item:q.item}))});
+      chests:(s.chests||[]).map(q=>({id:q.id,tx:q.tx,ty:q.ty,item:q.item})),bushes});
   }
   return out;
 })()`, sb);
