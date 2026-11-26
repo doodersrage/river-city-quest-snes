@@ -140,8 +140,16 @@ const world = vm.runInContext(`(function(){
       if(!talks.length&&n0.talk=='shop')talks.push(['What can I get you?']);
       if(!talks.length&&n0.talk=='grocer')talks.push(['Fresh from the farms!']);
       if(!talks.length)talks.push(['...']);
+      // Trading quest (melon -> sheet music -> river map -> kayak): talks that change what you carry.
+      const quest=[];
+      for(const need of [null,'melon','music','rivermap']){
+        const keep=st;st=newState();st.trade=need;const n=Object.assign({},n0);let r=null;SAID=null;
+        try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
+        const got=st.items.kayak?'kayak':st.trade;
+        if(r&&got!==need)quest.push({need:need||'none',give:got,pages:pages(r)});
+        st=keep;}
       let sp;try{sp=n0.spr&&n0.spr.down?n0.spr:npcSpr(n0);}catch(e){sp=npcSpr(Object.assign({hat:['#888','#666','#aaa'],shirt:['#888','#666','#aaa']},n0));}
-      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,gifts,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
+      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',talks,gifts,quest,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
     });
     out[id]={reads,npcs};
   }
@@ -155,7 +163,7 @@ for (const id in world) {
     n.spr.forEach((f, i) => x.drawImage(f, i * 16 + Math.floor((16 - f.width) / 2), 16 - f.height));
     const file = 'npcs/' + safe + '_' + k + '.png';
     fs.writeFileSync(path.join(OUT, file), c.toBuffer('image/png'));
-    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, gifts: n.gifts, shop: n.shop, file };
+    return { tx: n.tx, ty: n.ty, who: n.who, talks: n.talks, gifts: n.gifts, quest: n.quest, shop: n.shop, file };
   }) };
 }
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1));

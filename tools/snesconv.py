@@ -231,7 +231,8 @@ def encode_text(title, pages):
 
 
 GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug']   # same numbering as ITEM_* in the ROM
-NPC_REC = 8
+NPC_REC = 12
+TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4}
 
 
 def build_world(w, extra_texts=()):
@@ -258,7 +259,13 @@ def build_world(w, extra_texts=()):
         for t_, item in n.get('gifts') or []:
             if item in GIFT_ITEMS:
                 gift_talk, gift_item = t_, GIFT_ITEMS.index(item) + 1
-        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, shop, gift_talk, gift_item))
+        # trading quest: what this person wants, what they say, what they give
+        q_need, q_text, q_give = 255, 0, 0
+        for q in n.get('quest') or []:
+            q_need, q_give = TRADE[q['need']], TRADE[q['give']]
+            q_text = len(texts)
+            texts.append(encode_text(n['who'], q['pages']))
+        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), k + 1, shop, gift_talk, gift_item, q_need, q_text, q_give, 0))
     extra_ids = []
     for title, pages in extra_texts:
         extra_ids.append(text_id(title, pages))
@@ -612,7 +619,7 @@ def convert_shops(extra):
 
 
 DOOR_OPEN, DOOR_KEYSTONES, DOOR_CARKEY, DOOR_LATER = 0, 1, 2, 3
-CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT, CELL_COUNTER, CELL_BUSH, CELL_POST, CELL_LOW, CELL_LOCK, CELL_BRAZIER = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT, CELL_COUNTER, CELL_BUSH, CELL_POST, CELL_LOW, CELL_LOCK, CELL_BRAZIER, CELL_RIVER = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 
 
 def main():
@@ -671,7 +678,7 @@ def main():
         chr_, tm, pal, nt, npal, open_entries = convert_bg(os.path.join(exp, m['file']), extra_tiles)
         def cell(ch):
             return CELL_BRAZIER if ch in 'jJ' else CELL_BUSH if ch == 'b' else CELL_COUNTER if ch == 'V' else CELL_POST if ch == '+' else \
-                CELL_LOCK if ch == 'L' else CELL_LOW if ch in '_w~' and ch in solid else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
+                CELL_LOCK if ch == 'L' else CELL_RIVER if ch == '~' else CELL_LOW if ch in '_w' and ch in solid else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
         col = bytearray(32 * 22)
         for y, row in enumerate(m['grid']):
             for x, ch in enumerate(row):
@@ -827,7 +834,7 @@ def main():
     open(os.path.join(out, 'shops.bin'), 'wb').write(shops)
     asm += ['.section ".shops" superfree', 'shops_bin:', '.incbin "data/shops.bin"', '.ends', '']
     hdr += ['extern char shops_bin;'] + shop_defs + [f'#define CHEST_COUNT {len(chest_gid)}',
-            '#define CELL_OPEN 0', '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4', '#define CELL_BUSH 5', '#define CELL_POST 6', '#define CELL_LOW 7', '#define CELL_LOCK 8', '#define CELL_BRAZIER 9',
+            '#define CELL_OPEN 0', '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4', '#define CELL_BUSH 5', '#define CELL_POST 6', '#define CELL_LOW 7', '#define CELL_LOCK 8', '#define CELL_BRAZIER 9', '#define CELL_RIVER 10',
             '#define DOOR_OPEN 0', '#define DOOR_KEYSTONES 1', '#define DOOR_CARKEY 2', '#define DOOR_LATER 3', '']
     bblobs, bpals, bdefs = convert_bosses(exp)
     for i, (bb, bp) in enumerate(zip(bblobs, bpals)):

@@ -487,7 +487,8 @@ u8 solidAt(s16 x, s16 y)
     tx = x >> 4;
     ty = y >> 4;
     tx = colGrid[ty * COL_STRIDE + tx];
-    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_LOCK;
+    if (tx == CELL_RIVER) return !hasKayak; /* the kayak paddles the James */
+    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_LOCK || tx == CELL_BRAZIER;
 }
 
 u8 blocked(s16 x, s16 y)
@@ -663,6 +664,19 @@ u8 interact(void)
             if (rec[5])
             {
                 openShop(rec[5] - 1);
+                return 1;
+            }
+            /* the trading quest: melon -> sheet music -> river map -> kayak */
+            if (rec[8] != 255 && ((rec[8] == 0 && !tradeItem && !hasKayak && !melonTaken) || (rec[8] && tradeItem == rec[8])))
+            {
+                openText(rec[9]);
+                if (rec[10] == 4)
+                {
+                    hasKayak = 1;
+                    tradeItem = 0;
+                }
+                else tradeItem = rec[10];
+                if (rec[10] == 1) melonTaken = 1;
                 return 1;
             }
             /* someone handing you something (the Archivist's Gas Lantern) */

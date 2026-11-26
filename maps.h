@@ -151,6 +151,7 @@ extern char shops_bin;
 #define CELL_LOW 7
 #define CELL_LOCK 8
 #define CELL_BRAZIER 9
+#define CELL_RIVER 10
 #define DOOR_OPEN 0
 #define DOOR_KEYSTONES 1
 #define DOOR_CARKEY 2
@@ -239,7 +240,7 @@ extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;
 #define WLD_NPCS 706
 #define WLD_TOFS 754
 #define MAX_NPCS 4
-#define NPC_REC 8
+#define NPC_REC 12
 #define BOX_COLS 28
 #define FONT_WHITE 1  /* tile for char c is FONT_WHITE + c - 32 */
 #define FONT_GOLD 97
