@@ -189,7 +189,7 @@ void applyRoomState(u8 now)
             }
         }
     /* something appeared where you stand (a reward chest, a gate): step clear of it */
-    if (!now) settle();
+    if (!now && !hookSt && !dash) settle(); /* (the hook and a dash may carry you over pits) */
 }
 
 /* Walking into a locked door with a small key opens it (web tryUnlock). */
