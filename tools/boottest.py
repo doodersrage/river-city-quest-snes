@@ -3,7 +3,7 @@
 Usage: boottest.py RiverCityQuest.sfc RiverCityQuest.sym <out-dir>"""
 import os, sys
 import numpy as np
-from sneslab import Lab
+from sneslab import Lab, travel
 
 rom, sym, out = sys.argv[1], sys.argv[2], sys.argv[3]
 os.makedirs(out, exist_ok=True)
@@ -677,6 +677,63 @@ lab.walk_to_cell(0, 5); lab.run('LEFT', 30); lab.run(None, 60); close_box()
 lab.walk_to_cell(7, 9); lab.run('DOWN', 30); lab.run(None, 60); close_box()
 lab.walk_to_cell(7, 9); lab.run('DOWN', 30); lab.run(None, 60); close_box()
 check(lab.map == lab.map_named('Byrd Park & Maymont'), 'back out to Byrd Park')
+
+# Stage 6: the Conservatory at Lewis Ginter, the Watering Can and the Titan Arum.
+travel(lab, lab.map_named('Lewis Ginter Botanical Garden'), close_box)
+lab.walk_to_cell(8, 6); lab.run('UP', 20); lab.run(None, 70); close_box()
+check(lab.map == lab.map_named('Palm House'), 'north to Lewis Ginter and into the Conservatory')
+clear_room()
+lab.walk_to_cell(14, 5); lab.run('RIGHT', 30); lab.run(None, 60); close_box()
+check(lab.map == lab.map_named('Orchid Room') and clear_room(), 'the Orchid Room is cleared')
+lab.run(None, 30)
+lab.walk_to_cell(4, 3); lab.face('up'); lab.press('A', 60)
+lab.screenshot(f'{out}/30-watering-can.png'); close_box()
+check(lab.ram('hasCan') == 1 and lab.ram('eqItem') == 6, 'a chest appears with the Watering Can')
+lab.walk_to_cell(7, 4); lab.face('right'); lab.press('B', 10); close_box(); lab.run(None, 20)
+check(all(lab.ram('colRam', 1, False, 4 * 32 + x) == 0 for x in range(8, 12)), 'the sprout grows a vine across the gap')
+lab.walk_to_cell(12, 4); lab.face('up'); lab.press('A', 60); close_box()
+lab.screenshot(f'{out}/31-vine-bridge.png')
+check(lab.ram('keys', 1, False, lab.ram('roomArea')) == 1, 'over the vine to the key on the island')
+lab.walk_to_cell(0, 5); lab.run('LEFT', 30); lab.run(None, 60); close_box()
+lab.walk_to_cell(7, 1); lab.run('UP', 40); lab.run(None, 60); close_box()
+check(lab.map == lab.map_named('Fern Gully'), 'the key opens Fern Gully')
+lab.walk_to_cell(5, 8); lab.face('up'); lab.press('B', 10); close_box(); lab.run(None, 20)
+check(clear_room() and lab.ram('roomFlags', 1, False, lab.map) & 16, 'a second vine, and Fern Gully is cleared')
+lab.walk_to_cell(12, 3); lab.face('up'); lab.press('A', 60); close_box()
+lab.screenshot(f'{out}/32-fern-gully.png')
+lab.walk_to_cell(7, 1); lab.run('UP', 40); lab.run(None, 60)
+check(lab.map == lab.map_named('Under the Dome') and lab.ram('boxState'), 'the gate opens Under the Dome')
+lab.screenshot(f'{out}/33-titan-arum.png'); close_box()
+shot = False
+hpmax = lab.ram('hpMax')
+for _ in range(60):
+    if not lab.ram('bossOn') or lab.map != lab.map_named('Under the Dome'):
+        break
+    if lab.ram('hp') <= 3:
+        lab.poke('hp', lab.ram('hpMax'))
+    close_box()
+    if lab.ram('bossState') != 2:
+        try:
+            lab.walk_to_cell(8, 5)
+        except RuntimeError:
+            pass
+        lab.face('up'); lab.press('B', 4)
+        if lab.ram('bossState') == 2 and not shot:
+            close_box(); lab.run(None, 4); lab.screenshot(f'{out}/34-arum-blooms.png'); shot = True
+        close_box()
+    else:
+        lab.run('UP', 6); lab.press('A', 10)
+check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'watered, the Titan Arum blooms and is beaten')
+lab.run(None, 30); close_box()
+try:
+    lab.walk_to_cell(9, 5)
+except RuntimeError:
+    pass
+lab.run(None, 20); close_box(); lab.run('DOWN', 4); lab.run(None, 20); close_box()
+check(lab.ram('hpMax') == hpmax + 2, 'and a heart container')
+lab.screenshot(f'{out}/35-arum-beaten.png')
+lab.walk_to_cell(7, 7); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+check(lab.map == lab.map_named('Lewis Ginter Botanical Garden'), 'the stairs lead back out to Lewis Ginter')
 
 # Stage 3: let an enemy take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)
