@@ -251,6 +251,18 @@ void updateMenu(u16 pressed);
 /* the ending (ending.c) */
 #define BOX_ROWS_ALL (8 * 32)
 extern u8 gameWon, endingPending;
+
+/* stage 11: saves (save.c) and the title screen (title.c) */
+extern u8 saveSlot;
+extern char heroName[9];
+extern u16 playMin;
+void saveInit(void);
+void saveGame(void);
+void playTick(void);
+u8 runTitle(void);
+void openIntro(void);
+void dungeonEntered(void);
+void rcqNmi(void);
 void runEnding(void);
 
 #endif

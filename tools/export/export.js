@@ -364,6 +364,19 @@ const bossArt = vm.runInContext(`(function(){
     try{LMART[L.art](12,10,L.w*TS,L.h*TS,0,s,L);}catch(e){}g=old;
     return {map:ph.id,art:ph.art,cap:PHOTOCAP[ph.art],x:L.x*TS+L.w*8,y:L.y*TS+L.h*8,img:c};});
   out.photoAt=[];for(const id in SC){const s=SC[id];if(!s.ow)continue;for(const L of s.lm||[]){const k=out.photos.findIndex(q=>q.art==L.art);if(k>=0&&PHOTOCAP[L.art])out.photoAt.push({map:id,k,x:L.x*TS+L.w*8,y:L.y*TS+L.h*8});}}
+  // stage 11: the title screen (web draw() 'title': the night skyline, the logo, a panel for the save slots),
+  // the name screen (a big panel), and the opening's words
+  {const T=(x,str,X,Y,col,sz)=>{x.font=sz+'px PS2P';x.textAlign='center';x.textBaseline='top';x.fillStyle=col;x.fillText(str,X,Y);};
+   const base=()=>{const c=mkCanvas(256,200),old=g;g=c.getContext('2d');frame=0;try{drawTitleBg();}finally{g=old;}return c;};
+   const t=base(),x=t.getContext('2d');
+   // the moon sits right where the SNES logo's Y goes: sky over it, and the moon up in the corner instead
+   x.putImageData(x.getImageData(150,18,24,22),192,18);
+   for(const[a,b,w,h,c]of[[196,22,14,14,'#fff2c8'],[194,25,18,8,'#fff2c8'],[198,20,10,18,'#fff2c8'],[200,26,3,3,'#e8d8a0'],[205,31,2,2,'#e8d8a0']]){x.fillStyle=c;x.fillRect(a+34,b-14,w,h);}
+   for(const[dx,dy]of[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]]){T(x,'RIVER CITY',128+dx,24+dy,'#1a1423',16);T(x,'QUEST',128+dx,46+dy,'#1a1423',16);}T(x,'RIVER CITY',130,26,'#6a1c2c',16);T(x,'RIVER CITY',128,24,'#f2c14e',16);T(x,'QUEST',130,48,'#6a1c2c',16);T(x,'QUEST',128,46,'#fff2a8',16);
+   T(x,'The Tunnel Under Church Hill',129,71,'#1a1423',8);T(x,'The Tunnel Under Church Hill',128,70,'#e8ecf8',8);
+   x.fillStyle='rgba(8,10,24,.8)';x.fillRect(14,84,228,58);x.fillStyle='#f2c14e';x.fillRect(14,84,228,1);x.fillRect(14,141,228,1);out.titlebg=t;
+   const n=base(),y=n.getContext('2d');y.fillStyle='rgba(8,10,24,.82)';y.fillRect(16,20,224,160);y.fillStyle='#f2c14e';y.fillRect(16,20,224,1);out.namebg=n;}
+  out.intro=PANELS.map(P=>{const o=st;st=newState();st.name='\x01';let t='';try{t=P.txt();}catch(e){}st=o;return t;});
   out.chal=Object.entries(CHAL).map(([id,d])=>({id,name:d.name,type:d.type,time:d.time||0,ic:d.ic||null,foe:d.foe||null,n:d.n||0,needs:d.needs||null,intro:d.intro}));
   out.lore=LORE.map(([id,t,s])=>{const sn=s.split('. ')[0];return {id,title:t,quote:sn.length>95?sn.slice(0,92)+'...':sn+'.'};});
   out.keynames=KEYNAME;
@@ -391,6 +404,9 @@ const bossArt = vm.runInContext(`(function(){
   }
   fs.writeFileSync(path.join(OUT, 'combat', 'race.json'), JSON.stringify({ info: bossArt.raceInfo, obs: Object.fromEntries(Object.entries(bossArt.race).map(([k, r]) => [k, Object.keys(r.obs)])) }, null, 1));
   fs.writeFileSync(path.join(OUT, 'combat', 'pinlit.png'), bossArt.pinlit.toBuffer('image/png'));
+  fs.writeFileSync(path.join(OUT, 'combat', 'title.png'), bossArt.titlebg.toBuffer('image/png'));
+  fs.writeFileSync(path.join(OUT, 'combat', 'name.png'), bossArt.namebg.toBuffer('image/png'));
+  fs.writeFileSync(path.join(OUT, 'combat', 'intro.json'), JSON.stringify(bossArt.intro, null, 1));
   fs.mkdirSync(path.join(OUT, 'photos'), { recursive: true });
   bossArt.photos.forEach((ph, i) => fs.writeFileSync(path.join(OUT, 'photos', i + '.png'), ph.img.toBuffer('image/png')));
   fs.writeFileSync(path.join(OUT, 'photos', 'photos.json'), JSON.stringify({ photos: bossArt.photos.map(({ img, ...r }) => r), at: bossArt.photoAt }, null, 1));

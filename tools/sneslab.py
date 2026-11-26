@@ -18,6 +18,7 @@ MAP_W, MAP_H, HALF = 32, 22, 5
 
 class Lab:
     def __init__(self, rom, sym, root):
+        self.rom = rom
         self.emu = retro.RetroEmulator(rom)
         self.data = retro.data.GameData()
         self.emu.configure_data(self.data)
@@ -191,6 +192,19 @@ class Lab:
                 'alive': self.ram('enAlive', 1, False, k), 'type': self.ram('enType', 1, False, k),
                 'hp': self.ram('enHp', 1, False, k)}
 
+    def power_cycle(self):
+        """Switch the console off and on: a fresh emulator, keeping only the battery-backed SRAM."""
+        import gc
+        self.data.update_ram()
+        sram = bytes(self.data.memory.blocks[0x700000])
+        del self.emu
+        gc.collect()
+        self.emu = retro.RetroEmulator(self.rom)
+        self.data = retro.data.GameData()
+        self.emu.configure_data(self.data)
+        for i, v in enumerate(sram):
+            self.data.memory.assign(0x700000 + i, '|u1', v)
+
     def poke(self, name, value, index=0):
         """Write one byte of a game variable (for tests that need a set-up state)."""
         self.data.memory.assign(self.sym[name] + index, '|u1', value)
@@ -317,9 +331,22 @@ def leave(lab, d, close_box):
     return False
 
 
+def _step_in(lab):
+    """Just arrived over an edge: walk a little way in, so the next walk can't step straight back over it."""
+    x, y = lab.pos
+    w, h = lab.ram('mapW') * 16, lab.ram('mapH') * 16
+    for d, near in (('RIGHT', x < 16), ('LEFT', x > w - 16), ('DOWN', y < 16), ('UP', y > h - 16)):
+        if near:
+            lab.run(d, 10)
+            lab.run(None, 2)
+            return
+
+
 def travel(lab, dest, close_box):
     for tries in range(3):   # knocked off course (a door, an edge): plan again from wherever we are
-        if lab.map == dest: return
+        if lab.map == dest:
+            _step_in(lab)
+            return
         for d in route(lab, dest):
             for attempt in range(3):   # people and traffic move: if every way out was blocked, wait and look again
                 if leave(lab, d, close_box): break
@@ -327,3 +354,4 @@ def travel(lab, dest, close_box):
             else:
                 raise RuntimeError(f'stuck leaving map {lab.map} {d}')
     if lab.map != dest: raise RuntimeError(f'travel ended on map {lab.map}, not {dest}')
+    _step_in(lab)

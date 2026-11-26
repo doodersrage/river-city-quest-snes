@@ -23,6 +23,7 @@ csum = h[0x1E] | h[0x1F] << 8
 check(comp ^ csum == 0xFFFF, f'checksum ${csum:04X} / complement ${comp:04X}')
 total = sum(rom) & 0xFFFF
 check(total == csum, f'checksum matches contents (${total:04X})')
+check(h[0x16] == 0x02 and h[0x18] == 0x03, f'battery-backed 8 KB SRAM for saves (type ${h[0x16]:02X}, size ${h[0x18]:02X})')
 reset = rom[0x7FFC] | rom[0x7FFD] << 8
 check(reset >= 0x8000, f'reset vector ${reset:04X}')
 sys.exit(0 if ok else 1)

@@ -1881,6 +1881,26 @@ mini6_pal:
 .incbin "data/mini6.pal"
 .ends
 
+.section ".mini10" superfree
+mini10_chr:
+.incbin "data/mini10.chr"
+mini10_chrend:
+mini10_map:
+.incbin "data/mini10.map"
+mini10_pal:
+.incbin "data/mini10.pal"
+.ends
+
+.section ".mini11" superfree
+mini11_chr:
+.incbin "data/mini11.chr"
+mini11_chrend:
+mini11_map:
+.incbin "data/mini11.map"
+mini11_pal:
+.incbin "data/mini11.pal"
+.ends
+
 .section ".race0" superfree
 race0_chr:
 .incbin "data/race0.chr"
