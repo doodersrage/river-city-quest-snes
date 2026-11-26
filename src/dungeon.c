@@ -1125,6 +1125,7 @@ void useItem(void)
     else if (eqItem == ITEM_LANTERN) useLantern();
     else if (eqItem == ITEM_BUG) throwBug();
     else if (eqItem == ITEM_CAN) useCan();
+    else useGear();
 }
 
 u8 hasItem(u8 item)
@@ -1135,6 +1136,10 @@ u8 hasItem(u8 item)
     if (item == ITEM_SHIELD) return hasShield;
     if (item == ITEM_BUG) return hasBug;
     if (item == ITEM_CAN) return hasCan;
+    if (item == ITEM_BALLS) return hasBalls;
+    if (item == ITEM_SHOES) return hasShoes;
+    if (item == ITEM_BIKE) return hasBike;
+    if (item == ITEM_BOTTLE) return hasBottle;
     return 0;
 }
 
@@ -1142,9 +1147,9 @@ u8 hasItem(u8 item)
 void nextItem(void)
 {
     u8 i, it = eqItem;
-    for (i = 0; i < 6; i++)
+    for (i = 0; i < ITEM_BOTTLE; i++)
     {
-        it = it >= ITEM_CAN ? ITEM_HOOK : it + 1;
+        it = it >= ITEM_BOTTLE ? ITEM_HOOK : it + 1;
         if (it != ITEM_SHIELD && hasItem(it))
         {
             eqItem = it;
@@ -1164,6 +1169,11 @@ void gotItem(u8 item)
     if (item == ITEM_LANTERN) hasLantern = 1;
     if (item == ITEM_BUG) hasBug = 1;
     if (item == ITEM_CAN) hasCan = 1;
+    if (item >= ITEM_BALLS)
+    {
+        gotGear(item);
+        if (item == ITEM_BOTTLE && eqItem) return; /* web: only if nothing's on B yet */
+    }
     if (item == ITEM_SHIELD)
     {
         hasShield = 1; /* works on its own: not a B item */
@@ -1184,9 +1194,11 @@ void gotKeystone(u8 id)
 void drawItemHud(void)
 {
     u16 id = OAM_BICON * 4;
-    if (eqItem == hudEq && powder == hudPowder) return;
+    if (eqItem == hudEq && powder == hudPowder && balls == hudBalls && bottleFull == hudBottle) return;
     hudEq = eqItem;
     hudPowder = powder;
+    hudBalls = balls;
+    hudBottle = bottleFull;
     if (!eqItem)
     {
         sprHide((id) >> 2);
@@ -1194,13 +1206,9 @@ void drawItemHud(void)
         sprHide(((OAM_BICON + 2) * 4) >> 2);
         return;
     }
-    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : eqItem == ITEM_BUG ? OBJ_I_BUG : eqItem == ITEM_CAN ? OBJ_I_CAN : OBJ_I_KEG, PAL_ITEM);
-    if (eqItem == ITEM_POWDER)
-    {
-        if (powder >= 10) sprPut(OAM_BICON + 1, 0, 137, 12, 3, 0, HUD_DIGIT + powder / 10, PAL_HUD);
-        else sprHide(OAM_BICON + 1);
-        sprPut(((OAM_BICON + 2) * 4) >> 2, 0, 145, 12, 3, 0, HUD_DIGIT + powder % 10, PAL_HUD);
-    }
+    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : eqItem == ITEM_BUG ? OBJ_I_BUG : eqItem == ITEM_CAN ? OBJ_I_CAN : eqItem == ITEM_BALLS ? OBJ_I_BALL : eqItem == ITEM_SHOES ? OBJ_I_SHOES : eqItem == ITEM_BIKE ? OBJ_I_BIKE : eqItem == ITEM_BOTTLE ? OBJ_I_BOTTLE : OBJ_I_KEG, PAL_ITEM);
+    if (eqItem == ITEM_POWDER) hudCount(powder);
+    else if (eqItem == ITEM_BALLS) hudCount(balls);
     else
     {
         sprHide(((OAM_BICON + 1) * 4) >> 2);
