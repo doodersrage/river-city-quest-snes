@@ -653,8 +653,8 @@ def convert_bosses(exp):
 
 # ---------- Stage 9: town life ----------
 # Cars, the Pulse bus and pigeons load into the boss area (cell 32 on) on outdoor maps, which never have a boss.
-TOWN_CELLS = {'car': 0, 'bus': 6, 'sit': 9, 'fly': 10, 'tap': 12, 'melon': 13, 'lure': 14, 'trash': 15, 'flag': 16, 'bang': 18}
-TOWN_N = 19   # car colour c at 2c; bus 3 cells; fly 2 frames; flag 2 colours; then challenge tokens and the '!'
+TOWN_CELLS = {'car': 0, 'bus': 6, 'sit': 9, 'fly': 10, 'tap': 12, 'melon': 13, 'lure': 14, 'trash': 15, 'flag': 16, 'bang': 18, 'camera': 19}
+TOWN_N = 20   # car colour c at 2c; bus 3 cells; fly 2 frames; flag 2 colours; then challenge tokens and the '!'
 
 
 def convert_town(exp, tok_pal={}):
@@ -703,7 +703,7 @@ def town_tables(maps):
 # Each game's background is one screen on BG1 (the web game's 256x200, 12 px down); what moves is 8x8 sprites
 # from a small sheet at OBJ tile 32 (the NPC area, reloaded with the map), sprite palette 1.
 MINI_COLS = ['#ffffff', '#1a1423', '#c9a26b', '#f0dc98', '#d8f060', '#5a5662', '#e8ecf0', '#e07a28', '#f2c14e', '#e8ecf8']
-MINI_TILES = ['ball2', 'ball3', 'ball4', 'ball5', 'bat', 'battip', 'tball', 'racket', 'rackethead', 'bball', 'needle', 'pindot', 'pinball']
+MINI_TILES = ['ball2', 'ball3', 'ball4', 'ball5', 'bat', 'battip', 'tball', 'racket', 'rackethead', 'bball', 'needle', 'pindot', 'pinball', 'cornertl', 'cornertr', 'cornerbl', 'cornerbr']
 
 
 def convert_mini_sprites():
@@ -734,14 +734,17 @@ def convert_mini_sprites():
         for x in range(7):
             if (x - 3) ** 2 + (y - 3) ** 2 <= 10: pb[y][x] = PB
     pb[2][2] = W
-    tiles = [sq(2, W), sq(3, W), sq(4, W), sq(5, W), sq(2, BAT), sq(2, TIP), tb, sq(2, RK), sq(2, RH), bb, nd, pd, pb]
+    co = blank()   # a cursor corner (the album), flipped for the others
+    for i in range(6): co[0][i] = FL; co[1][i] = FL; co[i][0] = FL; co[i][1] = FL
+    fh = lambda t: [r[::-1] for r in t]
+    tiles = [sq(2, W), sq(3, W), sq(4, W), sq(5, W), sq(2, BAT), sq(2, TIP), tb, sq(2, RK), sq(2, RH), bb, nd, pd, pb, co, fh(co), co[::-1], fh(co[::-1])]
     chr_ = b''.join(tile4bpp([v for r in t for v in r]) for t in tiles)
     pal = sprite_palette([hexc(c) for c in MINI_COLS])
     defs = [f'#define MT_{n.upper()} {32 + i}' for i, n in enumerate(MINI_TILES)]
     return chr_, pal, defs
 
 
-def convert_minis(exp, out, asm, hdr):
+def convert_minis(exp, out, asm, hdr, maps=()):
     loader = ['void rcqMiniUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal);', 'void rcqLoadMini(u8 k)', '{', '    switch (k)', '    {']
     for name in ['bat', 'hoops', 'tennis', 'pin']:
         k = MINIS.index(name)
@@ -759,6 +762,7 @@ def convert_minis(exp, out, asm, hdr):
     loader += ['    }', '}', '']
     loader += convert_races(exp, out, asm, hdr)
     loader += convert_pinball(exp, out, asm, hdr)
+    convert_album(exp, out, asm, hdr, {m['id']: i for i, m in enumerate(maps)})
     mchr, mpal, mdefs = convert_mini_sprites()
     open(os.path.join(out, 'minispr.chr'), 'wb').write(mchr)
     open(os.path.join(out, 'minispr.pal'), 'wb').write(mpal)
@@ -802,6 +806,59 @@ def convert_pinball(exp, out, asm, hdr):
     end = len(hdr) - 1 - hdr[::-1].index('#endif')
     hdr[end:end] = defs
     return []
+
+
+def convert_album(exp, out, asm, hdr, index_of):
+    """The photo album: one screen with every landmark's thumbnail (5 across, 48x32 each from (8, 16)), plus a
+    placeholder block the ROM writes over the photos you haven't taken. Captions and where each landmark stands."""
+    d = json.load(open(os.path.join(exp, 'photos', 'photos.json')))
+    photos = d['photos']
+    im = Image.new('RGB', (256, 224), hexc_rgb('#14102a'))
+    for i, ph in enumerate(photos):
+        x0, y0 = 8 + (i % 5) * 48, 16 + (i // 5) * 32
+        cell = Image.new('RGB', (48, 32), hexc_rgb('#080a18'))
+        t = Image.open(os.path.join(exp, 'photos', f'{i}.png')).convert('RGB')
+        sc = min(46 / t.width, 30 / t.height)
+        t = t.resize((max(1, round(t.width * sc)), max(1, round(t.height * sc))), Image.LANCZOS)
+        cell.paste(t, ((48 - t.width) // 2, (32 - t.height) // 2))
+        im.paste(cell, (x0, y0))
+    path = os.path.join(exp, 'album.png'); im.save(path)
+    # the placeholder: a dark blue block with a question mark (web drawAlbum)
+    ph = Image.new('RGB', (48, 32), hexc_rgb('#080a18'))
+    from PIL import ImageDraw
+    dr = ImageDraw.Draw(ph); dr.rectangle((1, 1, 46, 30), fill=hexc_rgb('#1c2660'))
+    q = ['.###.', '#...#', '...#.', '..#..', '.....', '..#..']
+    for y, r in enumerate(q):
+        for x, c in enumerate(r):
+            if c == '#': dr.rectangle((19 + x * 2, 10 + y * 2, 20 + x * 2, 11 + y * 2), fill=hexc_rgb('#3a4a98'))
+    extra = [[c15(ph.getpixel((tx * 8 + x, ty * 8 + y))) for y in range(8) for x in range(8)] for ty in range(4) for tx in range(6)]
+    chr_, tm, pal, nt, npal, ex = convert_bg(path, extra)
+    for ext, data in (('chr', chr_), ('map', tm[:2048]), ('pal', pal)):
+        open(os.path.join(out, f'album.{ext}'), 'wb').write(data)
+    asm += ['.section ".album" superfree', 'album_chr:', '.incbin "data/album.chr"', 'album_chrend:',
+            'album_map:', '.incbin "data/album.map"', 'album_pal:', '.incbin "data/album.pal"', '.ends', '']
+    J = lambda a: ', '.join(map(str, a))
+    def split(c):   # a caption on two rows of 32
+        c = ascii_text(c)
+        if len(c) <= 32: return '', c
+        cut = c.rfind(' ', 0, 32)
+        return c[:cut], c[cut + 1:]
+    caps = [split(p_['cap']) for p_ in photos]
+    at = [(index_of[a['map']], a['k'], min(255, a['x'] // 2), min(255, a['y'] // 2)) for a in d['at'] if a['map'] in index_of]
+    defs = ['extern char album_chr, album_chrend, album_map, album_pal;',
+            f'#define PHOTO_COUNT {len(photos)}',
+            f'static const u16 albumBlank[24] = {{{J(ex)}}};  /* the placeholder, 6 x 4 tilemap words */',
+            'static const char *const photoCap1[%d] = {%s};' % (len(photos), ', '.join('"%s"' % c[0].replace('"', "'") for c in caps)),
+            'static const char *const photoCap2[%d] = {%s};' % (len(photos), ', '.join('"%s"' % c[1].replace('"', "'") for c in caps)),
+            'static const char *const photoWrap[%d] = {%s};  /* for the text box: 28 a line */' % (len(photos), ', '.join('"%s"' % '\\n'.join(l for pg in wrap(ascii_text(p_['cap'])) for l in pg).replace('"', "'") for p_ in photos)),
+            f'#define PHOTO_AT {len(at)}', f'static const u8 photoAt[{4 * len(at)}] = {{{J(v for a in at for v in a)}}};  /* map, photo, x/2, y/2 */']
+    end = len(hdr) - 1 - hdr[::-1].index('#endif')
+    hdr[end:end] = defs
+
+
+def hexc_rgb(h):
+    h = h.lstrip('#')
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
 RACE_LEN = {'derby': 3100, 'trail': 4200, 'race': 3900}     # web startMini
@@ -903,7 +960,7 @@ def convert_shops(extra):
             msg = it['msg']
             if it['name'] == 'Heart Charm': msg = 'A heart charm! Your hearts grew by one.'
             if it['name'] == 'Landmark Card Pack': msg = 'You got a landmark card!'
-            effect = {'Heart Charm': EFFECT_HEART, 'Big Satchel': EFFECT_SATCHEL, 'Fishing Rod': 6, 'Landmark Card Pack': 7}.get(it['name'], EFFECT_NONE)
+            effect = {'Heart Charm': EFFECT_HEART, 'Big Satchel': EFFECT_SATCHEL, 'Fishing Rod': 6, 'Landmark Card Pack': 7, 'Camera': 8}.get(it['name'], EFFECT_NONE)
             if kind == NEEDS: effect = needs[it['name']][1]
             if not msg: msg = {EFFECT_BALLS: 'Ten baseballs.', EFFECT_KEGS: 'Four powder kegs.', EFFECT_GINGER: 'Your bottle is full of ginger beer.',
                                EFFECT_SATCHEL: 'A big satchel. You can carry more baseballs and kegs now.'}.get(effect, '')
@@ -915,7 +972,7 @@ def convert_shops(extra):
                      bytes((min(255, it['price']), kind, req, effect, mo & 0xFF, mo >> 8)))
     defs = [f'#define SHOP_HEAD {SHOP_HEAD}', f'#define SHOP_ITEM {SHOP_ITEM}', f'#define SHOP_NAME {SHOP_NAME}',
             f'#define SHOP_LOCK {SHOP_LOCK}', '#define SHOP_ONCE 0', '#define SHOP_REPEAT 1', '#define SHOP_LOCKED 2', '#define SHOP_NEEDS 3',
-            '#define EFFECT_HEART 1', '#define EFFECT_BALLS 2', '#define EFFECT_KEGS 3', '#define EFFECT_GINGER 4', '#define EFFECT_SATCHEL 5', '#define EFFECT_ROD 6', '#define EFFECT_CARD 7', f'#define SHOP_OFS_SHOP {offsets["shop"]}', f'#define SHOP_OFS_MARKET {offsets["market"]}',
+            '#define EFFECT_HEART 1', '#define EFFECT_BALLS 2', '#define EFFECT_KEGS 3', '#define EFFECT_GINGER 4', '#define EFFECT_SATCHEL 5', '#define EFFECT_ROD 6', '#define EFFECT_CARD 7', '#define EFFECT_CAMERA 8', f'#define SHOP_OFS_SHOP {offsets["shop"]}', f'#define SHOP_OFS_MARKET {offsets["market"]}',
             f'#define SHOP_MSGS {len(blob)}', '#define MAX_SHOP_ITEMS 16']
     return bytes(blob + msgs), defs
 
@@ -1167,6 +1224,7 @@ def main():
                   ('NEEDBUG', '', ["You'd need something that can fly over the water and bring things back."]),
                   ('NEEDLAMP', '', ["You'll need a lantern for this one."]),
                   ('NEEDCOIN', 'Stone House Arcade', ['You need a coin.']),
+                  ('CAMNONE', 'Camera', ['Nice shot! Find a landmark to fill your album.']),
                   ('QUIZFEW', 'Tour Guide', ['Find at least three stories for your journal first, from markers, statues and people. Then come back!'])]
     for n in range(3):
         sys_texts.append((f'QUIZ{n}', 'Tour Guide', [f'{n} out of 3. Brush up on your journal and try again!']))
@@ -1308,7 +1366,7 @@ def main():
         hdr.append(f'extern char boss{i + 1}_chr, boss{i + 1}_chrend, boss{i + 1}_pal;')
     hdr += bdefs + ['#define PAL_BOSS 1', '#define PAL_ITEM 7',
             f'#define AREA_COUNT {len(dungeon_areas) + 1}', f'#define LINK_COUNT {max(1, len(link_flag))}',
-            '#define ITEM_HOOK 1', '#define ITEM_POWDER 2', '#define ITEM_LANTERN 3', '#define ITEM_SHIELD 4', '#define ITEM_BUG 5', '#define ITEM_CAN 6', '#define ITEM_BALLS 7', '#define ITEM_SHOES 8', '#define ITEM_BIKE 9', '#define ITEM_BOTTLE 10', '#define ITEM_ROD 11',
+            '#define ITEM_HOOK 1', '#define ITEM_POWDER 2', '#define ITEM_LANTERN 3', '#define ITEM_SHIELD 4', '#define ITEM_BUG 5', '#define ITEM_CAN 6', '#define ITEM_BALLS 7', '#define ITEM_SHOES 8', '#define ITEM_BIKE 9', '#define ITEM_BOTTLE 10', '#define ITEM_ROD 11', '#define ITEM_CAMERA 12',
             '#define EFFECT_KEY 3', '#define EFFECT_ITEM 4', '#define EFFECT_PIECE 5', f'#define PICKUP_COUNT {max(1, len(pickup_gid))}',
             '#define PAL_BLOCK 3', '']
     cobj, cpal, ctables = convert_combat(exp)
@@ -1362,7 +1420,7 @@ def main():
     for i in range(len(maps)):
         loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_chrend - &m{i}_chr, &m{i}_map, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl, &m{i}_ene, &m{i}_xtr); break;')
     loader += ['    }', '}', '']
-    loader += convert_minis(exp, out, asm, hdr)
+    loader += convert_minis(exp, out, asm, hdr, maps)
 
     open(os.path.join(root, 'maps.asm'), 'w').write('\n'.join(asm))
     open(os.path.join(root, 'maps.h'), 'w').write('\n'.join(hdr))

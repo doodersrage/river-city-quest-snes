@@ -307,7 +307,7 @@ const bossArt = vm.runInContext(`(function(){
    [0,1].forEach(w=>{const x=168+w*16,y=9;R(x-2,y-1,4,3,'#1a1423');R(x-1,y,2,1,'#8a8496');R(x-6,y-(w?3:0),4,2,'#5f566a');R(x+2,y-(w?3:0),4,2,'#5f566a');});
    g=old;out.town=c;}
   // Challenge tokens (stage 10): tap, melon, lure, trash, the race flag (2 colours), and the "!" over someone with a challenge.
-  {const c=mkCanvas(16*7,16),old=g;g=c.getContext('2d');frame=0;
+  {const c=mkCanvas(16*8,16),old=g;g=c.getContext('2d');frame=0;g.drawImage(IC.camera,112+2,2);   // and the camera, for the B icon
    ['tap','melon','lure','trash'].forEach((k,i)=>g.drawImage(IC[k],i*16+2,2));
    [0,1].forEach(f=>{const x=64+f*16+4,y=15;R(x-1,y-14,2,14,'#1a1423');R(x+1,y-14,10,7,'#1a1423');R(x+1,y-13,9,5,f?'#e83048':'#f2c14e');R(x+1,y-13,4,2,'#ffffff');});
    R(96+6,1,5,10,'#1a1423');R(96+7,2,3,7,'#f2c14e');R(96+6,11,5,4,'#1a1423');R(96+7,12,3,2,'#f2c14e');
@@ -357,6 +357,13 @@ const bossArt = vm.runInContext(`(function(){
   out.cards=CARDS.map(c=>({id:c.id,name:c.name,fact:c.fact,src:c.src}));out.pack=PACK;out.bosscard=BOSSCARD;
   out.fish=FISH.map(f=>({id:f.id,name:f.name,str:f.str,coins:f.coins,txt:f.txt}));
   out.river=Object.keys(SC).filter(id=>{const o=cur;cur=SC[id];let r=false;try{r=!!riverHere();}catch(e){}cur=o;return r;});
+  // The photo album (stage 10): every landmark with a caption, its thumbnail as the web game draws it (thumbOf), and
+  // where it stands so the camera can find the nearest.
+  out.photos=PHOTOS.map(ph=>{const L=ph.L,s=SC[ph.id],w=L.w*TS+24,h=L.h*TS+20,c=mkCanvas(w,h),old=g;g=c.getContext('2d');
+    R(0,0,w,h,'#58a848');for(let i=0;i<w*h/90;i++){const q=HH(i,ph.art.length,5);R(q%w,(q>>8)%h,2,1,'#68b854');}
+    try{LMART[L.art](12,10,L.w*TS,L.h*TS,0,s,L);}catch(e){}g=old;
+    return {map:ph.id,art:ph.art,cap:PHOTOCAP[ph.art],x:L.x*TS+L.w*8,y:L.y*TS+L.h*8,img:c};});
+  out.photoAt=[];for(const id in SC){const s=SC[id];if(!s.ow)continue;for(const L of s.lm||[]){const k=out.photos.findIndex(q=>q.art==L.art);if(k>=0&&PHOTOCAP[L.art])out.photoAt.push({map:id,k,x:L.x*TS+L.w*8,y:L.y*TS+L.h*8});}}
   out.chal=Object.entries(CHAL).map(([id,d])=>({id,name:d.name,type:d.type,time:d.time||0,ic:d.ic||null,foe:d.foe||null,n:d.n||0,needs:d.needs||null,intro:d.intro}));
   out.lore=LORE.map(([id,t,s])=>{const sn=s.split('. ')[0];return {id,title:t,quote:sn.length>95?sn.slice(0,92)+'...':sn+'.'};});
   out.keynames=KEYNAME;
@@ -384,6 +391,9 @@ const bossArt = vm.runInContext(`(function(){
   }
   fs.writeFileSync(path.join(OUT, 'combat', 'race.json'), JSON.stringify({ info: bossArt.raceInfo, obs: Object.fromEntries(Object.entries(bossArt.race).map(([k, r]) => [k, Object.keys(r.obs)])) }, null, 1));
   fs.writeFileSync(path.join(OUT, 'combat', 'pinlit.png'), bossArt.pinlit.toBuffer('image/png'));
+  fs.mkdirSync(path.join(OUT, 'photos'), { recursive: true });
+  bossArt.photos.forEach((ph, i) => fs.writeFileSync(path.join(OUT, 'photos', i + '.png'), ph.img.toBuffer('image/png')));
+  fs.writeFileSync(path.join(OUT, 'photos', 'photos.json'), JSON.stringify({ photos: bossArt.photos.map(({ img, ...r }) => r), at: bossArt.photoAt }, null, 1));
   for (const k in bossArt.minibg) fs.writeFileSync(path.join(OUT, 'combat', 'mini_' + k + '.png'), bossArt.minibg[k].toBuffer('image/png'));
   for (const name of ['turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']) {
     const ts = createCanvas(48 * bossArt[name].length, 48), tx2 = ts.getContext('2d');

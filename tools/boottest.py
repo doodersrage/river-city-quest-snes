@@ -1408,13 +1408,35 @@ travel(lab, N('Carytown'), close_box)
 walk((6, 17)); lab.run('UP', 30); lab.run(None, 40); close_box()
 lab.poke('coins', 200, 0); lab.poke('coins', 0, 1)
 walk((8, 5)); lab.face('up'); lab.press('A', 10)
-for idx in (5, 6):   # the Fishing Rod, a Landmark Card Pack
+for idx in (0, 5, 6):   # the Camera, the Fishing Rod, a Landmark Card Pack
     while lab.ram('shopCur') < idx: lab.press('DOWN', 3)
     while lab.ram('shopCur') > idx: lab.press('UP', 3)
     lab.press('A', 60); lab.press('A', 10)
 lab.press('B', 10); close_box()
-check(lab.ram('hasRod') and ncards() == 6, f'Carytown Goods sells a Fishing Rod and landmark card packs ({ncards()} cards)')
+check(lab.ram('hasRod') and ncards() == 6 and lab.ram('hasCamera'), f'Carytown Goods sells a Camera, a Fishing Rod and landmark card packs ({ncards()} cards)')
 walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+# the camera: a photo of the Byrd Theatre for the album
+menu_pick(12)
+at = carr('photoAt')
+mine = [(at[i + 2] * 2, at[i + 3] * 2) for i in range(0, len(at), 4) if at[i] == lab.map]
+g = lab.solid_grid()
+tx, ty = mine[0]
+spot = min(((x, y) for y in range(22) for x in range(32) if not g[y][x]), key=lambda c: abs(c[0] * 16 + 8 - tx) + abs(c[1] * 16 + 8 - ty))
+walk(spot); lab.press('B', 20)
+lab.screenshot(f'{out}/75-camera.png')
+check(lab.ram('photoGot', 1, False, 0) | lab.ram('photoGot', 1, False, 1) | lab.ram('photoGot', 1, False, 2) | lab.ram('photoGot', 1, False, 3),
+      f'B with the camera by a landmark: a photo for the album (near {spot})')
+close_box()
+lab.press('START', 10)
+items = [lab.ram('menuList', 1, False, i) for i in range(lab.ram('menuN'))]
+for _ in range(14):
+    if lab.ram('menuCur') >= len(items) - 1: break
+    lab.press('DOWN', 4)
+lab.press('A', 60)
+lab.screenshot(f'{out}/76-photo-album.png')
+check(lab.ram('miniOn') and items[-1] == 98, 'START, then Photo Album: every landmark, the ones you have taken in colour')
+lab.press('B', 60); close_box()
+check(not lab.ram('miniOn') and lab.map == N('Carytown'), 'B closes the album')
 # the cards in the START menu
 lab.press('START', 10)
 items = [lab.ram('menuList', 1, False, i) for i in range(lab.ram('menuN'))]

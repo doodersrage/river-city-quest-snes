@@ -122,6 +122,10 @@ void openCards(void);
 void drawCards(void);
 void updateCards(u16 pressed);
 void fishReset(void);
+extern u8 hasCamera;
+void snapPhoto(void);
+u8 photoCount(void);
+void runAlbum(void);
 /* stage 10: neighbourhood challenges and the history quiz (chal.c) */
 #define ASK_CHAL 1
 #define ASK_QUIZ 2

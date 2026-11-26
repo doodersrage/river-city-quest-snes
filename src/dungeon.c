@@ -1257,6 +1257,7 @@ void useItem(void)
     else if (eqItem == ITEM_BUG) throwBug();
     else if (eqItem == ITEM_CAN) useCan();
     else if (eqItem == ITEM_ROD) fishCast();
+    else if (eqItem == ITEM_CAMERA) snapPhoto();
     else useGear();
 }
 
@@ -1273,6 +1274,7 @@ u8 hasItem(u8 item)
     if (item == ITEM_BIKE) return hasBike;
     if (item == ITEM_BOTTLE) return hasBottle;
     if (item == ITEM_ROD) return hasRod;
+    if (item == ITEM_CAMERA) return hasCamera;
     return 0;
 }
 
@@ -1280,9 +1282,9 @@ u8 hasItem(u8 item)
 void nextItem(void)
 {
     u8 i, it = eqItem;
-    for (i = 0; i < ITEM_ROD; i++)
+    for (i = 0; i < ITEM_CAMERA; i++)
     {
-        it = it >= ITEM_ROD ? ITEM_HOOK : it + 1;
+        it = it >= ITEM_CAMERA ? ITEM_HOOK : it + 1;
         if (it != ITEM_SHIELD && hasItem(it))
         {
             eqItem = it;
@@ -1341,7 +1343,7 @@ void drawItemHud(void)
         sprHide(((OAM_BICON + 2) * 4) >> 2);
         return;
     }
-    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : eqItem == ITEM_BUG ? OBJ_I_BUG : eqItem == ITEM_CAN ? OBJ_I_CAN : eqItem == ITEM_BALLS ? OBJ_I_BALL : eqItem == ITEM_SHOES ? OBJ_I_SHOES : eqItem == ITEM_BIKE ? OBJ_I_BIKE : eqItem == ITEM_BOTTLE ? OBJ_I_BOTTLE : eqItem == ITEM_ROD ? OBJ_I_ROD : OBJ_I_KEG, PAL_ITEM);
+    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : eqItem == ITEM_BUG ? OBJ_I_BUG : eqItem == ITEM_CAN ? OBJ_I_CAN : eqItem == ITEM_BALLS ? OBJ_I_BALL : eqItem == ITEM_SHOES ? OBJ_I_SHOES : eqItem == ITEM_BIKE ? OBJ_I_BIKE : eqItem == ITEM_BOTTLE ? OBJ_I_BOTTLE : eqItem == ITEM_ROD ? OBJ_I_ROD : eqItem == ITEM_CAMERA ? townTile[TOWN_CAMERA] : OBJ_I_KEG, PAL_ITEM);
     if (eqItem == ITEM_POWDER) hudCount(powder);
     else if (eqItem == ITEM_BALLS) hudCount(balls);
     else

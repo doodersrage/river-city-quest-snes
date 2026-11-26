@@ -21,6 +21,8 @@ u8 hasRod, frogs, frogsDone;
 u16 cards;
 u8 fishN[FISH_COUNT];
 u8 cardReturn;
+u8 hasCamera, photoGot[(PHOTO_COUNT + 7) / 8];
+static u8 camTxt[120];
 
 /* the line: phase 0 waiting, 1 a bite, 2 reeling */
 u8 fishPh, fishSp, fishRun;
@@ -334,9 +336,75 @@ void updateCards(u16 pressed)
         closeText();
 }
 
+/* ---------- the camera (web snapPhoto): the nearest captioned landmark within 150 px goes in the album ---------- */
+u8 photoCount(void)
+{
+    u8 k, n = 0;
+    for (k = 0; k < PHOTO_COUNT; k++)
+        if (photoGot[k >> 3] & (1 << (k & 7))) n++;
+    return n;
+}
+
+static char *camPut(char *d, const char *s)
+{
+    while (*s) *d++ = *s++;
+    return d;
+}
+
+void snapPhoto(void)
+{
+    u8 i, best = 255, k, isNew, n;
+    s16 dx, dy;
+    u16 d2, bd = 0xFFFF;
+    char *d;
+    sfx(SFX_MENU);
+    sfx(SFX_COIN);
+    for (i = 0; i < PHOTO_AT; i++)
+    {
+        if (photoAt[i * 4] != curMap) continue;
+        dx = (photoAt[i * 4 + 2] << 1) - px;
+        dy = (photoAt[i * 4 + 3] << 1) - py;
+        if (ABS(dx) >= 150 || ABS(dy) >= 150) continue;
+        dx >>= 2;
+        dy >>= 2;
+        d2 = dx * dx + dy * dy;
+        if (d2 < 1406 && d2 < bd)
+        {
+            bd = d2;
+            best = photoAt[i * 4 + 1];
+        }
+    }
+    if (best == 255)
+    {
+        openTextAt((u8 *)&sys_txt + TXT_CAMNONE);
+        return;
+    }
+    k = best;
+    isNew = !(photoGot[k >> 3] & (1 << (k & 7)));
+    photoGot[k >> 3] |= 1 << (k & 7);
+    n = photoCount();
+    /* "New photo: (n/30)", then the caption */
+    d = camPut((char *)camTxt, "Camera");
+    *d++ = 0;
+    d = camPut(d, isNew ? "New photo! (" : "Retook it. (");
+    if (n >= 10) *d++ = '0' + n / 10;
+    *d++ = '0' + n % 10;
+    *d++ = '/';
+    *d++ = '0' + PHOTO_COUNT / 10;
+    *d++ = '0' + PHOTO_COUNT % 10;
+    *d++ = ')';
+    *d++ = 0x0A;
+    d = camPut(d, photoWrap[k]);
+    *d++ = 0;
+    *d = 0;
+    openTextAt(camTxt);
+}
+
 void fishReset(void)
 {
     u8 k;
+    hasCamera = 0;
+    for (k = 0; k < (PHOTO_COUNT + 7) / 8; k++) photoGot[k] = 0;
     hasRod = frogs = frogsDone = 0;
     cards = 0;
     cardReturn = 0;

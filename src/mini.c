@@ -27,7 +27,7 @@ u8 mgSx0, mgSx1, mgBt;       /* free-throw flight: start/end x, frames */
 static char msg[33], top[33];
 static u8 msgDirty, topDirty;
 static u16 row[32], rowTop[32], rowMsg[32];
-static u8 topReady, msgReady;
+static u8 topReady, msgReady, albumRow; /* the top line's row: 0, or 26 in the album */
 
 /* ---------- text on BG3 rows 0 (score) and 27 (messages), outside the picture ---------- */
 /* lay a line out centred in buf, as BG3 map words */
@@ -537,7 +537,7 @@ void miniVBlank(void)
     /* only the copy happens here: the lines are laid out in the main loop */
     if (topReady)
     {
-        dmaCopyVram((u8 *)rowTop, VRAM_BG3_MAP, 64);
+        dmaCopyVram((u8 *)rowTop, VRAM_BG3_MAP + albumRow * 32, 64);
         topReady = 0;
     }
     else if (msgReady)
@@ -756,6 +756,112 @@ static void pinDraw(void)
             if (pbLit[i]) sprPut(OAM_M + slot, 1, bumpX[i] - 16 + (c & 1) * 16, bumpY[i] - 16 + MY + (c >> 1) * 16, 2, 0, pinLitTile[z * 4 + c], 2);
             else sprHide(OAM_M + slot);
     }
+}
+
+/* ---------- the photo album (web drawAlbum): every landmark, the ones you haven't taken as a ? ---------- */
+static u16 albumMap[32 * 28];
+extern u8 photoGot[];
+u8 photoCount(void);
+static u8 albumCur;
+
+static void albumCaption(void)
+{
+    u8 k = albumCur;
+    if (photoGot[k >> 3] & (1 << (k & 7)))
+    {
+        bg3Fill(rowTop, photoCap1[k], FONT_GOLD);
+        bg3Fill(rowMsg, photoCap2[k], FONT_GOLD);
+    }
+    else
+    {
+        bg3Fill(rowTop, "Not taken yet.", FONT_WHITE);
+        bg3Fill(rowMsg, "Use the camera near it.", FONT_WHITE);
+    }
+    topReady = msgReady = 1;
+}
+
+static void albumCursor(void)
+{
+    s16 x = 8 + (albumCur % 5) * 48, y = 16 + (albumCur / 5) * 32;
+    put8(0, x - 2, y - 2, MT_CORNERTL, 1);
+    put8(1, x + 42, y - 2, MT_CORNERTR, 1);
+    put8(2, x - 2, y + 26, MT_CORNERBL, 1);
+    put8(3, x + 42, y + 26, MT_CORNERBR, 1);
+}
+
+void runAlbum(void)
+{
+    u16 pad, pressed, lastPad = 0xFFFF, i;
+    u8 k, r, c, n;
+    char title[24], *d;
+    mgKind = 0;
+    topDirty = msgDirty = topReady = msgReady = 0;
+    top[0] = msg[0] = 0;
+    miniOn = 1;
+    albumRow = 26;
+    fadeTo(0);
+    setBrightness(0);
+    closeText();
+    flushText();
+    for (k = 0; k < 128; k++) sprHide(k);
+    dmaCopyVram(&album_chr, VRAM_BG1_CHR, (&album_chrend - &album_chr));
+    dmaCopyCGram(&album_pal, 0, 8 * 16 * 2);
+    /* the photos you haven't taken yet are a blank block with a question mark */
+    for (i = 0; i < 32 * 28; i++) albumMap[i] = ((u16 *)&album_map)[i];
+    for (k = 0; k < PHOTO_COUNT; k++)
+        if (!(photoGot[k >> 3] & (1 << (k & 7))))
+            for (r = 0; r < 4; r++)
+                for (c = 0; c < 6; c++)
+                    albumMap[(2 + (k / 5) * 4 + r) * 32 + 1 + (k % 5) * 6 + c] = albumBlank[r * 6 + c];
+    dmaCopyVram((u8 *)albumMap, VRAM_BG1_MAP, 32 * 28 * 2);
+    dmaCopyVram(&minispr_chr, VRAM_OBJ_CHR + 32 * 16, (&minispr_chrend - &minispr_chr));
+    dmaCopyCGram(&minispr_pal, 128 + 16, 32);
+    bgSetScroll(0, 0, 0);
+    REG_HDMAEN = 0;
+    REG_CGADSUB = 0;
+    n = photoCount();
+    d = putStr(title, "PHOTOS ");
+    d = putNum(d, n);
+    d = putStr(d, "/");
+    putNum(d, PHOTO_COUNT);
+    bg3Row(0, title, FONT_GOLD);
+    albumCur = 0;
+    albumCaption();
+    bg3Row(26, "", FONT_WHITE);
+    bg3Row(27, "", FONT_WHITE);
+    albumCursor();
+    fadeTo(1);
+    padSeen = 0;
+    while (1)
+    {
+        pad = padsCurrent(0);
+        pressed = (pad | padSeen) & ~lastPad;
+        padSeen = 0;
+        lastPad = pad;
+        if (pressed & (KEY_B | KEY_START)) break;
+        k = albumCur;
+        if ((pressed & KEY_LEFT) && albumCur % 5) albumCur--;
+        if ((pressed & KEY_RIGHT) && albumCur % 5 < 4 && albumCur + 1 < PHOTO_COUNT) albumCur++;
+        if ((pressed & KEY_UP) && albumCur >= 5) albumCur -= 5;
+        if ((pressed & KEY_DOWN) && albumCur + 5 < PHOTO_COUNT) albumCur += 5;
+        if (k != albumCur)
+        {
+            sfx(SFX_MENU);
+            albumCaption();
+            albumCursor();
+        }
+        WaitForVBlank();
+    }
+    fadeTo(0);
+    setBrightness(0);
+    for (k = 0; k < 128; k++) sprHide(k);
+    bg3Row(0, "", FONT_WHITE);
+    bg3Row(26, "", FONT_WHITE);
+    bg3Row(27, "", FONT_WHITE);
+    albumRow = 0;
+    miniOn = 0;
+    lightDirty = 1;
+    enterMap(curMap);
 }
 
 /* ---------- the frame around them ---------- */
