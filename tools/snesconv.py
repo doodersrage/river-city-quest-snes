@@ -506,7 +506,7 @@ def convert_shops(extra):
 
 
 DOOR_OPEN, DOOR_KEYSTONES, DOOR_CARKEY, DOOR_LATER = 0, 1, 2, 3
-CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT = 0, 1, 2, 3
+CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT, CELL_COUNTER = 0, 1, 2, 3, 4
 
 
 def main():
@@ -543,7 +543,7 @@ def main():
                         extra_tiles.append([c15(op.getpixel((x0 + x, y0 + y))) for y in range(8) for x in range(8)])
         chr_, tm, pal, nt, npal, open_entries = convert_bg(os.path.join(exp, m['file']), extra_tiles)
         def cell(ch):
-            return CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
+            return CELL_COUNTER if ch == 'V' else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
         col = bytearray(32 * 22)
         for y, row in enumerate(m['grid']):
             for x, ch in enumerate(row):
@@ -613,7 +613,7 @@ def main():
     open(os.path.join(out, 'shops.bin'), 'wb').write(shops)
     asm += ['.section ".shops" superfree', 'shops_bin:', '.incbin "data/shops.bin"', '.ends', '']
     hdr += ['extern char shops_bin;'] + shop_defs + [f'#define CHEST_COUNT {len(chest_gid)}',
-            '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3',
+            '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4',
             '#define DOOR_OPEN 0', '#define DOOR_KEYSTONES 1', '#define DOOR_CARKEY 2', '#define DOOR_LATER 3', '']
     cobj, cpal, ctables = convert_combat(exp)
     open(os.path.join(out, 'combat.chr'), 'wb').write(cobj)

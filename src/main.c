@@ -415,7 +415,8 @@ u8 solidAt(s16 x, s16 y)
         return 0; /* off-map: handled as a map exit */
     tx = x >> 4;
     ty = y >> 4;
-    return colGrid[ty * COL_STRIDE + tx] == CELL_SOLID;
+    tx = colGrid[ty * COL_STRIDE + tx];
+    return tx == CELL_SOLID || tx == CELL_COUNTER;
 }
 
 u8 blocked(s16 x, s16 y)
@@ -574,6 +575,12 @@ u8 interact(void)
     else if (heroDir == 1) fy -= 14;
     else if (heroDir == 2) fx -= 14;
     else fx += 14;
+    /* across a shop counter, reach the person behind it (web: front(30)) */
+    if (fx >= 0 && fy >= 0 && fx < MAP_PX_W && fy < MAP_PX_H && colGrid[(fy >> 4) * COL_STRIDE + (fx >> 4)] == CELL_COUNTER)
+    {
+        fx = px + (fx - px) * 30 / 14;
+        fy = py + (fy - py) * 30 / 14;
+    }
     for (k = 0; k < npcCount; k++)
         if (ABS(fx - npcX[k]) < 13 && ABS(fy - npcY[k]) < 13)
         {
