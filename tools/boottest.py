@@ -1180,7 +1180,7 @@ check(lab.ram('oamShown', 1, False, 120) == 1, 'a countdown at the top of the sc
 for x, y in toks:
     hop(x, y)
     if lab.ram('boxState'): break
-lab.screenshot(f'{out}/58-city-pin.png')
+lab.run(None, 40); lab.screenshot(f'{out}/58-city-pin.png')
 check(not lab.ram('chalOn') and lab.ram('pins', 2) & (1 << CH.index('melons')) and lab.ram('coins', 2) == min(999, coins + 25),
       f"gather them all: a city pin and 25 coins ({coins} -> {lab.ram('coins', 2)})")
 close_box()
@@ -1235,7 +1235,7 @@ for tx, ty in chal_cells(c):
             break
     poke16('chalT', 3000)
     if not lab.ram('chalOn'): break
-lab.screenshot(f'{out}/60-gas-lamps.png')
+lab.run(None, 40); lab.screenshot(f'{out}/60-gas-lamps.png')
 check(lab.ram('pins', 2) & (1 << c), f"every lamp lit: a pin ({lab.ram('chalGot')} of {lab.ram('chalNeed')})")
 close_box()
 # The history quiz in Capitol Square: three stories from your journal
