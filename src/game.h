@@ -61,6 +61,7 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define MAX_PK 10 /* room for a challenge's eight tokens */
 #define PK_TOKEN 15
 #define PK_FLAG 16
+#define PK_FROG 17
 
 /* VRAM (word addresses) */
 #define VRAM_BG1_CHR 0x0000
@@ -103,6 +104,24 @@ extern u8 enemiesExisted;
 extern u8 enCount, enAlive[];
 extern u8 enChal[];
 extern u8 pkKind[];
+extern s16 pkX[], pkY[];
+extern u16 pkLife[];
+extern u8 pkHop[];
+/* stage 10, part 3: fishing, frogs, landmark cards (fish.c) */
+extern u8 hasRod, frogs, frogsDone, cardReturn;
+extern u16 cards;
+u8 nightLevel(void);
+void fishCast(void);
+void fishUpdate(u16 pressed);
+void frogTick(void);
+void gotFrog(void);
+void gotPackCard(void);
+u8 packSoldOut(void);
+u8 cardCount(void);
+void openCards(void);
+void drawCards(void);
+void updateCards(u16 pressed);
+void fishReset(void);
 /* stage 10: neighbourhood challenges and the history quiz (chal.c) */
 #define ASK_CHAL 1
 #define ASK_QUIZ 2

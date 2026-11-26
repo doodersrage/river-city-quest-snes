@@ -92,7 +92,7 @@ void lightInit(void)
 }
 
 /* web dark(): 1 from 8pm to 5am, ramping over 5-8pm and 5-7am; here in steps 0..4 */
-static u8 nightLevel(void)
+u8 nightLevel(void)
 {
     u16 c = dayClock;
     if (c >= 14 * HOUR && c < 23 * HOUR) return 4;          /* 8pm - 5am */

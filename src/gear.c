@@ -194,11 +194,12 @@ void hudCount(u8 n)
 
 /* ---------- the item menu (START): pick what B does ---------- */
 
-static const char *const itemName[11] = {"", "Grappling Hook", "Blasting Powder", "Gas Lantern", "Cast-Iron Shield", "The Gold-Bug",
-                                          "Watering Can", "Baseballs", "Running Shoes", "Bicycle", "Ginger Beer"};
+static const char *const itemName[12] = {"", "Grappling Hook", "Blasting Powder", "Gas Lantern", "Cast-Iron Shield", "The Gold-Bug",
+                                          "Watering Can", "Baseballs", "Running Shoes", "Bicycle", "Ginger Beer", "Fishing Rod"};
+#define MENU_CARDS 99 /* the last line of the menu: your landmark cards */
 /* the web game's menu order */
-static const u8 menuOrder[9] = {ITEM_LANTERN, ITEM_BALLS, ITEM_POWDER, ITEM_BUG, ITEM_SHOES, ITEM_HOOK, ITEM_CAN, ITEM_BIKE, ITEM_BOTTLE};
-u8 menuList[9], menuN, menuCur, menuTop;
+static const u8 menuOrder[10] = {ITEM_LANTERN, ITEM_BALLS, ITEM_POWDER, ITEM_BUG, ITEM_SHOES, ITEM_HOOK, ITEM_CAN, ITEM_BIKE, ITEM_BOTTLE, ITEM_ROD};
+u8 menuList[11], menuN, menuCur, menuTop;
 
 void drawMenu(void)
 {
@@ -211,6 +212,14 @@ void drawMenu(void)
         if (j >= menuN) break;
         it = menuList[j];
         boxPut(2 + r, 2, j == menuCur ? FONT_GOLD + '>' - 32 : FILL);
+        if (it == MENU_CARDS)
+        {
+            boxText(2 + r, 3, (u8 *)"Landmark Cards", FONT_WHITE);
+            boxNum(2 + r, 29, CARD_COUNT);
+            boxPut(2 + r, 27, FONT_GOLD + '/' - 32);
+            boxNum(2 + r, 26, cardCount());
+            continue;
+        }
         boxText(2 + r, 3, (u8 *)itemName[it], it == eqItem ? FONT_GOLD : FONT_WHITE);
         if (it == ITEM_POWDER) boxNum(2 + r, 29, powder);
         else if (it == ITEM_BALLS) boxNum(2 + r, 29, balls);
@@ -225,13 +234,13 @@ void openMenu(void)
     u8 i;
     menuN = 0;
     menuCur = 0;
-    for (i = 0; i < 9; i++)
+    for (i = 0; i < 10; i++)
         if (hasItem(menuOrder[i]))
         {
             if (menuOrder[i] == eqItem) menuCur = menuN;
             menuList[menuN++] = menuOrder[i];
         }
-    if (!menuN) return;
+    menuList[menuN++] = MENU_CARDS;
     menuTop = menuCur > 3 ? menuCur - 3 : 0;
     boxTop = (py - camY > 120) ? 0 : 20;
     drawMenu();
@@ -253,6 +262,8 @@ void updateMenu(u16 pressed)
         if (menuCur >= menuTop + 4) menuTop = menuCur - 3;
         drawMenu();
     }
+    else if ((pressed & KEY_A) && menuList[menuCur] == MENU_CARDS)
+        openCards();
     else if (pressed & KEY_A)
     {
         eqItem = menuList[menuCur];

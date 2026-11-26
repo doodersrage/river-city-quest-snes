@@ -153,6 +153,12 @@ void drawShop(void);
 void closeText(void)
 {
     u16 i;
+    if (cardReturn)
+    {
+        cardReturn = 0;
+        drawCards();
+        return;
+    }
     if (shopReturn)
     {
         shopReturn = 0;
@@ -216,6 +222,7 @@ u8 shopStatus(u8 j)
     }
     if (req != 255 && !shopOwned[shopId][req]) return 2;
     if (kind == SHOP_ONCE && shopOwned[shopId][j]) return 1;
+    if (it[SHOP_NAME + SHOP_LOCK + 3] == EFFECT_CARD && packSoldOut()) return 1;
     return 0;
 }
 
@@ -292,6 +299,13 @@ void shopBuy(void)
         capBalls = 50;
         capPowder = 16;
         break;
+    case EFFECT_ROD:
+        hasRod = 1;
+        if (!eqItem) eqItem = ITEM_ROD;
+        break;
+    case EFFECT_CARD:
+        gotPackCard(); /* says which card */
+        return;
     }
     mo = it[SHOP_NAME + SHOP_LOCK + 4] | (it[SHOP_NAME + SHOP_LOCK + 5] << 8);
     openTextAt((u8 *)&shops_bin + SHOP_MSGS + mo);
@@ -387,6 +401,16 @@ void updateText(u16 pressed)
     if (boxState == BOX_ASK)
     {
         updateAsk(pressed);
+        return;
+    }
+    if (boxState == 7) /* BOX_FISH: a line in the water */
+    {
+        fishUpdate(pressed);
+        return;
+    }
+    if (boxState == 8) /* BOX_CARDS */
+    {
+        updateCards(pressed);
         return;
     }
     if (boxState == BOX_SHOP)
@@ -562,7 +586,7 @@ u8 solidAt(s16 x, s16 y)
     ty = y >> 4;
     tx = colGrid[ty * COL_STRIDE + tx];
     if (tx == CELL_RIVER) return !hasKayak; /* the kayak paddles the James */
-    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_LOCK || tx == CELL_BRAZIER || tx == CELL_SPROUT;
+    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_WATER || tx == CELL_LOCK || tx == CELL_BRAZIER || tx == CELL_SPROUT;
 }
 
 u8 blocked(s16 x, s16 y)
@@ -766,6 +790,21 @@ u8 interact(void)
                     openText(rec[9]);
                     return 1;
                 }
+            }
+            /* the frog count: the naturalist in Byrd Park, with five frogs */
+            else if (rec[8] == 9 && (frogsDone || frogs >= 5))
+            {
+                if (frogsDone)
+                {
+                    openText(rec[9] + 1);
+                    return 1;
+                }
+                frogsDone = 1;
+                coins = coins + 40 > 999 ? 999 : coins + 40;
+                cards |= 1 << CARD_MAYMONT;
+                sfx(SFX_JING);
+                openText(rec[9]);
+                return 1;
             }
             /* the trading quest: melon -> sheet music -> river map -> kayak */
             else if (rec[8] == 5)
@@ -1105,6 +1144,7 @@ int main(void)
             dungeonUpdate();
             lifeUpdate();
             chalUpdate();
+            frogTick();
             dx = 0;
             dy = 0;
             /* 1.5 px per frame like the web game's walk; slower while charging a spin */
