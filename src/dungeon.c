@@ -60,6 +60,7 @@ s16 boomX, boomY;
 u8 bossVis; /* the Wraith: frames left solid after its own orb hits it */
 u8 bossOn, bossType, bossHp, bossState, bossSt, bossFlash, bossFlip;
 s16 bossX, bossY, bossVX, bossVY;
+u8 vampP2, vampP3, vampSwarm, vampGone, gameWon, endingPending;
 u16 bossT;
 const u16 *bossTiles;
 #define B_WALK 0
@@ -72,6 +73,8 @@ const u16 *bossTiles;
 #define BOSS_RAVEN 4
 #define BOSS_BELL 5
 #define BOSS_ARUM 6
+#define BOSS_VAMPIRE 7
+#define T_BAT 5
 #define B_DROP 4
 #define B_RISE 5
 #define SRC_PADDLE 0
@@ -117,6 +120,8 @@ void dungeonInit(void)
     hookSt = 0;
     bossOn = 0;
     for (i = 0; i < MAX_SHOT; i++) shotOn[i] = 0;
+    gameWon = 0;
+    endingPending = 0;
 }
 
 u8 roomSolved(u8 m)
@@ -377,6 +382,17 @@ void bossLoad(void)
         bossY = (4 * 16 + 8) * 16;
         bossZ = 40;
     }
+    else if (bossType == BOSS_VAMPIRE)
+    {
+        bossTiles = boss7Tile;
+        bossHp = 14;
+        bossX = (8 * 16 + 8) * 16;
+        bossY = (5 * 16 + 8) * 16;
+        vampP2 = 0;
+        vampP3 = 0;
+        vampSwarm = 0;
+        vampGone = 0;
+    }
     else if (bossType == BOSS_ARUM)
     {
         bossTiles = boss6Tile;
@@ -407,7 +423,12 @@ void bossDefeated(void)
     roomFlags[curMap] |= ROOM_BOSS | ROOM_CLEARED;
     for (i = 0; i < MAX_SHOT; i++) shotOn[i] = 0;
     for (i = 0; i < enCount; i++) enAlive[i] = 0;
-    if (!(roomFlags[curMap] & ROOM_CONTAINER))
+    if (bossType == BOSS_VAMPIRE)
+    {
+        gameWon = 1;
+        endingPending = 1;
+    }
+    else if (!(roomFlags[curMap] & ROOM_CONTAINER))
         dropKind(144, 80, 3); /* the heart container */
     if (roomReward && !(keystones & (1 << (roomReward - 1))))
         dropKind(112, 80, 4 + roomReward); /* the keystone (kinds 5-8) */
@@ -440,7 +461,8 @@ u8 bossHit(u8 dmg, u8 src)
        time, and the paddle once he's stunned himself charging into a wall */
     /* the Bell can't be reached up high, and only a keg dents it unless it has just slammed down */
     if (bossType == BOSS_BELL && bossZ > 12) return 0;
-    if (bossType != BOSS_RAVEN && bossState != B_STUN && !((bossType == BOSS_TURTLE || bossType == BOSS_BELL) && src == SRC_BOMB)) return 2;
+    if (bossType == BOSS_VAMPIRE && (vampGone || vampSwarm)) return 0;
+    if (bossType != BOSS_RAVEN && bossType != BOSS_VAMPIRE && bossState != B_STUN && !((bossType == BOSS_TURTLE || bossType == BOSS_BELL) && src == SRC_BOMB)) return 2;
     bossFlash = 16;
     if (bossHp <= dmg)
     {
@@ -568,6 +590,65 @@ void updBell(s16 dx, s16 dy, s16 d)
     if (bossT % 140 == 139) bossState = B_DROP;
 }
 
+/* The Richmond Vampire (web updEnemy 'vampire'): fades in somewhere away from you, throws
+   blood three ways, calls bats; at 60% it bursts into bats until you beat them, and at 30%
+   it rings out blood every cycle. Gone (and safe from you) for the last 40 frames of each cycle. */
+void vampShoot3(s16 dx, s16 dy, s16 d, s16 sp)
+{
+    s16 vx = dx * sp / d, vy = dy * sp / d;
+    shoot(bossX, bossY - 6 * 16, vx, vy, 1);
+    /* +-0.4 rad: cos 59/64, sin 25/64 */
+    shoot(bossX, bossY - 6 * 16, (vx * 59 - vy * 25) / 64, (vx * 25 + vy * 59) / 64, 1);
+    shoot(bossX, bossY - 6 * 16, (vx * 59 + vy * 25) / 64, (vy * 59 - vx * 25) / 64, 1);
+}
+
+void updVampire(s16 dx, s16 dy, s16 d)
+{
+    u8 i, ph;
+    s16 x, y;
+    if (!vampP2 && bossHp <= 8)
+    {
+        vampP2 = 1;
+        vampSwarm = 1;
+        for (i = 0; i < 3; i++)
+            spawnEnemy(T_BAT, (bossX >> 4) + (i - 1) * 20, (bossY >> 4) - 10);
+    }
+    if (vampSwarm)
+    {
+        vampGone = 1;
+        if (!enemyCount(T_BAT))
+        {
+            vampSwarm = 0;
+            bossT = 0;
+            vampGone = 0;
+        }
+        return;
+    }
+    if (!vampP3 && bossHp <= 4) vampP3 = 1;
+    ph = bossT % 170;
+    if (vampP3 && ph == 60)
+        for (i = 0; i < 8; i++)
+            shoot(bossX, bossY - 6 * 16, sinTab[(i * 8 + 16) & 63] * 24 / 64, sinTab[(i * 8) & 63] * 24 / 64, 1);
+    vampGone = ph >= 130;
+    if (ph == 0)
+        for (i = 0; i < 30; i++)
+        {
+            x = (2 + rnd() % 12) * 16 + 8;
+            y = (3 + rnd() % 6) * 16 + 8;
+            if (!bigBlocked(x, y, 6) && ABS(x - px) + ABS(y - py) > 60)
+            {
+                bossX = x * 16;
+                bossY = y * 16;
+                break;
+            }
+        }
+    if (ph == 40 || ph == 80 || (bossHp <= 7 && ph == 110))
+        vampShoot3(dx, dy, d, bossHp <= 7 ? 30 : 24);
+    if (ph == 100 && enemyCount(T_BAT) < 2)
+        spawnEnemy(T_BAT, bossX >> 4, (bossY >> 4) - 10);
+    bossT++;
+}
+
 /* The Titan Arum (web updArum): rooted in place, spits a fan of seeds and sprouts rats.
    Watered, it blooms (B_STUN) and can be hit until it closes again. */
 void updArum(s16 dx, s16 dy, s16 d)
@@ -681,6 +762,11 @@ void updBoss(void)
     if (bossType == BOSS_TURTLE) updTurtle(dx, dy);
     else if (bossType == BOSS_WRAITH) updWraith(dx, dy, d);
     else if (bossType == BOSS_RAVEN) updRaven(dx, dy, d);
+    else if (bossType == BOSS_VAMPIRE)
+    {
+        updVampire(dx, dy, d);
+        if (vampGone || vampSwarm) return;
+    }
     else if (bossType == BOSS_ARUM)
     {
         updArum(dx, dy, d);
@@ -695,7 +781,7 @@ void updBoss(void)
     bx = bossX >> 4;
     by = bossY >> 4;
     if (ABS(bx - px) < (bossType >= BOSS_WRAITH ? 11 : 13) && ABS(by - py) < (bossType >= BOSS_WRAITH ? 11 : 13) && !dying)
-        hurtHeroBy(bx, by, bossState == B_CHARGE || bossState == B_DROP ? 2 : 1);
+        hurtHeroBy(bx, by, bossState == B_CHARGE || bossState == B_DROP || bossType == BOSS_VAMPIRE ? 2 : 1);
 }
 
 void drawBoss(void)
@@ -707,7 +793,8 @@ void drawBoss(void)
     {
         id = (OAM_BOSS + k) * 4;
         /* the Wraith is see-through until its orb hits it: drawn every other frame */
-        if (!bossOn || (bossFlash & 2) || (bossType == BOSS_WRAITH && !bossVis && (frameCount & 1)))
+        if (!bossOn || (bossFlash & 2) || (bossType == BOSS_WRAITH && !bossVis && (frameCount & 1)) ||
+            (bossType == BOSS_VAMPIRE && (vampGone || vampSwarm || ((bossT % 170 < 15 || bossT % 170 > 115) && (frameCount & 1)))))
         {
             sprHide((id) >> 2);
             continue;
@@ -720,6 +807,8 @@ void drawBoss(void)
             f = bossState == B_STUN ? 1 : 0;
         else if (bossType == BOSS_ARUM)
             f = bossState == B_STUN ? 2 : (frameCount >> 5) & 1;
+        else if (bossType == BOSS_VAMPIRE)
+            f = 0;
         else if (bossType == BOSS_TURTLE)
             f = bossState == B_STUN ? 2 + ((frameCount >> 2) & 1) : (frameCount >> (bossState == B_CHARGE ? 1 : 3)) & 1;
         else
@@ -728,7 +817,7 @@ void drawBoss(void)
         sh = bossState == B_WIND ? ((frameCount >> 1) & 1) * 2 - 1 : 0;
         /* the turtle's and the Raven's frames face right: mirror the 3x3 grid to face left */
         col = k % 3;
-        if ((bossType == BOSS_TURTLE || bossType == BOSS_RAVEN) && bossFlip) col = 2 - col;
+        if ((bossType == BOSS_TURTLE || bossType == BOSS_RAVEN || bossType == BOSS_VAMPIRE) && bossFlip) col = 2 - col;
         sx = (bossX >> 4) - camX - 24 + col * 16 + sh;
         sy = (bossY >> 4) - camY - 40 + (k / 3) * 16 - (bossType == BOSS_BELL ? bossZ : 0);
         if (!t || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
@@ -736,7 +825,7 @@ void drawBoss(void)
             sprHide((id) >> 2);
             continue;
         }
-        sprPut((id) >> 2, 1, sx, sy, 2, (bossType == BOSS_TURTLE || bossType == BOSS_RAVEN) && bossFlip, t, PAL_BOSS);
+        sprPut((id) >> 2, 1, sx, sy, 2, (bossType == BOSS_TURTLE || bossType == BOSS_RAVEN || bossType == BOSS_VAMPIRE) && bossFlip, t, PAL_BOSS);
     }
 }
 
@@ -1422,6 +1511,11 @@ void dungeonLoad(void)
     {
         dmaCopyVram(&boss5_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss5_chrend - &boss5_chr));
         dmaCopyCGram(&boss5_pal, 128 + 16, 16 * 2);
+    }
+    else if (roomBoss == BOSS_VAMPIRE)
+    {
+        dmaCopyVram(&boss7_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss7_chrend - &boss7_chr));
+        dmaCopyCGram(&boss7_pal, 128 + 16, 16 * 2);
     }
     else if (roomBoss == BOSS_ARUM)
     {

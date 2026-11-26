@@ -497,8 +497,10 @@ void combatUpdate(u16 pad, u16 pressed)
     if (kt)
     {
         kt--;
-        if (kx && !blocked(px + kx, py)) px += kx;
-        if (ky && !blocked(px, py + ky)) py += ky;
+        /* knockback never carries you over the edge into the next neighbourhood */
+        if (kx && !blocked(px + kx, py) && px + kx > HALF && px + kx < MAP_PX_W - HALF - 1) px += kx;
+        if (ky && !blocked(px, py + ky) && py + ky > HALF && py + ky < MAP_PX_H - HALF - 1) py += ky;
+        lastCell = (py >> 4) * COL_STRIDE + (px >> 4); /* knocked onto stairs isn't taking them */
     }
 
     /* B uses the item you've picked; SELECT picks the next one */

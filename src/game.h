@@ -140,6 +140,7 @@ void boxNum(u8 row, u8 right, u16 v);
 void closeText(void);
 void checkExits(void);
 void checkCells(void);
+extern u16 lastCell;
 void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy);
 extern s16 enX[], enY[];
 extern s16 bossX, bossY;
@@ -159,5 +160,10 @@ void drawBike(void);
 void hudCount(u8 n);
 void openMenu(void);
 void updateMenu(u16 pressed);
+
+/* the ending (ending.c) */
+#define BOX_ROWS_ALL (8 * 32)
+extern u8 gameWon, endingPending;
+void runEnding(void);
 
 #endif

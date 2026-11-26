@@ -39,7 +39,7 @@ for (const f of files) {
 // Top-level consts (SC, TS, g...) live in the context's shared script scope.
 // Scenes for the SNES port so far: the outdoor maps plus every single-room area (interiors, caves).
 vm.runInContext(`var SNES_AREAN={};for(const id in SC){const a=SC[id].area;SNES_AREAN[a]=(SNES_AREAN[a]||0)+1;}
-  var PORT_AREAS=${JSON.stringify((process.env.DUNGEONS || 'tredegar,quarry,pyramid,poe,carillon,conserv').split(','))};
+  var PORT_AREAS=${JSON.stringify((process.env.DUNGEONS || 'tredegar,quarry,pyramid,poe,carillon,conserv,tunnel').split(','))};
   function portScene(s){return s.ow||SNES_AREAN[s.area]==1||PORT_AREAS.includes(s.area);}`, sb);
 vm.runInContext('shadow=()=>{};', sb);   // soft shadows don't survive palette reduction
 const dump = vm.runInContext(`(function(){
@@ -263,6 +263,8 @@ const bossArt = vm.runInContext(`(function(){
   // The Titan Arum (web drawArum): closed bud swaying (2 frames) and in bloom. Centre (24,42).
   out.arum=[['walk',31],['walk',94],['bloom',0]].map(([stt,f])=>{const c=mkCanvas(48,48),old=g;g=c.getContext('2d');frame=f;
     drawArum({x:24,y:37,state:stt,t:1,hp:8,f:1},false);g=old;return c;});
+  // The Richmond Vampire (web drawEnemy 'vampire'): one frame facing right, feet at (24,40) like the others.
+  out.vampire=[0].map(()=>{const c=mkCanvas(48,48),x=c.getContext('2d');x.drawImage(SPR.vampire.r.c,16,22);return c;});
   // a push block (web drawBlocks, without its soft shadow)
   {const c=mkCanvas(16,16),x=c.getContext('2d'),R3=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(a,b,w,h);};
    R3(0,0,16,15,'#1a1423');R3(1,1,14,13,'#8a7a6a');R3(1,1,14,3,'#b4a490');R3(1,11,14,3,'#5e5044');R3(4,5,8,5,'#6e5e4e');R3(5,6,6,3,'#9a8a76');out.block=c;}
@@ -282,7 +284,9 @@ const bossArt = vm.runInContext(`(function(){
   // heart container pickup (16x16, centre 8,9)
   {const c=mkCanvas(16,16),old=g;g=c.getContext('2d');frame=0;const k={kind:'container',x:8,y:9,life:1e9,t:0};
    R(1,1,15,14,'#1a1423');R(2,2,13,12,'#fff2a8');R(3,3,11,10,'#3a1c30');g.drawImage(HEART,4,4);g=old;out.container=c;}
-  out.text={foreman:BOSSTXT.foreman,foremanIntro:BOSSINTRO.foreman,turtle:BOSSTXT.turtle,turtleIntro:BOSSINTRO.turtle,wraith:BOSSTXT.wraith,wraithIntro:BOSSINTRO.wraith,raven:BOSSTXT.raven,ravenIntro:BOSSINTRO.raven,bell:BOSSTXT.bell,bellIntro:BOSSINTRO.bell,arum:BOSSTXT.arum,arumIntro:BOSSINTRO.arum,can:'The sprout drinks it up and grows!',bib:['A race bib from the Monument Avenue 10K.','A runner in the Fan must be missing it.'],bloom:'The Titan Arum unfurls!'};
+  out.text={foreman:BOSSTXT.foreman,foremanIntro:BOSSINTRO.foreman,turtle:BOSSTXT.turtle,turtleIntro:BOSSINTRO.turtle,wraith:BOSSTXT.wraith,wraithIntro:BOSSINTRO.wraith,raven:BOSSTXT.raven,ravenIntro:BOSSINTRO.raven,bell:BOSSTXT.bell,bellIntro:BOSSINTRO.bell,arum:BOSSTXT.arum,arumIntro:BOSSINTRO.arum,vampireIntro:BOSSINTRO.vampire,
+    vampire:['The pale thing shrieks and comes apart like wet newspaper.','Above you the fog thins. One by one the lamps along Broad Street come back on.','Richmond is safe. Somebody owes you a ginger beer.','By morning the fog has burned off the James. Every lamp from Church Hill to Carytown is lit.',"The archivist adds one last story to the journal. It's called Rory and the Fog."],
+    relight:RELIGHT.map(r=>[r[0],r[1]]),credits:(()=>{const o=st;st=newState();const c=CREDITS();st=o;return c;})(),can:'The sprout drinks it up and grows!',bib:['A race bib from the Monument Avenue 10K.','A runner in the Fan must be missing it.'],bloom:'The Titan Arum unfurls!'};
   return out;})()`, sb);
 {
   const strip = createCanvas(48 * bossArt.foreman.length, 48), x = strip.getContext('2d');
@@ -290,7 +294,7 @@ const bossArt = vm.runInContext(`(function(){
   fs.writeFileSync(path.join(OUT, 'combat', 'foreman.png'), strip.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'container.png'), bossArt.container.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'block.png'), bossArt.block.toBuffer('image/png'));
-  for (const name of ['turtle', 'wraith', 'raven', 'bell', 'arum']) {
+  for (const name of ['turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']) {
     const ts = createCanvas(48 * bossArt[name].length, 48), tx2 = ts.getContext('2d');
     bossArt[name].forEach((c, i) => tx2.drawImage(c, i * 48, 0));
     fs.writeFileSync(path.join(OUT, 'combat', name + '.png'), ts.toBuffer('image/png'));
