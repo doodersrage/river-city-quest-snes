@@ -21,9 +21,36 @@ def screen():
     return lab.emu.get_screen().astype(int)
 
 
-# Stage 1: boot, walk, change neighborhood.
+def name():
+    return bytes(lab.ram('heroName', 1, index=i) for i in range(9)).split(b'\0')[0].decode('ascii', 'replace')
+
+
+# Stage 11: the title screen, a new game in slot 1, and naming the hero.
 lab = Lab(rom, sym, root)
-lab.run(None, 120)
+lab.run(None, 150)
+check(screen().std() > 10, 'boots to the title screen')
+check(lab.ram('saveSlot') == 0 and lab.ram('curSong') == 7, f"no slot chosen yet, the title song plays ({lab.ram('curSong')})")
+lab.screenshot(f'{out}/0-title.png')
+lab.press('A', 60)                       # slot 1 is empty: name entry
+for b in 'BBBB':                         # RORY out
+    lab.press(b, 8)
+for b in ['A', 'RIGHT', 'RIGHT', 'RIGHT', 'A', 'LEFT', 'LEFT', 'LEFT', 'A']:   # A, D, A
+    lab.press(b, 8)
+lab.screenshot(f'{out}/0-name.png')
+lab.press('START', 120)
+check(name() == 'Ada', f'the hero is named ({name()!r})')
+check(lab.ram('saveSlot') == 1, 'the new game is in slot 1')
+check(lab.ram('boxState') != 0, 'the opening is read')
+lab.run(None, 200)
+lab.screenshot(f'{out}/0-intro.png')
+for _ in range(40):
+    if not lab.ram('boxState'):
+        break
+    lab.press('A', 6)
+check(lab.ram('boxState') == 0, 'the opening pages through')
+
+# Stage 1: boot, walk, change neighborhood.
+lab.run(None, 30)
 check(screen().std() > 10, 'boots to a drawn map')
 SONG = {1: 'town', 2: 'south', 3: 'dungeon', 4: 'boss', 5: 'forge', 6: 'win', 8: 'night'}
 def song():
@@ -1510,4 +1537,24 @@ for _ in range(3):
 check(lab.ram('frogsDone') and lab.ram('coins', 2) == min(999, coins + 40) and ncards() == before + 1,
       f"the naturalist counts them: 40 coins and the Maymont card ({ncards()} cards)")
 lab.poke('wx', 0); lab.poke('wxK', 0)
+
+# Stage 11: every arrival saves to SRAM. Reset the console: slot 1 is on the title, and CONTINUE puts you back.
+travel(lab, N('Broad Street'), close_box)
+close_box()
+lab.run(None, 20)
+where, pos, coins = lab.map, lab.pos, lab.ram('coins', 2)
+lab.poke('coins', (coins + 123) & 0xFF); lab.poke('coins', ((coins + 123) >> 8) & 0xFF, 1)   # spent after the save
+lab.emu.reset()
+lab.run(None, 150)
+lab.screenshot(f'{out}/90-title-with-a-save.png')
+check(lab.ram('saveSlot') == 0 and lab.ram('curSong') == 7, 'a reset goes back to the title')
+lab.press('A', 30)                       # slot 1 is used: CONTINUE / ERASE / BACK
+lab.screenshot(f'{out}/91-continue.png')
+lab.press('A', 120)
+check(lab.ram('saveSlot') == 1 and name() == 'Ada', f'CONTINUE loads slot 1 ({name()!r})')
+check(lab.map == where and lab.pos == pos, f'back where the game last saved (map {lab.map} at {lab.pos}, saved {where} at {pos})')
+check(lab.ram('coins', 2) == coins,
+      f"with the saved coins ({lab.ram('coins', 2)}, saved {coins})")
+check(lab.ram('frogsDone') == 1 and lab.ram('gameWon') == 1 and lab.ram('hasCamera') == 1, 'and the saved progress: the frogs, the win, the camera')
+lab.screenshot(f'{out}/92-continued.png')
 sys.exit(0 if ok else 1)

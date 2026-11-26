@@ -55,6 +55,20 @@ static void bg3Clear(void)
     for (r = 0; r < 32; r++) bg3Line(r, "", FONT_WHITE);
 }
 
+/* "Starring RORY" in the credits: whoever you named */
+static char star[24];
+static const char *starring(const char *s)
+{
+    const char *w = "Starring ";
+    u8 k = 0, j;
+    while (w[k] && s[k] == w[k]) k++;
+    if (w[k]) return s;
+    for (j = 0; j < k; j++) star[j] = w[j];
+    for (j = 0; heroName[j]; j++) star[k + j] = heroName[j];
+    star[k + j] = 0;
+    return star;
+}
+
 void runEnding(void)
 {
     u8 k, n, first;
@@ -99,7 +113,7 @@ void runEnding(void)
         while (i + n < CREDIT_LINES && creditLine[i + n][0] != '\f') n++;
         first = 14 - n;
         for (k = 0; k < n; k++)
-            bg3Line(first + k * 2, creditLine[i + k], k == 0 && i == 0 ? FONT_GOLD : FONT_WHITE);
+            bg3Line(first + k * 2, starring(creditLine[i + k]), k == 0 && i == 0 ? FONT_GOLD : FONT_WHITE);
         WaitForVBlank();
         fade(1);
         hold(240);

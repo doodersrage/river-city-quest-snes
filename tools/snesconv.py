@@ -746,10 +746,13 @@ def convert_mini_sprites():
 
 def convert_minis(exp, out, asm, hdr, maps=()):
     loader = ['void rcqMiniUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal);', 'void rcqLoadMini(u8 k)', '{', '    switch (k)', '    {']
-    for name in ['bat', 'hoops', 'tennis', 'pin']:
-        k = MINIS.index(name)
-        src = Image.open(os.path.join(exp, 'combat', f'mini_{name}.png')).convert('RGB')
+    screens = [(n, MINIS.index(n), f'mini_{n}.png') for n in ['bat', 'hoops', 'tennis', 'pin']] + [('title', 10, 'title.png'), ('name', 11, 'name.png')]
+    for name, k, fname in screens:
+        src = Image.open(os.path.join(exp, 'combat', fname)).convert('RGB')
         full = Image.new('RGB', (256, 224), (0, 0, 0)); full.paste(src, (0, 12))
+        if name in ('title', 'name'):   # the sky and the river carry on past the web game's 200 rows
+            for y in range(12): full.paste(src.crop((0, 0, 256, 1)), (0, y))
+            for y in range(212, 224): full.paste(src.crop((0, 199, 256, 200)), (0, y))
         path = os.path.join(exp, f'mini_{name}_full.png'); full.save(path)
         chr_, tm, pal, nt, npal, _ = convert_bg(path)
         for ext, data in (('chr', chr_), ('map', tm[:2048]), ('pal', pal)):
@@ -1247,13 +1250,16 @@ def main():
                   ('FISHBUSY', '', ['Too much commotion to fish.'])]
     for n in range(1, 6):
         sys_texts.append((f'FROG{n}', 'Frog', ['Five frogs! Take them to the naturalist in Byrd Park.' if n == 5 else f'Caught a frog! ({n}/5)']))
+    # the opening (web PANELS): four pages; \x01 is the hero's name, filled in by the ROM
+    intro = json.load(open(os.path.join(exp, 'combat', 'intro.json')))
+    sys_texts.append(('INTRO', '', [p_.replace('\x01', '@@@@@@@@') for p_ in intro]))
     blob, defs = b'', []
     for k, part in enumerate(['oar', 'pole', 'tiller']):
         gid = [g for key, g in pickup_gid.items() if key.endswith(':' + part)]
         defs.append(f'#define PART_GID{k} {gid[0] if gid else 255}')
     for name, title, pages in sys_texts:
         defs.append(f'#define TXT_{name} {len(blob)}')
-        blob += encode_text(title, pages)
+        blob += encode_text(title, pages).replace(b'@@@@@@@@', b'\x01')
     open(os.path.join(out, 'sys.txt'), 'wb').write(blob)
     if len(blob) > 0x8000: raise SystemExit(f'sys.txt is {len(blob)} bytes, over one bank')
     J = lambda a: ', '.join(map(str, a))

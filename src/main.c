@@ -689,6 +689,7 @@ void enterMap(u8 i)
     drawNpcs();
     lifeDraw();
     combatDraw();
+    saveGame(); /* every arrival is a save, like the web game's autosave */
     WaitForVBlank();
     songForMap();
     for (b = 1; b <= 15; b++)
@@ -1020,7 +1021,7 @@ int main(void)
 {
     u16 pad, pressed, i;
     s16 dx, dy, spd;
-    u8 b;
+    u8 b, cont;
 
     setMode(BG_MODE1, BG3_MODE1_PRIORITY_HIGH);
     bgSetGfxPtr(0, VRAM_BG1_CHR);
@@ -1081,10 +1082,23 @@ int main(void)
         dmaCopyVram((u8 *)boxMap, VRAM_BG3_MAP + i * BOX_ROWS * 32, BOX_ROWS * 32 * 2);
     bgSetScroll(2, 0, 0);
 
-    curMap = MAP_START;
+    /* the title screen: continue a saved game, or name a new hero */
+    saveInit();
+    nmiSet(rcqNmi); /* every VBlank: catch taps in long frames */
+    padSeen = 0;
+    cont = runTitle();
+    setBrightness(0);
+    for (i = 0; i < 4; i++)
+        dmaCopyVram((u8 *)boxMap, VRAM_BG3_MAP + i * BOX_ROWS * 32, BOX_ROWS * 32 * 2);
+    lightDirty = 1;
+
+    if (!cont)
+    {
+        curMap = MAP_START;
+        px = MAP_PX_W / 2; /* the middle of the Fan */
+        py = MAP_PX_H / 2;
+    }
     rcqLoadMap(curMap);
-    px = MAP_PX_W / 2; /* the middle of the Fan */
-    py = MAP_PX_H / 2;
     settle();
     updateCamera();
     drawHero();
@@ -1099,12 +1113,15 @@ int main(void)
         WaitForVBlank();
     }
 
-    nmiSet(rcqNmi); /* every VBlank: catch taps in long frames */
+    saveGame(); /* the slot is yours from the start */
+    if (!cont) openIntro();
+    else dungeonEntered();
     padSeen = 0;
     lastPad = 0xFFFF; /* nothing held at the start counts as a press */
     while (1)
     {
         frameCount++;
+        playTick();
         /* new presses since our last look (not padsDown, which only holds a press for one frame:
            when a busy frame runs long, that press would be lost) */
         pad = padsCurrent(0);

@@ -343,6 +343,7 @@ extern char sys_txt;
 #define TXT_FROG3 24257
 #define TXT_FROG4 24283
 #define TXT_FROG5 24309
+#define TXT_INTRO 24368
 #define CARD_COUNT 12
 static const u16 cardTxt[12] = {TXT_CARD0, TXT_CARD1, TXT_CARD2, TXT_CARD3, TXT_CARD4, TXT_CARD5, TXT_CARD6, TXT_CARD7, TXT_CARD8, TXT_CARD9, TXT_CARD10, TXT_CARD11};
 static const u16 cardGotTxt[12] = {TXT_CARDGOT0, TXT_CARDGOT1, TXT_CARDGOT2, TXT_CARDGOT3, TXT_CARDGOT4, TXT_CARDGOT5, TXT_CARDGOT6, TXT_CARDGOT7, TXT_CARDGOT8, TXT_CARDGOT9, TXT_CARDGOT10, TXT_CARDGOT11};
@@ -604,6 +605,8 @@ extern char mini0_chr, mini0_chrend, mini0_map, mini0_pal;  /* bat: 97 tiles, 8 
 extern char mini1_chr, mini1_chrend, mini1_map, mini1_pal;  /* hoops: 91 tiles, 8 palettes */
 extern char mini2_chr, mini2_chrend, mini2_map, mini2_pal;  /* tennis: 24 tiles, 1 palettes */
 extern char mini6_chr, mini6_chrend, mini6_map, mini6_pal;  /* pin: 129 tiles, 3 palettes */
+extern char mini10_chr, mini10_chrend, mini10_map, mini10_pal;  /* title: 458 tiles, 6 palettes */
+extern char mini11_chr, mini11_chrend, mini11_map, mini11_pal;  /* name: 402 tiles, 7 palettes */
 extern char race0_chr, race0_chrend, race0_map, race0_pal, race0_och, race0_ochend, race0_opl;  /* derby: 18 tiles */
 extern char race1_chr, race1_chrend, race1_map, race1_pal, race1_och, race1_ochend, race1_opl;  /* trail: 17 tiles */
 extern char race2_chr, race2_chrend, race2_map, race2_pal, race2_och, race2_ochend, race2_opl;  /* race: 34 tiles */
