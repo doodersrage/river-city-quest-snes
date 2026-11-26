@@ -727,7 +727,7 @@ def main():
             kind = {'L': 1, '%': 2, 'H': 3, 'z': 4, '_': 5}.get(d['closed'], 0)   # 4 sprout, 5 its vine bridge
             if kind == 3: ref = index_of[d['solved']]
             else: ref = link_flag.setdefault(d['flag'], len(link_flag))
-            xtr += bytes((kind, ref, len(d['cells']), CELL_DOOR if d['open'] == 'D' else CELL_SOLID if d['open'] == '1' else CELL_OPEN))
+            xtr += bytes((kind, ref, len(d['cells']), CELL_DOOR if d['open'] == 'D' else CELL_OPEN))   # a grown sprout is the foot of its vine: you climb across
             for c in d['cells']:
                 xtr += bytes((c[0], c[1])) + words(base)
                 base += 1
