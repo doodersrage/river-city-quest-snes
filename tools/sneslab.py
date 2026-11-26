@@ -84,7 +84,8 @@ class Lab:
         off = self.sym['colRam'] - 0x7E0000
         col = [int(wram[off + i]) for i in range(MAP_W * MAP_H)]
         w, h = self.ram('mapW'), self.ram('mapH')
-        grid = [[1 if (x >= w or y >= h or col[y * MAP_W + x] in (1, 4, 5, 6, 7, 8)) else 0
+        # doors and stairs (2, 3) count as walls for routing, so a route never wanders out of the map
+        grid = [[1 if (x >= w or y >= h or col[y * MAP_W + x] in (1, 2, 3, 4, 5, 6, 7, 8)) else 0
                  for x in range(MAP_W)] for y in range(MAP_H)]
         for k in range(self.ram('npcCount')):
             nx, ny = self.ram('npcX', 2, True, k), self.ram('npcY', 2, True, k)
@@ -93,6 +94,7 @@ class Lab:
 
     def path(self, goal):
         grid = self.solid_grid()
+        grid[goal[1]][goal[0]] = 0
         x, y = self.pos
         start = (x // 16, y // 16)
         prev, q = {start: None}, deque([start])

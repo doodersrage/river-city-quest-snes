@@ -135,6 +135,110 @@ lab.run(None, 40)
 check(lab.map == 17, f'walked south into Hollywood Cemetery (map {lab.map})')
 lab.screenshot(f'{out}/9-hollywood-cemetery.png')
 
+# Stage 5: Tredegar Iron Works, start to finish.
+def clear_room():
+    for _ in range(12):
+        alive = [k for k in range(lab.ram('enCount')) if lab.enemy(k)['alive']]
+        if not alive:
+            break
+        x, y = lab.pos
+        lab.fight(min(alive, key=lambda k: abs(lab.enemy(k)['x'] - x) + abs(lab.enemy(k)['y'] - y)), 900)
+        if lab.ram('hp') <= 2:
+            lab.poke('hp', lab.ram('hpMax'))  # this test checks the dungeon, not our dodging
+    return not any(lab.enemy(k)['alive'] for k in range(lab.ram('enCount')))
+
+lab.walk_to_cell(28, 17)
+lab.run('UP', 20)
+lab.run(None, 70)
+check(lab.map == lab.map_named('Foundry Gate') and lab.ram('dentMap') == lab.map, 'the Tredegar door leads into the Foundry Gate')
+check(clear_room() and lab.ram('roomFlags', 1, False, lab.map) & 1, 'the Foundry Gate is cleared')
+lab.walk_to_cell(14, 5)
+lab.run('RIGHT', 40)
+lab.run(None, 40)
+check(lab.map == lab.map_named('Pattern Shop'), 'east into the Pattern Shop')
+check(clear_room(), 'the Pattern Shop is cleared')
+lab.walk_to_cell(4, 4)
+lab.face('up')
+lab.press('A', 60)
+check(lab.ram('hasHook') == 1, 'a chest appears with the Grappling Hook')
+lab.screenshot(f'{out}/10-grappling-hook.png')
+close_box()
+lab.walk_to_cell(12, 6)
+lab.face('up')
+lab.press('B', 50)
+check(lab.pos == (200, 56), f'the hook pulls you across the pit to the post ({lab.pos})')
+lab.walk_to_cell(11, 3)
+lab.face('up')
+lab.press('A', 60)
+close_box()
+area = lab.ram('roomArea')
+check(lab.ram('keys', 1, False, area) == 1, 'a small key')
+lab.walk_to_cell(12, 3)
+lab.face('down')
+lab.press('B', 50)
+lab.walk_to_cell(1, 5)
+lab.run('LEFT', 40)
+lab.run(None, 40)
+lab.walk_to_cell(7, 1)
+lab.run('UP', 10)
+check(lab.ram('keys', 1, False, area) == 0 and lab.ram('colRam', 1, False, 7) == 0, 'the key opens the locked door')
+lab.run('UP', 40)
+lab.run(None, 40)
+check(lab.map == lab.map_named('Casting Floor'), 'north into the Casting Floor')
+check(clear_room() and lab.ram('colRam', 1, False, 7) == 0, 'clearing it opens the gate')
+lab.walk_to_cell(7, 7)
+lab.face('up')
+lab.press('B', 50)
+lab.walk_to_cell(7, 1)
+lab.run('UP', 40)
+lab.run(None, 60)
+check(lab.map == lab.map_named('Furnace Hall') and lab.ram('boxState'), 'the Iron Foreman wakes up')
+close_box()
+lab.screenshot(f'{out}/11-iron-foreman.png')
+clanked = stunned = False
+for _ in range(6000):
+    if lab.ram('boxState'):
+        break
+    if not lab.ram('bossOn'):
+        break
+    if lab.ram('hp') <= 2:
+        lab.poke('hp', lab.ram('hpMax'))
+    bx, by = lab.ram('bossX', 2, True) >> 4, lab.ram('bossY', 2, True) >> 4
+    x, y = lab.pos
+    dx, dy = bx - x, (by - 8) - y
+    if lab.ram('bossState') == 2:
+        stunned = True
+        if abs(dx) + abs(dy) < 22 and (abs(dx) < 10 or abs(dy) < 12):
+            lab.run(('RIGHT' if dx > 0 else 'LEFT') if abs(dx) >= abs(dy) else ('DOWN' if dy > 0 else 'UP'), 1)
+            lab.press('A', 12)
+        else:
+            lab.run(('RIGHT' if dx > 0 else 'LEFT') if abs(dx) > abs(dy) else ('DOWN' if dy > 0 else 'UP'), 1)
+    elif abs(dx) > 3:
+        lab.run('RIGHT' if dx > 0 else 'LEFT', 1)
+    elif dy < 30 and y > 40:
+        lab.run('UP', 1)   # fight from above, away from where the stairs will appear
+    else:
+        lab.run('DOWN', 1)
+        lab.press('B', 3)
+check(stunned, 'the hook rips the Foreman\'s chest plate loose')
+lab.run(None, 30)
+lab.screenshot(f'{out}/12-foreman-beaten.png')
+check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'the Iron Foreman is beaten')
+close_box()
+hpmax = lab.ram('hpMax')
+lab.walk_to_cell(9, 3)
+for _ in range(40):
+    if lab.ram('boxState'):
+        break
+    lab.run('DOWN', 1)
+lab.run(None, 30)
+check(lab.ram('hpMax') == hpmax + 2, 'he leaves a heart container')
+close_box()
+lab.walk_to_cell(7, 7)
+lab.run('DOWN', 30)
+lab.run(None, 60)
+check(lab.map == 17 and lab.ram('dentMap') == 255, 'the stairs lead back out to Hollywood Cemetery')
+
 # Stage 3: let a ghost take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)
 for _ in range(1500):
@@ -143,7 +247,7 @@ for _ in range(1500):
     lab.run(None, 1)
 check(lab.ram('dying') == 1, 'a ghost takes the last heart')
 lab.run(None, 60)
-lab.screenshot(f'{out}/10-fog-takes-you.png')
+lab.screenshot(f'{out}/13-fog-takes-you.png')
 for _ in range(10):
     if not lab.ram('boxState'):
         break
