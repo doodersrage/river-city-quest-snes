@@ -1152,7 +1152,7 @@ def accept(k, want=None):
     for _ in range(4):
         r = talk_to(k)
         if os.environ.get('DEBUG'):
-            print('  accept', k, 'talked', r, 'box', lab.ram('boxState'), 'ask', lab.ram('askKind'), 'at', lab.pos, 'dir', lab.ram('heroDir'),
+            print('  accept', k, 'map', lab.map, 'talked', r, 'box', lab.ram('boxState'), 'ask', lab.ram('askKind'), 'at', lab.pos, 'dir', lab.ram('heroDir'),
                   'npc', (lab.ram('npcX', 2, True, k), lab.ram('npcY', 2, True, k)))
         for _ in range(30):
             if lab.ram('boxState') in (0, 6): break

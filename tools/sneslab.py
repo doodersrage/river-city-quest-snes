@@ -318,9 +318,12 @@ def leave(lab, d, close_box):
 
 
 def travel(lab, dest, close_box):
-    for d in route(lab, dest):
-        for attempt in range(3):   # people and traffic move: if every way out was blocked, wait and look again
-            if leave(lab, d, close_box): break
-            close_box(); lab.run(None, 90)
-        else:
-            raise RuntimeError(f'stuck leaving map {lab.map} {d}')
+    for tries in range(3):   # knocked off course (a door, an edge): plan again from wherever we are
+        if lab.map == dest: return
+        for d in route(lab, dest):
+            for attempt in range(3):   # people and traffic move: if every way out was blocked, wait and look again
+                if leave(lab, d, close_box): break
+                close_box(); lab.run(None, 90)
+            else:
+                raise RuntimeError(f'stuck leaving map {lab.map} {d}')
+    if lab.map != dest: raise RuntimeError(f'travel ended on map {lab.map}, not {dest}')
