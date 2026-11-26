@@ -60,19 +60,20 @@ void lightInit(void)
     darkLevel = 0;
     lightR1 = lightR2 = 255;
     lightDirty = 1;
-    /* HDMA 6 -> WH0/WH1 (window 1), HDMA 7 -> WH2/WH3 (window 2), two registers a line */
+    /* HDMA 4 -> WH0/WH1 (window 1), HDMA 5 -> WH2/WH3 (window 2), two registers a line
+       (PVSnesLib's vblank sends the sprites over DMA channel 7, so not that one) */
     a = (u16)lightTab1;
-    REG_DMAP(6) = 0x01;
-    REG_BBAD(6) = 0x26;
-    REG_A1TL(6) = a & 255;
-    REG_A1TH(6) = a >> 8;
-    REG_A1B(6) = 0x7E;
+    REG_DMAP(4) = 0x01;
+    REG_BBAD(4) = 0x26;
+    REG_A1TL(4) = a & 255;
+    REG_A1TH(4) = a >> 8;
+    REG_A1B(4) = 0x7E;
     a = (u16)lightTab2;
-    REG_DMAP(7) = 0x01;
-    REG_BBAD(7) = 0x28;
-    REG_A1TL(7) = a & 255;
-    REG_A1TH(7) = a >> 8;
-    REG_A1B(7) = 0x7E;
+    REG_DMAP(5) = 0x01;
+    REG_BBAD(5) = 0x28;
+    REG_A1TL(5) = a & 255;
+    REG_A1TH(5) = a >> 8;
+    REG_A1B(5) = 0x7E;
     lightCircle(hw15, 0, 0, 0, 0);
     lightCircle(hw15, 1, 0, 0, 0);
 }
@@ -198,5 +199,5 @@ void lightVBlank(void)
         REG_COLDATA = 0x40 | (darkLevel * 3);
         REG_COLDATA = 0x80 | darkLevel;
     }
-    REG_HDMAEN = 0xC0;
+    REG_HDMAEN = 0x30;
 }
