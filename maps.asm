@@ -1144,6 +1144,94 @@ m51_xtr:
 .incbin "data/m51.xtr"
 .ends
 
+.section ".map52" superfree
+m52_chr:
+.incbin "data/m52.chr"
+m52_chrend:
+m52_map:
+.incbin "data/m52.map"
+m52_pal:
+.incbin "data/m52.pal"
+m52_col:
+.incbin "data/m52.col"
+m52_wld:
+.incbin "data/m52.wld"
+m52_och:
+.incbin "data/m52.och"
+m52_opl:
+.incbin "data/m52.opl"
+m52_ene:
+.incbin "data/m52.ene"
+m52_xtr:
+.incbin "data/m52.xtr"
+.ends
+
+.section ".map53" superfree
+m53_chr:
+.incbin "data/m53.chr"
+m53_chrend:
+m53_map:
+.incbin "data/m53.map"
+m53_pal:
+.incbin "data/m53.pal"
+m53_col:
+.incbin "data/m53.col"
+m53_wld:
+.incbin "data/m53.wld"
+m53_och:
+.incbin "data/m53.och"
+m53_opl:
+.incbin "data/m53.opl"
+m53_ene:
+.incbin "data/m53.ene"
+m53_xtr:
+.incbin "data/m53.xtr"
+.ends
+
+.section ".map54" superfree
+m54_chr:
+.incbin "data/m54.chr"
+m54_chrend:
+m54_map:
+.incbin "data/m54.map"
+m54_pal:
+.incbin "data/m54.pal"
+m54_col:
+.incbin "data/m54.col"
+m54_wld:
+.incbin "data/m54.wld"
+m54_och:
+.incbin "data/m54.och"
+m54_opl:
+.incbin "data/m54.opl"
+m54_ene:
+.incbin "data/m54.ene"
+m54_xtr:
+.incbin "data/m54.xtr"
+.ends
+
+.section ".map55" superfree
+m55_chr:
+.incbin "data/m55.chr"
+m55_chrend:
+m55_map:
+.incbin "data/m55.map"
+m55_pal:
+.incbin "data/m55.pal"
+m55_col:
+.incbin "data/m55.col"
+m55_wld:
+.incbin "data/m55.wld"
+m55_och:
+.incbin "data/m55.och"
+m55_opl:
+.incbin "data/m55.opl"
+m55_ene:
+.incbin "data/m55.ene"
+m55_xtr:
+.incbin "data/m55.xtr"
+.ends
+
 .section ".hero" superfree
 hero_chr:
 .incbin "data/hero.chr"
@@ -1163,12 +1251,20 @@ shops_bin:
 .incbin "data/shops.bin"
 .ends
 
-.section ".boss" superfree
-boss_chr:
-.incbin "data/boss.chr"
-boss_chrend:
-boss_pal:
-.incbin "data/boss.pal"
+.section ".boss1" superfree
+boss1_chr:
+.incbin "data/boss1.chr"
+boss1_chrend:
+boss1_pal:
+.incbin "data/boss1.pal"
+.ends
+
+.section ".boss2" superfree
+boss2_chr:
+.incbin "data/boss2.chr"
+boss2_chrend:
+boss2_pal:
+.incbin "data/boss2.pal"
 .ends
 
 .section ".combat" superfree
@@ -1177,6 +1273,12 @@ combat_chr:
 combat_chrend:
 combat_pal:
 .incbin "data/combat.pal"
+.ends
+
+.section ".items" superfree
+items_chr:
+.incbin "data/items.chr"
+items_chrend:
 .ends
 
 .section ".font" superfree

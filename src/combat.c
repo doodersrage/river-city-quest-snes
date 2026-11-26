@@ -16,7 +16,7 @@ u8 enemiesExisted;
 s16 enX[MAX_EN], enY[MAX_EN], enVX[MAX_EN], enVY[MAX_EN], enKX[MAX_EN], enKY[MAX_EN];
 u16 enT[MAX_EN];
 
-u8 pkKind[MAX_PK]; /* 0 none, 1 coin, 2 heart, 3 heart container */
+u8 pkKind[MAX_PK]; /* 0 none, 1 coin, 2 heart, 3 heart container, 4 powder keg, 5-8 keystones */
 s16 pkX[MAX_PK], pkY[MAX_PK];
 u16 pkLife[MAX_PK];
 
@@ -155,7 +155,7 @@ void dropKind(s16 x, s16 y, u8 kind)
             pkKind[i] = kind;
             pkX[i] = x;
             pkY[i] = y;
-            pkLife[i] = kind == 3 ? 0xFFFF : 600;
+            pkLife[i] = 600;
             return;
         }
 }
@@ -197,20 +197,39 @@ void dropAt(s16 x, s16 y)
     u8 r = rnd() % 100;
     if (r < 30) dropKind(x, y, 1);
     else if (r < 44) dropKind(x, y, 2);
+    else if (r >= 52 && r < 57 && hasPowder) dropKind(x, y, 4);
+}
+
+/* web explode(): 2 damage to everything within 30px, knocked away */
+void bombHitsEnemies(s16 x, s16 y)
+{
+    u8 k;
+    s16 dx, dy;
+    for (k = 0; k < MAX_EN; k++)
+        if (enAlive[k])
+        {
+            dx = (enX[k] >> 4) - x;
+            dy = (enY[k] >> 4) - y;
+            if (ABS(dx) < 30 && ABS(dy) < 30)
+                hitEnemy(k, 2, dx > 0 ? 48 : -48, dy > 0 ? 48 : -48);
+        }
 }
 
 void collectPickup(u8 k)
 {
-    if (pkKind[k] == 1) { if (coins < 999) coins++; }
-    else if (pkKind[k] == 2) { hp += 2; if (hp > hpMax) hp = hpMax; }
-    else
+    u8 kind = pkKind[k];
+    pkKind[k] = 0;
+    if (kind == 1) { if (coins < 999) coins++; }
+    else if (kind == 2) { hp += 2; if (hp > hpMax) hp = hpMax; }
+    else if (kind == 3)
     {
         if (hpMax < 20) hpMax += 2;
         hp = hpMax;
         roomFlags[curMap] |= ROOM_CONTAINER;
         openTextAt((u8 *)&sys_txt + TXT_CONTAINER);
     }
-    pkKind[k] = 0;
+    else if (kind == 4) { if (powder < 10) powder++; }
+    else gotKeystone(kind - 5);
 }
 
 void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy)
@@ -231,9 +250,14 @@ void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy)
 
 void hurtHero(s16 sx, s16 sy)
 {
+    hurtHeroBy(sx, sy, 1);
+}
+
+void hurtHeroBy(s16 sx, s16 sy, u8 dmg)
+{
     s16 dx, dy, d;
-    if (inv || hp == 0 || dying) return;
-    hp = hp > 1 ? hp - 1 : 0;
+    if (inv || hp == 0 || dying || hookSt == 3) return;
+    hp = hp > dmg ? hp - dmg : 0;
     inv = 50;
     dx = px - sx;
     dy = py - sy;
@@ -367,9 +391,11 @@ void combatUpdate(u16 pad, u16 pressed)
         if (ky && !blocked(px, py + ky)) py += ky;
     }
 
-    /* B fires the hook */
-    if ((pressed & KEY_B) && !atk && !spin && !charging)
-        fireHook();
+    /* B uses the item you've picked; SELECT picks the next one */
+    if ((pressed & KEY_B) && !atk && !spin && !charging && !hookSt)
+        useItem();
+    if (pressed & KEY_SELECT)
+        nextItem();
 
     /* A swings (main.c calls interact() first and only swings if nothing was there) */
     if ((pressed & KEY_A) && !atk && !spin && !hookSt)
@@ -389,7 +415,7 @@ void combatUpdate(u16 pad, u16 pressed)
                 d = dist(dx, dy);
                 if (d < 24) hitEnemy(k, 2, dx * 48 / d, dy * 48 / d);
             }
-        if (bossOn) bossHit(2);
+        if (bossOn) bossHit(2, 0);
         /* web: every 4th spin frame, cut at 8 points 16px out */
         if ((spin & 3) == 0)
         {
@@ -439,7 +465,7 @@ void combatUpdate(u16 pad, u16 pressed)
                     hitEnemy(k, 1, dirX[heroDir] * 40, dirY[heroDir] * 40);
             }
         if (atk == 10) cutAt(hx, hy);
-        if (bossOn && bossNear(hx, hy) && bossHit(1) == 2)
+        if (bossOn && bossNear(hx, hy) && bossHit(1, 0) == 2)
         {
             /* clank: the paddle bounces off the armour */
             kx = -dirX[heroDir] * 2;
@@ -460,7 +486,7 @@ void combatUpdate(u16 pad, u16 pressed)
     for (k = 0; k < MAX_PK; k++)
         if (pkKind[k])
         {
-            if (pkKind[k] != 3 && !--pkLife[k])
+            if (pkKind[k] < 3 && !--pkLife[k])
             {
                 pkKind[k] = 0;
                 continue;
@@ -516,15 +542,16 @@ void combatDraw(void)
         id = (OAM_PICKUPS + k) * 4;
         sx = pkX[k] - camX - 4;
         sy = pkY[k] - camY - 5;
-        if (!pkKind[k] || (pkLife[k] < 120 && (frameCount & 4)) || sx < -8 || sx > SCREEN_W || sy < -8 || sy > SCREEN_H)
+        if (!pkKind[k] || (pkKind[k] < 3 && pkLife[k] < 120 && (frameCount & 4)) || sx < -8 || sx > SCREEN_W || sy < -8 || sy > SCREEN_H)
         {
             oamSetEx(id, OBJ_SMALL, OBJ_HIDE);
             continue;
         }
-        if (pkKind[k] == 3)
+        if (pkKind[k] >= 3)
         {
+            tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
             oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-            oamSet(id, (sx - 4) & 0x1FF, (sy - 4) & 0xFF, 2, 0, 0, OBJ_CONTAINER, PAL_CONTAINER);
+            oamSet(id, (sx - 4) & 0x1FF, (sy - 4) & 0xFF, 2, 0, 0, tile, PAL_ITEM);
             continue;
         }
         tile = pkKind[k] == 1 ? HUD_COIN + ((frameCount >> 3) & 1) : HUD_HEART;

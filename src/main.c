@@ -432,11 +432,12 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     roomArea = rec[0];
     roomSolve = rec[1];
     roomBoss = rec[2];
-    roomEntry = rec[3];
+    roomEntry = rec[3] & 1;
+    roomReward = rec[3] >> 4;
     dynPtr = rec + 4;
     rec = dynPtr + 1;
     for (k = 0; k < dynPtr[0]; k++)
-        rec += 3 + rec[2] * 10;
+        rec += 4 + rec[2] * 10;
     stairsPtr = rec;
     for (n = 0; n < COL_STRIDE * 22; n++)
         colRam[n] = col[n];
@@ -667,8 +668,8 @@ u8 interact(void)
             }
             else if (rec[3] == EFFECT_KEY)
                 keys[roomArea]++;
-            else if (rec[3] == EFFECT_ITEM && rec[4] == ITEM_HOOK)
-                hasHook = 1;
+            else if (rec[3] == EFFECT_ITEM)
+                gotItem(rec[4]);
             chestTiles(k, 0);
             openText(rec[5]);
             return 1;
@@ -804,6 +805,8 @@ int main(void)
     /* Enemies, the paddle and the HUD: OBJ tiles 128-255, sprite palettes 5-7. */
     dmaCopyVram(&combat_chr, VRAM_OBJ_CHR + 128 * 16, (&combat_chrend - &combat_chr));
     dmaCopyCGram(&combat_pal, 128 + 5 * 16, 3 * 16 * 2);
+    /* items (kegs, icons, keystones, heart containers, explosions): second OBJ name table, tile 256 */
+    dmaCopyVram(&items_chr, VRAM_OBJ_CHR + 0x1000, (&items_chrend - &items_chr));
 
     /* Font, and an empty text layer. */
     dmaCopyVram(&font_chr, VRAM_BG3_CHR, (&font_chrend - &font_chr));

@@ -1,7 +1,9 @@
 /*---------------------------------------------------------------------------------
-    Stage 5: dungeons. Room state (cleared rooms, locked doors, gates, chests that appear,
-    boss stairs), small keys, the grappling hook, projectiles and the Iron Foreman.
-    Ported from the web game's world.js (links, applyDyn), play.js and systems.js (updHook).
+    Stages 5-6: dungeons. Room state (cleared rooms, locked doors, gates, cracked walls, chests
+    that appear, boss stairs), small keys, the items on B (grappling hook, blasting powder),
+    projectiles, keystones and the bosses (the Iron Foreman, Old Snapper).
+    Ported from the web game's world.js (links, applyDyn), play.js (explode, updEnemy) and
+    systems.js (updHook).
 ---------------------------------------------------------------------------------*/
 #include "game.h"
 
@@ -14,7 +16,9 @@ u8 *stairsPtr; /* count, then cells (tx, ty, 4 words) */
 u8 roomFlags[MAP_COUNT]; /* ROOM_* bits */
 u8 linkOpen[(LINK_COUNT + 7) / 8];
 u8 keys[AREA_COUNT];
-u8 hasHook;
+u8 hasHook, hasPowder, powder, eqItem; /* eqItem: ITEM_HOOK or ITEM_POWDER */
+u8 keystones;  /* bit per keystone: granite, iron, brick, bronze */
+u8 roomReward; /* keystone this boss room gives (1-4), 0 none */
 u8 dentMap; /* dungeon entrance, for waking up after the fog takes you inside */
 
 /* the hook */
@@ -28,13 +32,24 @@ u8 shotOn[MAX_SHOT];
 s16 shotX[MAX_SHOT], shotY[MAX_SHOT], shotVX[MAX_SHOT], shotVY[MAX_SHOT];
 u8 shotLife[MAX_SHOT];
 
+/* bombs (blasting powder kegs) and the explosion */
+#define MAX_BOMB 2
+u8 bombOn[MAX_BOMB], bombT[MAX_BOMB];
+s16 bombX[MAX_BOMB], bombY[MAX_BOMB];
+u8 boomT;
+s16 boomX, boomY;
+
 /* the boss (1/16 px) */
-u8 bossOn, bossHp, bossState, bossSt, bossFlash;
-s16 bossX, bossY;
+u8 bossOn, bossType, bossHp, bossState, bossSt, bossFlash, bossFlip;
+s16 bossX, bossY, bossVX, bossVY;
 u16 bossT;
+const u16 *bossTiles;
 #define B_WALK 0
 #define B_WIND 1
 #define B_STUN 2
+#define B_CHARGE 3
+#define BOSS_FOREMAN 1
+#define BOSS_TURTLE 2
 
 extern const s8 dirX[4], dirY[4];
 
@@ -45,7 +60,13 @@ void dungeonInit(void)
     for (i = 0; i < sizeof(linkOpen); i++) linkOpen[i] = 0;
     for (i = 0; i < AREA_COUNT; i++) keys[i] = 0;
     hasHook = 0;
+    hasPowder = 0;
+    powder = 0;
+    eqItem = 0;
+    keystones = 0;
     dentMap = 255;
+    boomT = 0;
+    for (i = 0; i < MAX_BOMB; i++) bombOn[i] = 0;
     hookSt = 0;
     bossOn = 0;
     for (i = 0; i < MAX_SHOT; i++) shotOn[i] = 0;
@@ -75,14 +96,14 @@ void applyRoomState(u8 now)
         if (groupOpen(g))
             for (c = 0; c < n; c++)
             {
-                r = g + 3 + c * 10;
-                if (colGrid[r[1] * COL_STRIDE + r[0]] != CELL_OPEN)
+                r = g + 4 + c * 10;
+                if (colGrid[r[1] * COL_STRIDE + r[0]] != g[3])
                 {
-                    colGrid[r[1] * COL_STRIDE + r[0]] = CELL_OPEN;
+                    colGrid[r[1] * COL_STRIDE + r[0]] = g[3];
                     queuePatch(r[0], r[1], r + 2, now);
                 }
             }
-        g += 3 + n * 10;
+        g += 4 + n * 10;
     }
     for (k = 0; k < chests[0]; k++)
     {
@@ -129,7 +150,7 @@ u8 tryUnlock(s16 x, s16 y)
         if (g[0] == 1)
             for (c = 0; c < n; c++)
             {
-                r = g + 3 + c * 10;
+                r = g + 4 + c * 10;
                 if (r[0] == tx && r[1] == ty)
                 {
                     linkOpen[g[1] >> 3] |= 1 << (g[1] & 7);
@@ -138,7 +159,7 @@ u8 tryUnlock(s16 x, s16 y)
                     return 1;
                 }
             }
-        g += 3 + n * 10;
+        g += 4 + n * 10;
     }
     return 0;
 }
@@ -194,20 +215,35 @@ void updShots(void)
         }
 }
 
-/* ---------- the Iron Foreman ---------- */
+/* ---------- bosses ---------- */
+
+/* walls for a big body: a box of half-size h */
+u8 bigBlocked(s16 x, s16 y, s16 h)
+{
+    if (x - h < 0 || y - h < 0 || x + h >= MAP_PX_W || y + h >= MAP_PX_H) return 1;
+    if (solidAt(x - h, y - h) || solidAt(x + h, y - h) || solidAt(x - h, y + h) || solidAt(x + h, y + h)) return 1;
+    if (solidAt(x, y - h) || solidAt(x, y + h) || solidAt(x - h, y) || solidAt(x + h, y)) return 1;
+    return 0;
+}
 
 void bossLoad(void)
 {
     bossOn = 0;
-    if (roomBoss != 1 || (roomFlags[curMap] & ROOM_BOSS)) return;
+    bossType = roomBoss;
+    if (!roomBoss || (roomFlags[curMap] & ROOM_BOSS)) return;
     bossOn = 1;
-    bossHp = 9;
+    bossTiles = bossType == BOSS_TURTLE ? boss2Tile : boss1Tile;
+    bossHp = bossType == BOSS_TURTLE ? 8 : 9;
     bossX = (8 * 16 + 8) * 16;
     bossY = (4 * 16 + 8) * 16;
+    if (bossType == BOSS_TURTLE) bossX = (9 * 16 + 8) * 16;
     bossState = B_WALK;
     bossSt = 0;
     bossT = 0;
     bossFlash = 0;
+    bossFlip = 0;
+    bossVX = 0;
+    bossVY = 0;
 }
 
 void bossDefeated(void)
@@ -218,15 +254,19 @@ void bossDefeated(void)
     for (i = 0; i < MAX_SHOT; i++) shotOn[i] = 0;
     if (!(roomFlags[curMap] & ROOM_CONTAINER))
         dropKind(144, 80, 3); /* the heart container */
+    if (roomReward && !(keystones & (1 << (roomReward - 1))))
+        dropKind(112, 80, 4 + roomReward); /* the keystone (kinds 5-8) */
     applyRoomState(0);
-    openTextAt((u8 *)&sys_txt + TXT_FOREMAN_OUT);
+    openTextAt((u8 *)&sys_txt + bossOutTxt[bossType]);
 }
 
-/* The paddle or spin reached the boss. Returns 1 for a hit, 2 for a clank off the armour. */
-u8 bossHit(u8 dmg)
+/* Something hit the boss. src: 0 paddle, 1 bomb. Returns 1 for a hit, 2 for a clank off the armour. */
+u8 bossHit(u8 dmg, u8 src)
 {
     if (!bossOn || bossFlash) return 0;
-    if (bossState != B_STUN) return 2;
+    /* the Foreman only takes hits once the hook rips his plate off; Old Snapper takes bombs any
+       time, and the paddle once he's stunned himself charging into a wall */
+    if (bossState != B_STUN && !(bossType == BOSS_TURTLE && src == 1)) return 2;
     bossFlash = 16;
     if (bossHp <= dmg)
     {
@@ -237,27 +277,10 @@ u8 bossHit(u8 dmg)
     return 1;
 }
 
-void updBoss(void)
+void updForeman(s16 dx, s16 dy, s16 d)
 {
-    s16 dx, dy, d, bx, by;
     u8 i, a;
-    if (!bossOn) return;
-    if (bossFlash) bossFlash--;
-    bx = bossX >> 4;
-    by = bossY >> 4;
-    dx = px - bx;
-    dy = py - by;
-    d = ABS(dx) > ABS(dy) ? ABS(dx) + (ABS(dy) >> 1) : ABS(dy) + (ABS(dx) >> 1);
-    if (!d) d = 1;
-    if (bossState == B_STUN)
-    {
-        if (!--bossSt)
-        {
-            bossState = B_WALK;
-            bossT = 0;
-        }
-        return;
-    }
+    s16 bx = bossX >> 4, by = bossY >> 4;
     if (bossState == B_WIND)
     {
         if (!--bossSt)
@@ -269,30 +292,105 @@ void updBoss(void)
                 shoot(bossX, bossY, sinTab[(a + 16) & 63] * 24 / 64, sinTab[a & 63] * 24 / 64);
             }
         }
+        return;
     }
-    else
+    if (d > 4)
     {
-        if (d > 4)
-        {
-            if (!enBlocked((bossX + dx * 7 / d) >> 4, by)) bossX += dx * 7 / d;
-            if (!enBlocked(bx, (bossY + dy * 7 / d) >> 4)) bossY += dy * 7 / d;
-        }
-        bossT++;
-        if (bossT % 150 == 149)
-        {
-            bossState = B_WIND;
-            bossSt = 40;
-        }
-        if (bossHp <= 5 && bossT % 90 == 45)
-            shoot(bossX, bossY, dx * 27 / d, dy * 27 / d);
+        if (!enBlocked((bossX + dx * 7 / d) >> 4, by)) bossX += dx * 7 / d;
+        if (!enBlocked(bx, (bossY + dy * 7 / d) >> 4)) bossY += dy * 7 / d;
     }
+    bossT++;
+    if (bossT % 150 == 149)
+    {
+        bossState = B_WIND;
+        bossSt = 40;
+    }
+    if (bossHp <= 5 && bossT % 90 == 45)
+        shoot(bossX, bossY, dx * 27 / d, dy * 27 / d);
+}
+
+/* Old Snapper (web updEnemy 'turtle'): plods toward you, winds up, charges in a straight line,
+   and stuns himself on the wall. */
+void updTurtle(s16 dx, s16 dy)
+{
+    s16 nx, ny;
+    if (bossState == B_WIND)
+    {
+        if (!--bossSt)
+        {
+            bossState = B_CHARGE;
+            bossVX = 0;
+            bossVY = 0;
+            if (ABS(dx) > ABS(dy)) bossVX = dx > 0 ? 42 : -42;
+            else bossVY = dy > 0 ? 42 : -42;
+        }
+        return;
+    }
+    if (bossState == B_CHARGE)
+    {
+        nx = bossX + bossVX;
+        ny = bossY + bossVY;
+        if (bigBlocked(nx >> 4, ny >> 4, 10))
+        {
+            bossState = B_STUN;
+            bossSt = 140;
+            return;
+        }
+        bossX = nx;
+        bossY = ny;
+        return;
+    }
+    bossT++;
+    if (bossT % 40 < 30)
+    {
+        if (ABS(dx) > ABS(dy)) nx = bossX + (dx > 0 ? 8 : -8), ny = bossY;
+        else nx = bossX, ny = bossY + (dy > 0 ? 8 : -8);
+        if (!bigBlocked(nx >> 4, ny >> 4, 10))
+        {
+            bossX = nx;
+            bossY = ny;
+        }
+    }
+    if (bossT >= 100)
+    {
+        bossState = B_WIND;
+        bossSt = 36;
+        bossT = 0;
+    }
+}
+
+void updBoss(void)
+{
+    s16 dx, dy, d, bx, by;
+    if (!bossOn) return;
+    if (bossFlash) bossFlash--;
+    bx = bossX >> 4;
+    by = bossY >> 4;
+    dx = px - bx;
+    dy = py - by;
+    d = ABS(dx) > ABS(dy) ? ABS(dx) + (ABS(dy) >> 1) : ABS(dy) + (ABS(dx) >> 1);
+    if (!d) d = 1;
+    if (bossState != B_CHARGE) bossFlip = dx < 0;
+    if (bossState == B_STUN)
+    {
+        if (!--bossSt)
+        {
+            bossState = B_WALK;
+            bossT = 0;
+        }
+        return; /* stunned bosses don't hurt */
+    }
+    if (bossType == BOSS_TURTLE) updTurtle(dx, dy);
+    else updForeman(dx, dy, d);
+    bx = bossX >> 4;
+    by = bossY >> 4;
     if (ABS(bx - px) < 13 && ABS(by - py) < 13 && !dying)
-        hurtHero(bx, by);
+        hurtHeroBy(bx, by, bossState == B_CHARGE ? 2 : 1);
 }
 
 void drawBoss(void)
 {
-    u8 k, f;
+    u8 k, f, col;
     u16 id, t;
     s16 sx, sy, sh;
     for (k = 0; k < 9; k++)
@@ -303,10 +401,16 @@ void drawBoss(void)
             oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
             continue;
         }
-        f = bossState == B_STUN ? 3 + ((frameCount >> 2) & 1) : bossState == B_WIND ? 2 : (bossT >> 3) & 1;
-        t = foremanTile[f * 9 + k];
+        if (bossType == BOSS_TURTLE)
+            f = bossState == B_STUN ? 2 + ((frameCount >> 2) & 1) : (frameCount >> (bossState == B_CHARGE ? 1 : 3)) & 1;
+        else
+            f = bossState == B_STUN ? 3 + ((frameCount >> 2) & 1) : bossState == B_WIND ? 2 : (bossT >> 3) & 1;
+        t = bossTiles[f * 9 + k];
         sh = bossState == B_WIND ? ((frameCount >> 1) & 1) * 2 - 1 : 0;
-        sx = (bossX >> 4) - camX - 24 + (k % 3) * 16 + sh;
+        /* the turtle's frames face right: mirror the 3x3 grid to face left */
+        col = k % 3;
+        if (bossType == BOSS_TURTLE && bossFlip) col = 2 - col;
+        sx = (bossX >> 4) - camX - 24 + col * 16 + sh;
         sy = (bossY >> 4) - camY - 40 + (k / 3) * 16;
         if (!t || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
         {
@@ -314,7 +418,171 @@ void drawBoss(void)
             continue;
         }
         oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
-        oamSet(id, sx & 0x1FF, sy & 0xFF, 2, 0, 0, t, PAL_BOSS);
+        oamSet(id, sx & 0x1FF, sy & 0xFF, 2, bossType == BOSS_TURTLE && bossFlip, 0, t, PAL_BOSS);
+    }
+}
+
+/* ---------- blasting powder (web useItem 'powder' and explode) ---------- */
+
+void dropBomb(void)
+{
+    u8 i;
+    if (!powder)
+    {
+        openTextAt((u8 *)&sys_txt + TXT_NOPOWDER);
+        return;
+    }
+    for (i = 0; i < MAX_BOMB; i++)
+        if (!bombOn[i])
+        {
+            bombOn[i] = 1;
+            bombT[i] = 80;
+            bombX[i] = px + dirX[heroDir] * 12;
+            bombY[i] = py + dirY[heroDir] * 12;
+            powder--;
+            return;
+        }
+}
+
+void explode(s16 x, s16 y)
+{
+    u8 k, n, c, opened = 0;
+    u8 *g;
+    u8 *r;
+    s16 dx, dy;
+    boomT = 16;
+    boomX = x;
+    boomY = y;
+    bombHitsEnemies(x, y);
+    if (bossOn && ABS((bossX >> 4) - x) < 30 && ABS((bossY >> 4) - y) < 30) bossHit(2, 1);
+    for (dy = -24; dy <= 24; dy += 16)
+        for (dx = -24; dx <= 24; dx += 16)
+            cutAt(x + dx, y + dy);
+    if (ABS(px - x) < 20 && ABS(py - y) < 20) hurtHeroBy(x, y, 1);
+    /* cracked walls and rubble within 32px give way */
+    g = dynPtr + 1;
+    for (k = 0; k < dynPtr[0]; k++)
+    {
+        n = g[2];
+        if (g[0] == 2 && !groupOpen(g))
+            for (c = 0; c < n; c++)
+            {
+                r = g + 4 + c * 10;
+                if (ABS(r[0] * 16 + 8 - x) < 32 && ABS(r[1] * 16 + 8 - y) < 32)
+                {
+                    linkOpen[g[1] >> 3] |= 1 << (g[1] & 7);
+                    opened = 1;
+                    break;
+                }
+            }
+        g += 4 + n * 10;
+    }
+    if (opened) applyRoomState(0);
+}
+
+void updBombs(void)
+{
+    u8 i;
+    if (boomT) boomT--;
+    for (i = 0; i < MAX_BOMB; i++)
+        if (bombOn[i] && !--bombT[i])
+        {
+            bombOn[i] = 0;
+            explode(bombX[i], bombY[i]);
+        }
+}
+
+void drawBombs(void)
+{
+    u8 i, k;
+    u16 id;
+    s16 sx, sy;
+    for (i = 0; i < MAX_BOMB; i++)
+    {
+        id = (OAM_BOMBS + i) * 4;
+        sx = bombX[i] - camX - 8;
+        sy = bombY[i] - camY - 10;
+        if (!bombOn[i] || (bombT[i] < 24 && (frameCount & 2)))
+        {
+            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+            continue;
+        }
+        oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
+        oamSet(id, sx & 0x1FF, sy & 0xFF, 2, 0, 0, OBJ_I_KEG, PAL_ITEM);
+    }
+    for (k = 0; k < 4; k++)
+    {
+        id = (OAM_BOOM + k) * 4;
+        if (!boomT)
+        {
+            oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+            continue;
+        }
+        sx = boomX - camX - 16 + (k & 1) * 16;
+        sy = boomY - camY - 16 + (k >> 1) * 16;
+        oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
+        oamSet(id, sx & 0x1FF, sy & 0xFF, 3, 0, 0, OBJ_I_BOOM + ((boomT < 8 ? 4 : 0) + k) * 2, PAL_ITEM);
+    }
+}
+
+/* ---------- items on B ---------- */
+
+void useItem(void)
+{
+    if (eqItem == ITEM_HOOK) fireHook();
+    else if (eqItem == ITEM_POWDER) dropBomb();
+}
+
+/* SELECT swaps between the items you have (the web game picks them in its menu) */
+void nextItem(void)
+{
+    if (eqItem == ITEM_HOOK && hasPowder) eqItem = ITEM_POWDER;
+    else if (eqItem == ITEM_POWDER && hasHook) eqItem = ITEM_HOOK;
+}
+
+void gotItem(u8 item)
+{
+    if (item == ITEM_HOOK) hasHook = 1;
+    if (item == ITEM_POWDER)
+    {
+        hasPowder = 1;
+        if (powder < 8) powder = 8; /* web give('powder') */
+    }
+    eqItem = item;
+}
+
+void gotKeystone(u8 id)
+{
+    u8 n = 0, b;
+    keystones |= 1 << id;
+    for (b = 0; b < 4; b++)
+        if (keystones & (1 << b)) n++;
+    openTextAt((u8 *)&sys_txt + keystoneTxt[id * 4 + n - 1]);
+}
+
+void drawItemHud(void)
+{
+    u16 id = OAM_BICON * 4;
+    if (!eqItem)
+    {
+        oamSetEx(id, OBJ_LARGE, OBJ_HIDE);
+        oamSetEx((OAM_BICON + 1) * 4, OBJ_SMALL, OBJ_HIDE);
+        oamSetEx((OAM_BICON + 2) * 4, OBJ_SMALL, OBJ_HIDE);
+        return;
+    }
+    oamSetEx(id, OBJ_LARGE, OBJ_SHOW);
+    oamSet(id, 120, 4, 3, 0, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : OBJ_I_KEG, PAL_ITEM);
+    if (eqItem == ITEM_POWDER)
+    {
+        oamSetEx((OAM_BICON + 1) * 4, OBJ_SMALL, powder >= 10 ? OBJ_SHOW : OBJ_HIDE);
+        oamSet((OAM_BICON + 1) * 4, 137, 12, 3, 0, 0, HUD_DIGIT + powder / 10, PAL_HUD);
+        oamSetEx((OAM_BICON + 2) * 4, OBJ_SMALL, OBJ_SHOW);
+        oamSet((OAM_BICON + 2) * 4, 145, 12, 3, 0, 0, HUD_DIGIT + powder % 10, PAL_HUD);
+    }
+    else
+    {
+        oamSetEx((OAM_BICON + 1) * 4, OBJ_SMALL, OBJ_HIDE);
+        oamSetEx((OAM_BICON + 2) * 4, OBJ_SMALL, OBJ_HIDE);
     }
 }
 
@@ -342,7 +610,7 @@ void updHook(void)
         hookY = py - 4 + dirY[hookDir] * hookD;
         if (bossOn && ABS((bossX >> 4) - hookX) < 15 && ABS((bossY >> 4) - 6 - hookY) < 18)
         {
-            if (bossState != B_STUN)
+            if (bossType == BOSS_FOREMAN && bossState != B_STUN)
             {
                 bossState = B_STUN; /* the chest plate rips loose */
                 bossSt = 170;
@@ -470,6 +738,7 @@ void drawShots(void)
 void dungeonUpdate(void)
 {
     updHook();
+    updBombs();
     updBoss();
     updShots();
     checkCleared();
@@ -478,6 +747,8 @@ void dungeonUpdate(void)
 void dungeonDraw(void)
 {
     drawBoss();
+    drawBombs();
+    drawItemHud();
     drawHook();
     drawShots();
 }
@@ -487,14 +758,21 @@ void dungeonLoad(void)
 {
     u8 i;
     hookSt = 0;
+    boomT = 0;
     for (i = 0; i < MAX_SHOT; i++) shotOn[i] = 0;
+    for (i = 0; i < MAX_BOMB; i++) bombOn[i] = 0;
     applyRoomState(1);
     bossLoad();
-    if (roomBoss)
+    if (roomBoss == BOSS_FOREMAN)
     {
-        /* boss art into the second OBJ name table, palettes 1-2 (no townspeople down here) */
-        dmaCopyVram(&boss_chr, VRAM_OBJ_CHR + 0x1000, (&boss_chrend - &boss_chr));
-        dmaCopyCGram(&boss_pal, 128 + 16, 2 * 16 * 2);
+        /* boss art into the second OBJ name table after the items (tile 320), palette 1 */
+        dmaCopyVram(&boss1_chr, VRAM_OBJ_CHR + 0x1000 + 64 * 16, (&boss1_chrend - &boss1_chr));
+        dmaCopyCGram(&boss1_pal, 128 + 16, 16 * 2);
+    }
+    else if (roomBoss == BOSS_TURTLE)
+    {
+        dmaCopyVram(&boss2_chr, VRAM_OBJ_CHR + 0x1000 + 64 * 16, (&boss2_chrend - &boss2_chr));
+        dmaCopyCGram(&boss2_pal, 128 + 16, 16 * 2);
     }
 }
 
@@ -504,6 +782,6 @@ void dungeonEntered(void)
     if (bossOn && !(roomFlags[curMap] & ROOM_SEEN))
     {
         roomFlags[curMap] |= ROOM_SEEN;
-        openTextAt((u8 *)&sys_txt + TXT_FOREMAN_IN);
+        openTextAt((u8 *)&sys_txt + bossInTxt[bossType]);
     }
 }
