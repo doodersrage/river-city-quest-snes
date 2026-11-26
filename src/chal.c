@@ -21,6 +21,7 @@ u8 quizI, quizScore, quizAns, quizQ[3];
 
 static u8 hudSecs, hudGot, hudShown, bangK;
 static u16 bangBit;
+static s16 bangX, bangY;
 
 /* Called when a map loads: who here has a challenge (for the "!"). */
 void chalLoad(void)
@@ -28,6 +29,7 @@ void chalLoad(void)
     u8 i;
     u8 *rec = wld + WLD_NPCS;
     bangK = 255;
+    bangX = -100;
     sprHide(OAM_BANG);
     for (i = 0; i < npcCount; i++, rec += NPC_REC)
         if (rec[12])
@@ -326,9 +328,16 @@ void chalDraw(void)
         sx = npcX[bangK] - camX - 8;
         sy = npcY[bangK] - camY - 32;
         if (chalOn || boxState || ((frameCount >> 4) & 1) || (pins & bangBit) || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
+        {
             sprHide(OAM_BANG);
-        else
+            bangX = -100;
+        }
+        else if (sx != bangX || sy != bangY)
+        {
             sprPut(OAM_BANG, 1, sx, sy, 3, 0, townTile[TOWN_BANG], PAL_ITEM);
+            bangX = sx;
+            bangY = sy;
+        }
     }
     if (!chalOn)
     {

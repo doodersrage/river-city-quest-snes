@@ -687,6 +687,11 @@ void combatDraw(void)
     for (k = 0; k < MAX_PK; k++)
     {
         id = (OAM_PICKUPS + k) * 4;
+        if (!pkKind[k])
+        {
+            sprHide((id) >> 2);
+            continue;
+        }
         sx = pkX[k] - camX - 4;
         sy = pkY[k] - camY - 5;
         if (!pkKind[k] || (pkKind[k] < 3 && pkLife[k] < 120 && (frameCount & 4)) || sx < -8 || sx > SCREEN_W || sy < -8 || sy > SCREEN_H)
