@@ -112,7 +112,10 @@ void lightFrame(void)
         r1 = kind >= 2 ? (hasLantern ? 68 : 38) : (hasLantern ? 54 : 32);
         /* every 8 frames (or on a new map) look for the nearest light: lit braziers, then the map's
            torches, lamps and lit windows; in between it just follows the camera */
-        if (srcMap != curMap || !(frameCount & 7))
+        k = 0;
+        if (srcMap != curMap) k = 1;
+        if ((frameCount & 7) == 0) k = 1;
+        if (k)
         {
             srcMap = curMap;
             srcR = 0;
