@@ -759,6 +759,7 @@ static void pinDraw(void)
 }
 
 /* ---------- the photo album (web drawAlbum): every landmark, the ones you haven't taken as a ? ---------- */
+static void fadeTo(u8 in);
 static u16 albumMap[32 * 28];
 extern u8 photoGot[];
 u8 photoCount(void);
