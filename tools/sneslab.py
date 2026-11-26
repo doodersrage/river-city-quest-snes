@@ -85,7 +85,7 @@ class Lab:
         col = [int(wram[off + i]) for i in range(MAP_W * MAP_H)]
         w, h = self.ram('mapW'), self.ram('mapH')
         # doors and stairs (2, 3) count as walls for routing, so a route never wanders out of the map
-        walls = {1, 2, 3, 4, 5, 6, 7, 8, 9, 11} | (set() if self.ram('hasKayak') else {10})
+        walls = {1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12} | (set() if self.ram('hasKayak') else {10})
         grid = [[1 if (x >= w or y >= h or col[y * MAP_W + x] in walls) else 0
                  for x in range(MAP_W)] for y in range(MAP_H)]
         for k in range(self.ram('blkN')):
@@ -318,6 +318,12 @@ def leave(lab, d, close_box):
 
 
 def travel(lab, dest, close_box):
-    for d in route(lab, dest):
-        if not leave(lab, d, close_box):
-            raise RuntimeError(f'stuck leaving map {lab.map} {d}')
+    for tries in range(3):   # knocked off course (a door, an edge): plan again from wherever we are
+        if lab.map == dest: return
+        for d in route(lab, dest):
+            for attempt in range(3):   # people and traffic move: if every way out was blocked, wait and look again
+                if leave(lab, d, close_box): break
+                close_box(); lab.run(None, 90)
+            else:
+                raise RuntimeError(f'stuck leaving map {lab.map} {d}')
+    if lab.map != dest: raise RuntimeError(f'travel ended on map {lab.map}, not {dest}')

@@ -21,6 +21,7 @@ u8 enChal[MAX_EN]; /* spawned for a challenge */ /* 0 none, 1 coin, 2 heart, 3 h
 u8 pkId[MAX_PK];   /* for pickups placed in a room: their id, else 255 */
 s16 pkX[MAX_PK], pkY[MAX_PK];
 u16 pkLife[MAX_PK];
+u8 pkHop[MAX_PK]; /* frogs: frames to the next hop */
 
 u16 seed;
 extern u8 bugOn, bugCarry;
@@ -320,6 +321,11 @@ void collectPickup(u8 k)
 {
     u8 kind = pkKind[k];
     pkKind[k] = 0;
+    if (kind == PK_FROG)
+    {
+        gotFrog();
+        return;
+    }
     if (kind == PK_TOKEN || kind == PK_FLAG)
     {
         chalProgress(); /* a challenge token or the finish flag */
@@ -635,7 +641,7 @@ void combatUpdate(u16 pad, u16 pressed)
     for (k = 0; k < MAX_PK; k++)
         if (pkKind[k])
         {
-            if (pkKind[k] < 3 && !--pkLife[k])
+            if ((pkKind[k] < 3 || pkKind[k] == PK_FROG) && !--pkLife[k])
             {
                 pkKind[k] = 0;
                 continue;
@@ -704,8 +710,9 @@ void combatDraw(void)
             tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : pkKind[k] == 9 ? OBJ_I_KEY : pkKind[k] == 10 ? OBJ_I_CARKEY :
                    pkKind[k] == 11 ? OBJ_I_PIECE : pkKind[k] == 12 ? OBJ_I_BIB : pkKind[k] == 13 ? OBJ_I_BALL : pkKind[k] == 14 ? OBJ_I_OAR :
                    pkKind[k] == PK_TOKEN ? (chalTok[chalOn - 1] == 255 ? OBJ_I_BALL : townTile[chalTok[chalOn - 1]]) :
-                   pkKind[k] == PK_FLAG ? townTile[TOWN_FLAG + ((frameCount >> 3) & 1)] : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
-            sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, pkKind[k] == PK_TOKEN ? chalPal[chalOn - 1] : PAL_ITEM);
+                   pkKind[k] == PK_FLAG ? townTile[TOWN_FLAG + ((frameCount >> 3) & 1)] : pkKind[k] == PK_FROG ? OBJ_I_FROG : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
+            sprPut((id) >> 2, 1, (sx - 4), (sy - 4 - (pkKind[k] == PK_FROG && pkHop[k] > 0 && pkHop[k] < 6 ? 3 : 0)), 2, 0, tile,
+                   pkKind[k] == PK_TOKEN ? chalPal[chalOn - 1] : pkKind[k] == PK_FROG ? PAL_FROG : PAL_ITEM);
             continue;
         }
         tile = pkKind[k] == 1 ? HUD_COIN + ((frameCount >> 3) & 1) : HUD_HEART;

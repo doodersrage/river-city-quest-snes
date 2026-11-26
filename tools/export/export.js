@@ -166,6 +166,10 @@ const world = vm.runInContext(`(function(){
       {const keep=st;st=newState();st.got.bib=1;const n=Object.assign({},n0);let r=null;SAID=null;
         try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
         if(r&&st.items.shoes)quest.push({need:'bib',give:'shoes',pages:pages(r)});st=keep;}
+      // The frog count: the naturalist in Byrd Park, once you bring five frogs.
+      {const keep=st;st=newState();st.frogs=5;const n=Object.assign({},n0);let r=null;SAID=null;
+        try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
+        if(r&&st.f.frogsDone){const after=pages(TALK[n.talk](n));quest.push({need:'frogs',give:'maymont',pages:pages(r),after});}st=keep;}
       // The bateau: the river historian rebuilds it once you bring the oar, the pole and the tiller.
       {const keep=st;st=newState();st.got.oar=st.got.pole=st.got.tiller=1;const n=Object.assign({},n0);let r=null;SAID=null;
         try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
@@ -286,7 +290,7 @@ const bossArt = vm.runInContext(`(function(){
     x.drawImage(SPR.raven.r.c,X-12,Y-9);x.drawImage(WINGS[fl].r.c,X-12+4,Y-9+(fl?6:-3));return c;});
   // 16x16 icons: keg, hook, keystones (granite, iron, brick, bronze); explosion 32x32 x2
   const icon=(img)=>{const c=mkCanvas(16,16),x=c.getContext('2d');x.drawImage(img,Math.floor((16-img.width)/2),Math.floor((16-img.height)/2));return c;};
-  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key),icon(IC.carkey),icon(IC.piece),icon(IC.can),icon(IC.ball),icon(IC.shoes),icon(IC.bike),icon(IC.bottle),icon(IC.bib),icon(IC.oar)];
+  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key),icon(IC.carkey),icon(IC.piece),icon(IC.can),icon(IC.ball),icon(IC.shoes),icon(IC.bike),icon(IC.bottle),icon(IC.bib),icon(IC.oar),icon(IC.rod),icon(IC.frog)];
   // the bike under the hero (web drawBike), side and front, the hero's feet at (8,6)
   out.bikes=[1,0].map(dir=>{const c=mkCanvas(16,16),old=g,op=p,os=st.riding;g=c.getContext('2d');p={x:8,y:6,dir};st.riding=true;frame=0;
     try{drawBike();}catch(e){}g=old;p=op;st.riding=os;return c;});
@@ -349,6 +353,10 @@ const bossArt = vm.runInContext(`(function(){
   // pinball: a lit bumper (radius 9, 10, 7) to lay over the dark one when it's hit
   out.pinlit=(()=>{const c=mkCanvas(96,32),old=g;g=c.getContext('2d');[9,10,7].forEach((r,i)=>{const x=i*32+16,y=16;
     g.fillStyle='#fff2a8';g.beginPath();g.arc(x,y,r,0,6.283);g.fill();g.fillStyle='#ffffff';g.beginPath();g.arc(x-2,y-2,r/2.5,0,6.283);g.fill();});g=old;return c;})();
+  // stage 10, part 3: landmark cards, fish, which places are on the James (for sturgeon)
+  out.cards=CARDS.map(c=>({id:c.id,name:c.name,fact:c.fact,src:c.src}));out.pack=PACK;out.bosscard=BOSSCARD;
+  out.fish=FISH.map(f=>({id:f.id,name:f.name,str:f.str,coins:f.coins,txt:f.txt}));
+  out.river=Object.keys(SC).filter(id=>{const o=cur;cur=SC[id];let r=false;try{r=!!riverHere();}catch(e){}cur=o;return r;});
   out.chal=Object.entries(CHAL).map(([id,d])=>({id,name:d.name,type:d.type,time:d.time||0,ic:d.ic||null,foe:d.foe||null,n:d.n||0,needs:d.needs||null,intro:d.intro}));
   out.lore=LORE.map(([id,t,s])=>{const sn=s.split('. ')[0];return {id,title:t,quote:sn.length>95?sn.slice(0,92)+'...':sn+'.'};});
   out.keynames=KEYNAME;
@@ -406,5 +414,5 @@ const bossArt = vm.runInContext(`(function(){
   R2(80 + 3, 3, 2, 2, '#ffffff'); R2(80 + 2, 4, 1, 1, '#e8eeff'); R2(80 + 5, 3, 1, 1, '#e8eeff');
   fs.writeFileSync(path.join(OUT, 'combat', 'small.png'), sm.toBuffer('image/png'));
   const intro = vm.runInContext("(function(){try{return Object.entries(BANNERS||{})}catch(e){return null}})()", sb);
-  fs.writeFileSync(path.join(OUT, 'combat', 'boss.json'), JSON.stringify({ text: bossArt.text, keynames: bossArt.keynames, chal: bossArt.chal, lore: bossArt.lore }, null, 1));
+  fs.writeFileSync(path.join(OUT, 'combat', 'boss.json'), JSON.stringify({ text: bossArt.text, keynames: bossArt.keynames, chal: bossArt.chal, lore: bossArt.lore, cards: bossArt.cards, pack: bossArt.pack, bosscard: bossArt.bosscard, fish: bossArt.fish, river: bossArt.river }, null, 1));
 }

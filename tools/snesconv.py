@@ -262,7 +262,7 @@ def light_tables(maps):
 
 LIT_AREAS = {'bank', 'byrd', 'capitol', 'vmfa', 'taproom', 'tearoom', 'hippo', 'stjohn', 'shop', 'rowhouse', 'station',
              'mansion', 'boathouse', 'studio'}   # web maps with lit:true (the Conservatory is lit but plays the dungeon song)
-TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4, 'bib': 5, 'shoes': 6, 'parts': 7, 'bateau': 8}
+TRADE = {'none': 0, 'melon': 1, 'music': 2, 'rivermap': 3, 'kayak': 4, 'bib': 5, 'shoes': 6, 'parts': 7, 'bateau': 8, 'frogs': 9, 'maymont': 10}
 
 
 def build_world(w, extra_texts=()):
@@ -496,6 +496,13 @@ def convert_combat(exp):
     for i, t in enumerate(hud_tiles):
         sheet[OBJ_HUD - 128 + i] = tile4bpp([ix(p) for r in t for p in r])
     sheet[OBJ_HUD - 128 + 26] = tile4bpp([ix(p) for r in slash for p in r])
+    # the fishing bobber (web drawBobber: 5x5, red over white), OBJ_HUD + 27
+    K, Rd, Wh = (0x1a, 0x14, 0x23, 255), (0xe8, 0x30, 0x48, 255), (255, 255, 255, 255)
+    bob = [[(0, 0, 0, 0)] * 8 for _ in range(8)]
+    for y in range(5):
+        for x in range(5): bob[y][x] = K
+    for x in range(1, 4): bob[1][x] = Rd; bob[2][x] = Rd; bob[3][x] = Wh
+    sheet[OBJ_HUD - 128 + 27] = tile4bpp([nearest(c15(p), p7) + 1 if p[3] else 0 for r in bob for p in r])
     # spark shot x2, hook head, chain link (nearest palette-7 colours)
     sm = Image.open(os.path.join(d, 'small.png')).convert('RGBA')
     for i in range(11):
@@ -513,7 +520,7 @@ def convert_combat(exp):
     pals += sprite_palette(p7x)
     global TOWN_PAL
     TOWN_PAL = p7x
-    items_chr, item_defs = convert_items(exp, p7x)
+    items_chr, item_defs = convert_items(exp, p7x, epals)
     open(os.path.join(exp, '..', 'items.chr'), 'wb').write(items_chr)
     tables = ['/* Combat tables (generated). */',
               f'#define OBJ_ENEMY {OBJ_ENEMY}', f'#define OBJ_PADDLE {OBJ_PADDLE}', f'#define OBJ_HUD {OBJ_HUD}',
@@ -521,7 +528,7 @@ def convert_combat(exp):
               f'#define HUD_EMPTY {OBJ_HUD + HUD_EMPTY}', f'#define HUD_COIN {OBJ_HUD + HUD_COIN}',
               f'#define HUD_DIGIT {OBJ_HUD + HUD_DIGIT}', '#define PAL_HUD 7',
               f'#define OBJ_SPARK {OBJ_HUD + 15}', f'#define OBJ_HOOK {OBJ_HUD + 17}', f'#define OBJ_CHAIN {OBJ_HUD + 18}',
-              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}', f'#define OBJ_RING {OBJ_HUD + 22}', f'#define OBJ_SEED {OBJ_HUD + 23}', f'#define OBJ_RAIN {OBJ_HUD + 24}', f'#define OBJ_SNOW {OBJ_HUD + 25}', f'#define HUD_SLASH {OBJ_HUD + 26}',
+              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}', f'#define OBJ_RING {OBJ_HUD + 22}', f'#define OBJ_SEED {OBJ_HUD + 23}', f'#define OBJ_RAIN {OBJ_HUD + 24}', f'#define OBJ_SNOW {OBJ_HUD + 25}', f'#define HUD_SLASH {OBJ_HUD + 26}', f'#define HUD_BOBBER {OBJ_HUD + 27}',
               f'#define ENEMY_TYPES {len(ENEMY_TYPES)}',
               '/* ' + ' '.join(f'{i}={t}' for i, t in enumerate(ENEMY_TYPES)) + ' */',
               f'static const u8 enemyHp[{len(ENEMY_TYPES)}] = {{{", ".join(map(str, ENEMY_HP))}}};',
@@ -552,7 +559,7 @@ def convert_combat(exp):
 # loaded in its room; only its non-empty cells take space.
 ITEM_CELLS = {'keg': 0, 'hook': 1, 'granite': 2, 'iron': 3, 'brick': 4, 'bronze': 5, 'container': 6, 'lantern': 7,
               'boom': 8, 'bug': 16, 'key': 17, 'carkey': 18, 'piece': 19, 'block': 20, 'can': 21,
-              'ball': 22, 'shoes': 23, 'bike': 24, 'bottle': 25, 'bib': 26, 'bikeside': 27, 'bikefront': 28, 'oar': 29}
+              'ball': 22, 'shoes': 23, 'bike': 24, 'bottle': 25, 'bib': 26, 'bikeside': 27, 'bikefront': 28, 'oar': 29, 'rod': 30, 'frog': 31}
 ITEM_SHEET_CELLS = 30
 BOSS_FIRST_CELL = 32   # row 4 of the second table (tile 128): bosses and town art load here
 BOSSES = ['foreman', 'turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']          # boss type 1, 2, ...
@@ -563,10 +570,10 @@ def item_palette(p7):
     return p7 + [hexc('#6c6e7a'), hexc('#a3a6ad'), hexc('#4d5f7a')][:15 - len(p7)]
 
 
-def convert_items(exp, pal):
+def convert_items(exp, pal, epals=()):
     d = os.path.join(exp, 'combat')
     sheet = [bytes(32)] * ((ITEM_SHEET_CELLS + 7) // 8 * 32)   # whole rows of 8 cells; the boss loads over the rest later
-    def put(cell, im, x0, y0):
+    def put(cell, im, x0, y0, pal=pal):
         t = obj_tile_of_frame(0, cell)
         for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
             idx = []
@@ -576,8 +583,15 @@ def convert_items(exp, pal):
                     idx.append(nearest(c15(p_), pal) + 1 if p_[3] > 96 else 0)
             sheet[t + qy * 16 + qx] = tile4bpp(idx)
     icons = Image.open(os.path.join(d, 'icons.png')).convert('RGBA')
-    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern', 'bug', 'key', 'carkey', 'piece', 'can', 'ball', 'shoes', 'bike', 'bottle', 'bib', 'oar']):
-        put(ITEM_CELLS[name], icons, i * 16, 0)
+    frog_pal = 7
+    for i, name in enumerate(['keg', 'hook', 'granite', 'iron', 'brick', 'bronze', 'lantern', 'bug', 'key', 'carkey', 'piece', 'can', 'ball', 'shoes', 'bike', 'bottle', 'bib', 'oar', 'rod', 'frog']):
+        if name == 'frog' and epals:
+            # palette 7 has no greens: the frog takes whichever enemy palette (5 or 6) suits it best
+            px_ = [c15(q) for q in icons.crop((i * 16, 0, i * 16 + 16, 16)).getdata() if q[3] > 96]
+            best = min(range(len(epals)), key=lambda k: sum(dist(c, epals[k][nearest(c, epals[k])]) for c in px_))
+            put(ITEM_CELLS[name], icons, i * 16, 0, epals[best]); frog_pal = 5 + best
+        else:
+            put(ITEM_CELLS[name], icons, i * 16, 0)
     # the push block has its own palette (sprite palette 3, free in dungeon rooms)
     blk = Image.open(os.path.join(d, 'block.png')).convert('RGBA')
     bpal = sorted({c15(p_) for p_ in blk.getdata() if p_[3]})
@@ -594,7 +608,7 @@ def convert_items(exp, pal):
     for f in range(2):
         for k in range(4):
             put(ITEM_CELLS['boom'] + f * 4 + k, boom, f * 32 + (k % 2) * 16, (k // 2) * 16)
-    defs = [f'#define OBJ_I_{n.upper()} {256 + obj_tile_of_frame(0, c)}' for n, c in ITEM_CELLS.items()]
+    defs = [f'#define OBJ_I_{n.upper()} {256 + obj_tile_of_frame(0, c)}' for n, c in ITEM_CELLS.items()] + [f'#define PAL_FROG {frog_pal}']
     defs.append('#define OBJ_I_KEYSTONE OBJ_I_GRANITE  /* +2 per keystone: granite, iron, brick, bronze */')
     return b''.join(sheet), defs
 
@@ -889,7 +903,7 @@ def convert_shops(extra):
             msg = it['msg']
             if it['name'] == 'Heart Charm': msg = 'A heart charm! Your hearts grew by one.'
             if it['name'] == 'Landmark Card Pack': msg = 'You got a landmark card!'
-            effect = {'Heart Charm': EFFECT_HEART, 'Big Satchel': EFFECT_SATCHEL}.get(it['name'], EFFECT_NONE)
+            effect = {'Heart Charm': EFFECT_HEART, 'Big Satchel': EFFECT_SATCHEL, 'Fishing Rod': 6, 'Landmark Card Pack': 7}.get(it['name'], EFFECT_NONE)
             if kind == NEEDS: effect = needs[it['name']][1]
             if not msg: msg = {EFFECT_BALLS: 'Ten baseballs.', EFFECT_KEGS: 'Four powder kegs.', EFFECT_GINGER: 'Your bottle is full of ginger beer.',
                                EFFECT_SATCHEL: 'A big satchel. You can carry more baseballs and kegs now.'}.get(effect, '')
@@ -901,13 +915,13 @@ def convert_shops(extra):
                      bytes((min(255, it['price']), kind, req, effect, mo & 0xFF, mo >> 8)))
     defs = [f'#define SHOP_HEAD {SHOP_HEAD}', f'#define SHOP_ITEM {SHOP_ITEM}', f'#define SHOP_NAME {SHOP_NAME}',
             f'#define SHOP_LOCK {SHOP_LOCK}', '#define SHOP_ONCE 0', '#define SHOP_REPEAT 1', '#define SHOP_LOCKED 2', '#define SHOP_NEEDS 3',
-            '#define EFFECT_HEART 1', '#define EFFECT_BALLS 2', '#define EFFECT_KEGS 3', '#define EFFECT_GINGER 4', '#define EFFECT_SATCHEL 5', f'#define SHOP_OFS_SHOP {offsets["shop"]}', f'#define SHOP_OFS_MARKET {offsets["market"]}',
+            '#define EFFECT_HEART 1', '#define EFFECT_BALLS 2', '#define EFFECT_KEGS 3', '#define EFFECT_GINGER 4', '#define EFFECT_SATCHEL 5', '#define EFFECT_ROD 6', '#define EFFECT_CARD 7', f'#define SHOP_OFS_SHOP {offsets["shop"]}', f'#define SHOP_OFS_MARKET {offsets["market"]}',
             f'#define SHOP_MSGS {len(blob)}', '#define MAX_SHOP_ITEMS 16']
     return bytes(blob + msgs), defs
 
 
 DOOR_OPEN, DOOR_KEYSTONES, DOOR_CARKEY, DOOR_LATER = 0, 1, 2, 3
-CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT, CELL_COUNTER, CELL_BUSH, CELL_POST, CELL_LOW, CELL_LOCK, CELL_BRAZIER, CELL_RIVER, CELL_SPROUT = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+CELL_OPEN, CELL_SOLID, CELL_DOOR, CELL_EXIT, CELL_COUNTER, CELL_BUSH, CELL_POST, CELL_LOW, CELL_LOCK, CELL_BRAZIER, CELL_RIVER, CELL_SPROUT, CELL_WATER = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
 
 
 def main():
@@ -967,7 +981,7 @@ def main():
         chr_, tm, pal, nt, npal, open_entries = convert_bg(os.path.join(exp, m['file']), extra_tiles)
         def cell(ch):
             return CELL_BRAZIER if ch in 'jJ' else CELL_BUSH if ch == 'b' else CELL_COUNTER if ch == 'V' else CELL_POST if ch == '+' else \
-                CELL_LOCK if ch == 'L' else CELL_SPROUT if ch == 'z' else CELL_RIVER if ch == '~' else CELL_LOW if ch in '_w' and ch in solid else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
+                CELL_LOCK if ch == 'L' else CELL_SPROUT if ch == 'z' else CELL_RIVER if ch == '~' else CELL_WATER if ch == 'w' and ch in solid else CELL_LOW if ch == '_' and ch in solid else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
         col = bytearray(32 * 22)
         for y, row in enumerate(m['grid']):
             for x, ch in enumerate(row):
@@ -1075,6 +1089,9 @@ def main():
             'hero_pal:', '.incbin "data/hero.pal"', 'hero_palend:', '.ends', '']
     boss_json = json.load(open(os.path.join(exp, 'combat', 'boss.json')))
     boss_text = dict(boss_json['text'], keynames=boss_json['keynames'])
+    cards = boss_json['cards']; card_ids = [c['id'] for c in cards]
+    for b, cid in boss_json['bosscard'].items():   # web: a boss's last words, then its landmark card
+        boss_text[b] = boss_text[b] + ['You found a landmark card: ' + cards[card_ids.index(cid)]['name'] + '!']
     # System texts, from the web game's hurt() and the swing tutorial.
     sys_texts = [('DEAD', '', ['The fog takes you...', 'You wake by the fountain in Capitol Square.']),
                  # door bounces, from the web game
@@ -1156,6 +1173,22 @@ def main():
     lore = boss_json['lore']
     for k, l in enumerate(lore):
         sys_texts.append((f'LORE{k}', 'Tour Guide', ['Which journal story is this from?', '"' + l['quote'] + '"']))
+    # stage 10, part 3: landmark cards, fishing, frogs (web systems.js awardCard, FISH, fishUpdate, frogTick)
+    for k, c in enumerate(cards):
+        sys_texts.append((f'CARD{k}', c['name'], [c['fact'], 'From ' + c['src'] + '.']))
+        sys_texts.append((f'CARDGOT{k}', 'Landmark Card Pack', [f"You got the {c['name']} card!"]))
+    sys_texts.append(('CARDNONE', 'Landmark Cards', ["Not found yet."]))
+    for k, f in enumerate(boss_json['fish']):
+        a = 'an ' if f['name'][0] in 'aeiouAEIOU' else 'a '
+        L = [f"You caught {a}{f['name']}!", f"{f['txt']} (+{f['coins']} coins)"]
+        sys_texts.append((f'FISH{k}', 'Fishing', L))
+        if f['id'] == 'sturgeon': sys_texts.append(('FISHCARD', 'Fishing', L + ['You earned the Atlantic Sturgeon card!']))
+    sys_texts += [('FISHEARLY', 'Fishing', ['Too early! Nothing on the hook.']), ('FISHSTOLE', 'Fishing', ['It stole the bait and swam off.']),
+                  ('FISHSNAP', 'Fishing', ['Snap! The line broke.']), ('FISHAWAY', 'Fishing', ['It got away.']),
+                  ('FISHREEL', 'Fishing', ['You reel in your line.']), ('FISHFACE', '', ['Face open water to cast.']),
+                  ('FISHBUSY', '', ['Too much commotion to fish.'])]
+    for n in range(1, 6):
+        sys_texts.append((f'FROG{n}', 'Frog', ['Five frogs! Take them to the naturalist in Byrd Park.' if n == 5 else f'Caught a frog! ({n}/5)']))
     blob, defs = b'', []
     for k, part in enumerate(['oar', 'pole', 'tiller']):
         gid = [g for key, g in pickup_gid.items() if key.endswith(':' + part)]
@@ -1166,6 +1199,21 @@ def main():
     open(os.path.join(out, 'sys.txt'), 'wb').write(blob)
     if len(blob) > 0x8000: raise SystemExit(f'sys.txt is {len(blob)} bytes, over one bank')
     J = lambda a: ', '.join(map(str, a))
+    fish = boss_json['fish']
+    river = set(boss_json['river'])
+    defs += [f'#define CARD_COUNT {len(cards)}',
+             f'static const u16 cardTxt[{len(cards)}] = {{{J(f"TXT_CARD{k}" for k in range(len(cards)))}}};',
+             f'static const u16 cardGotTxt[{len(cards)}] = {{{J(f"TXT_CARDGOT{k}" for k in range(len(cards)))}}};',
+             'static const char *const cardName[%d] = {%s};' % (len(cards), ', '.join('"%s"' % (ascii_text(c['name']) if len(c['name']) <= 26 else ascii_text(c['name'])[:24] + '..').replace('"', "'") for c in cards)),
+             f'static const u8 packCard[{len(boss_json["pack"])}] = {{{J(card_ids.index(c) for c in boss_json["pack"])}}};  /* the shop\'s card packs */',
+             f'#define PACK_COUNT {len(boss_json["pack"])}',
+             f'static const u8 bossCard[8] = {{{J([255] + [card_ids.index(boss_json["bosscard"][b]) if b in boss_json["bosscard"] else 255 for b in BOSSES])}}};  /* by boss type */',
+             f'#define CARD_STURGEON {card_ids.index("sturgeon")}', f'#define CARD_MAYMONT {card_ids.index("maymont")}',
+             f'#define FISH_COUNT {len(fish)}',
+             f'static const u8 fishStr[{len(fish)}] = {{{J(round(f["str"] * 10) for f in fish)}}};  /* x10 */',
+             f'static const u8 fishCoins[{len(fish)}] = {{{J(f["coins"] for f in fish)}}};',
+             f'static const u16 fishTxt[{len(fish)}] = {{{J(f"TXT_FISH{k}" for k in range(len(fish)))}}};',
+             f'static const u8 mapRiver[MAP_COUNT] = {{{J(1 if m["id"] in river else 0 for m in maps)}}};  /* sturgeon swim here */']
     TYPES = {'collect': 1, 'race': 2, 'defeat': 3, 'light': 4, 'tag': 5, 'quiz': 6}
     cxy, coff = [], []
     for cid in CHAL_IDS:
@@ -1249,7 +1297,7 @@ def main():
     open(os.path.join(out, 'shops.bin'), 'wb').write(shops)
     asm += ['.section ".shops" superfree', 'shops_bin:', '.incbin "data/shops.bin"', '.ends', '']
     hdr += ['extern char shops_bin;'] + shop_defs + [f'#define CHEST_COUNT {len(chest_gid)}',
-            '#define CELL_OPEN 0', '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4', '#define CELL_BUSH 5', '#define CELL_POST 6', '#define CELL_LOW 7', '#define CELL_LOCK 8', '#define CELL_BRAZIER 9', '#define CELL_RIVER 10', '#define CELL_SPROUT 11',
+            '#define CELL_OPEN 0', '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4', '#define CELL_BUSH 5', '#define CELL_POST 6', '#define CELL_LOW 7', '#define CELL_LOCK 8', '#define CELL_BRAZIER 9', '#define CELL_RIVER 10', '#define CELL_SPROUT 11', '#define CELL_WATER 12',
             '#define DOOR_OPEN 0', '#define DOOR_KEYSTONES 1', '#define DOOR_CARKEY 2', '#define DOOR_LATER 3', '']
     bblobs, bpals, bdefs = convert_bosses(exp)
     for i, (bb, bp) in enumerate(zip(bblobs, bpals)):
@@ -1260,7 +1308,7 @@ def main():
         hdr.append(f'extern char boss{i + 1}_chr, boss{i + 1}_chrend, boss{i + 1}_pal;')
     hdr += bdefs + ['#define PAL_BOSS 1', '#define PAL_ITEM 7',
             f'#define AREA_COUNT {len(dungeon_areas) + 1}', f'#define LINK_COUNT {max(1, len(link_flag))}',
-            '#define ITEM_HOOK 1', '#define ITEM_POWDER 2', '#define ITEM_LANTERN 3', '#define ITEM_SHIELD 4', '#define ITEM_BUG 5', '#define ITEM_CAN 6', '#define ITEM_BALLS 7', '#define ITEM_SHOES 8', '#define ITEM_BIKE 9', '#define ITEM_BOTTLE 10',
+            '#define ITEM_HOOK 1', '#define ITEM_POWDER 2', '#define ITEM_LANTERN 3', '#define ITEM_SHIELD 4', '#define ITEM_BUG 5', '#define ITEM_CAN 6', '#define ITEM_BALLS 7', '#define ITEM_SHOES 8', '#define ITEM_BIKE 9', '#define ITEM_BOTTLE 10', '#define ITEM_ROD 11',
             '#define EFFECT_KEY 3', '#define EFFECT_ITEM 4', '#define EFFECT_PIECE 5', f'#define PICKUP_COUNT {max(1, len(pickup_gid))}',
             '#define PAL_BLOCK 3', '']
     cobj, cpal, ctables = convert_combat(exp)

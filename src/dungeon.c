@@ -111,6 +111,7 @@ void dungeonInit(void)
     miniOn = 0; /* WRAM isn't cleared at power-on */
     for (i = 0; i < 8; i++) miniBest[i] = 0;
     chalReset();
+    fishReset();
     pins = 0;
     goldPaddle = 0;
     for (i = 0; i < (LORE_COUNT + 7) / 8; i++) loreRead[i] = 0;
@@ -460,6 +461,7 @@ void bossDefeated(void)
     if (roomReward && !(keystones & (1 << (roomReward - 1))))
         dropKind(112, 80, 4 + roomReward); /* the keystone (kinds 5-8) */
     applyRoomState(0);
+    if (bossCard[bossType] != 255) cards |= 1 << bossCard[bossType]; /* its landmark card (the text says so) */
     openTextAt((u8 *)&sys_txt + bossOutTxt[bossType]);
 }
 
@@ -1254,6 +1256,7 @@ void useItem(void)
     else if (eqItem == ITEM_LANTERN) useLantern();
     else if (eqItem == ITEM_BUG) throwBug();
     else if (eqItem == ITEM_CAN) useCan();
+    else if (eqItem == ITEM_ROD) fishCast();
     else useGear();
 }
 
@@ -1269,6 +1272,7 @@ u8 hasItem(u8 item)
     if (item == ITEM_SHOES) return hasShoes;
     if (item == ITEM_BIKE) return hasBike;
     if (item == ITEM_BOTTLE) return hasBottle;
+    if (item == ITEM_ROD) return hasRod;
     return 0;
 }
 
@@ -1276,9 +1280,9 @@ u8 hasItem(u8 item)
 void nextItem(void)
 {
     u8 i, it = eqItem;
-    for (i = 0; i < ITEM_BOTTLE; i++)
+    for (i = 0; i < ITEM_ROD; i++)
     {
-        it = it >= ITEM_BOTTLE ? ITEM_HOOK : it + 1;
+        it = it >= ITEM_ROD ? ITEM_HOOK : it + 1;
         if (it != ITEM_SHIELD && hasItem(it))
         {
             eqItem = it;
@@ -1337,7 +1341,7 @@ void drawItemHud(void)
         sprHide(((OAM_BICON + 2) * 4) >> 2);
         return;
     }
-    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : eqItem == ITEM_BUG ? OBJ_I_BUG : eqItem == ITEM_CAN ? OBJ_I_CAN : eqItem == ITEM_BALLS ? OBJ_I_BALL : eqItem == ITEM_SHOES ? OBJ_I_SHOES : eqItem == ITEM_BIKE ? OBJ_I_BIKE : eqItem == ITEM_BOTTLE ? OBJ_I_BOTTLE : OBJ_I_KEG, PAL_ITEM);
+    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : eqItem == ITEM_BUG ? OBJ_I_BUG : eqItem == ITEM_CAN ? OBJ_I_CAN : eqItem == ITEM_BALLS ? OBJ_I_BALL : eqItem == ITEM_SHOES ? OBJ_I_SHOES : eqItem == ITEM_BIKE ? OBJ_I_BIKE : eqItem == ITEM_BOTTLE ? OBJ_I_BOTTLE : eqItem == ITEM_ROD ? OBJ_I_ROD : OBJ_I_KEG, PAL_ITEM);
     if (eqItem == ITEM_POWDER) hudCount(powder);
     else if (eqItem == ITEM_BALLS) hudCount(balls);
     else
