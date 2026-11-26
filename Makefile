@@ -7,6 +7,8 @@ export ROMNAME := RiverCityQuest
 export ROMTITLE := RIVER CITY QUEST
 export ROMBANKS := 64
 export ROMSIZE := 0B
+# FastROM: code and data in banks $80 and up run at 3.58 MHz instead of 2.68
+export FASTROM := 1
 
 # Music and sound effects (tools/mkaudio.py): the effects module must come first.
 AUDIOFILES := data/audio/effects.it data/audio/city.it data/audio/south.it data/audio/dungeon.it data/audio/boss.it \

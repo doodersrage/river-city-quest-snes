@@ -11,8 +11,8 @@
 #define WX_RAIN 1
 #define WX_FOG 2
 #define WX_SNOW 3
-#define DROPS 16
-#define OAM_WX 100 /* 16 */
+#define DROPS 12
+#define OAM_WX 100 /* 12 */
 
 u8 wx, wxNext, wxK; /* weather, the one coming, strength 0..255 */
 u16 wxT;
@@ -60,9 +60,11 @@ void weatherFrame(void)
             if (n != wx) wxNext = n;
         }
     }
-    /* falling rain and snow: screen-space drops that keep their place in the world as the camera moves */
-    n = outdoors && (wx == WX_RAIN || wx == WX_SNOW) ? (u8)((wxK >> 4) + 1) : 0;
+    /* falling rain and snow: screen-space drops that keep their place in the world as the camera
+       moves. Half of them move each frame, twice as far, to keep the frame rate. */
+    n = outdoors && (wx == WX_RAIN || wx == WX_SNOW) ? (u8)((wxK >> 5) + 4) : 0;
     if (n > DROPS) n = DROPS;
+    if (!n && !wxShown) return;
     dx = camX - wxCamX;
     dy = camY - wxCamY;
     wxCamX = camX;
@@ -74,22 +76,20 @@ void weatherFrame(void)
             if (wxShown) sprHide(OAM_WX + i);
             continue;
         }
+        dropX[i] -= dx;
+        dropY[i] -= dy;
+        if ((i & 1) != (frameCount & 1)) continue;
         if (wx == WX_RAIN)
         {
-            dropX[i] = dropX[i] - 2 - dx;
-            dropY[i] = dropY[i] + 6 - dy;
+            dropX[i] -= 4;
+            dropY[i] += 12;
         }
         else
         {
             /* snow drifts side to side and falls slowly */
-            if ((frameCount & 3) == 0)
-            {
-                if (((frameCount >> 5) + i) & 1) dropX[i]++;
-                else dropX[i]--;
-            }
-            dropX[i] -= dx;
-            if (frameCount & 1) dropY[i]++;
-            dropY[i] -= dy;
+            if (((frameCount >> 5) + i) & 2) dropX[i]++;
+            else dropX[i]--;
+            dropY[i] += 1;
         }
         if (dropY[i] > 224 || dropY[i] < 20)
         {
