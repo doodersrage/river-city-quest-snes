@@ -820,6 +820,8 @@ for idx, what in ((9, 'Ginger Beer'), (10, '10 Baseballs'), (7, 'Big Satchel')):
 lab.press('B', 10)
 check(lab.ram('bottleFull') and lab.ram('balls') == 15 and lab.ram('capBalls') == 50 and lab.ram('capPowder') == 16,
       'Carytown Goods refills the bottle, sells baseballs and the Big Satchel')
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+check(lab.map == N('Carytown'), 'back out to Carytown')
 
 # Stage 3: let an enemy take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)
