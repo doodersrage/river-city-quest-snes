@@ -402,7 +402,7 @@ u8 bossHit(u8 dmg, u8 src)
     }
     /* the Foreman only takes hits once the hook rips his plate off; Old Snapper takes bombs any
        time, and the paddle once he's stunned himself charging into a wall */
-    if (bossState != B_STUN && !(bossType == BOSS_TURTLE && src == 1)) return 2;
+    if (bossType != BOSS_RAVEN && bossState != B_STUN && !(bossType == BOSS_TURTLE && src == SRC_BOMB)) return 2;
     bossFlash = 16;
     if (bossHp <= dmg)
     {
