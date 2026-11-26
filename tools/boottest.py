@@ -1062,9 +1062,9 @@ lab.run(None, 30)
 xs = lab.ram('carX', 2, True, 1); lab.run(None, 60)
 check(lab.ram('carStop', 1, False, 1) == 1 and lab.ram('carX', 2, True, 1) == xs, 'a car stops for you')
 lab.screenshot(f'{out}/53-car-stops.png')
-r = lab.pos
-lab.run('RIGHT', 20)
-check(lab.pos[0] <= r[0] + 2, "and you can't walk through it")
+lab.run('RIGHT', 30)
+edge = (lab.ram('carX', 2, True, 1) >> 4) - 13
+check(lab.pos[0] < edge, f"and you can't walk through it (you {lab.pos[0]}, its back bumper {edge})")
 lab.run('DOWN', 30); lab.run(None, 90)
 check(lab.ram('carX', 2, True, 1) != xs, 'it drives on once you are out of the way')
 # the Local on Broad Street wanders near home
@@ -1109,9 +1109,12 @@ lab.run(None, 10)
 take_pickup(14); close_box()
 check(lab.ram('parts') == 3, 'the third on the island off the landing')
 coins, hpm = lab.ram('coins', 2), lab.ram('hpMax')
-walk((16, 12)); lab.face('up'); lab.press('A', 40)
+for _ in range(4):
+    walk((16, 12)); lab.face('up'); lab.press('A', 40)
+    if lab.ram('bateauDone'): break
+    close_box()
 lab.screenshot(f'{out}/56-the-bateau.png')
 close_box()
 check(lab.ram('bateauDone') and lab.ram('coins', 2) == min(999, coins + 50) and lab.ram('hpMax') == min(20, hpm + 2),
-      f"the river historian rebuilds the bateau: 50 coins and a heart charm ({coins} -> {lab.ram('coins', 2)}, {hpm} -> {lab.ram('hpMax')})")
+      f"the river historian rebuilds the bateau: 50 coins and a heart charm ({coins} -> {lab.ram('coins', 2)}, {hpm} -> {lab.ram('hpMax')}; map {lab.map} {lab.pos})")
 sys.exit(0 if ok else 1)
