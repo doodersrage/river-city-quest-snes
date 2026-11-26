@@ -79,5 +79,9 @@ void rcqLoadMap(u8 i)
     case 68: rcqUpload(&m68_chr, &m68_chrend - &m68_chr, &m68_map, &m68_pal, &m68_col, &m68_wld, &m68_och, &m68_opl, &m68_ene, &m68_xtr); break;
     case 69: rcqUpload(&m69_chr, &m69_chrend - &m69_chr, &m69_map, &m69_pal, &m69_col, &m69_wld, &m69_och, &m69_opl, &m69_ene, &m69_xtr); break;
     case 70: rcqUpload(&m70_chr, &m70_chrend - &m70_chr, &m70_map, &m70_pal, &m70_col, &m70_wld, &m70_och, &m70_opl, &m70_ene, &m70_xtr); break;
+    case 71: rcqUpload(&m71_chr, &m71_chrend - &m71_chr, &m71_map, &m71_pal, &m71_col, &m71_wld, &m71_och, &m71_opl, &m71_ene, &m71_xtr); break;
+    case 72: rcqUpload(&m72_chr, &m72_chrend - &m72_chr, &m72_map, &m72_pal, &m72_col, &m72_wld, &m72_och, &m72_opl, &m72_ene, &m72_xtr); break;
+    case 73: rcqUpload(&m73_chr, &m73_chrend - &m73_chr, &m73_map, &m73_pal, &m73_col, &m73_wld, &m73_och, &m73_opl, &m73_ene, &m73_xtr); break;
+    case 74: rcqUpload(&m74_chr, &m74_chrend - &m74_chr, &m74_map, &m74_pal, &m74_col, &m74_wld, &m74_och, &m74_opl, &m74_ene, &m74_xtr); break;
     }
 }

@@ -18,7 +18,7 @@ u8 roomBraz[MAP_COUNT]; /* lit braziers, a bit each */
 u8 roomFlags[MAP_COUNT]; /* ROOM_* bits */
 u8 linkOpen[(LINK_COUNT + 7) / 8];
 u8 keys[AREA_COUNT];
-u8 hasHook, hasPowder, hasLantern, hasShield, hasBug, powder, eqItem;
+u8 hasHook, hasPowder, hasLantern, hasShield, hasBug, hasCan, powder, eqItem;
 u8 *pickPtr;   /* count, then pickups lying in the room: x, y (2 bytes each), kind, id */
 u8 *blkPtr;    /* count, then push blocks (tx, ty); then count, then switches (tx, ty) */
 u8 hasCarkey, pieces, hasKayak, tradeItem, melonTaken;
@@ -71,12 +71,14 @@ const u16 *bossTiles;
 #define BOSS_WRAITH 3
 #define BOSS_RAVEN 4
 #define BOSS_BELL 5
+#define BOSS_ARUM 6
 #define B_DROP 4
 #define B_RISE 5
 #define SRC_PADDLE 0
 #define SRC_BOMB 1
 #define SRC_REFL 2
 #define T_GHOST 6
+#define T_RAT 0
 
 extern const s8 dirX[4], dirY[4];
 
@@ -91,6 +93,7 @@ void dungeonInit(void)
     hasLantern = 0;
     hasShield = 0;
     hasBug = 0;
+    hasCan = 0;
     hasCarkey = 0;
     pieces = 0;
     hasKayak = 0;
@@ -374,6 +377,13 @@ void bossLoad(void)
         bossY = (4 * 16 + 8) * 16;
         bossZ = 40;
     }
+    else if (bossType == BOSS_ARUM)
+    {
+        bossTiles = boss6Tile;
+        bossHp = 8;
+        bossX = (8 * 16 + 8) * 16;
+        bossY = (3 * 16 + 8) * 16;
+    }
     else
     {
         bossTiles = boss1Tile;
@@ -396,6 +406,7 @@ void bossDefeated(void)
     bossOn = 0;
     roomFlags[curMap] |= ROOM_BOSS | ROOM_CLEARED;
     for (i = 0; i < MAX_SHOT; i++) shotOn[i] = 0;
+    for (i = 0; i < enCount; i++) enAlive[i] = 0;
     if (!(roomFlags[curMap] & ROOM_CONTAINER))
         dropKind(144, 80, 3); /* the heart container */
     if (roomReward && !(keystones & (1 << (roomReward - 1))))
@@ -557,6 +568,28 @@ void updBell(s16 dx, s16 dy, s16 d)
     if (bossT % 140 == 139) bossState = B_DROP;
 }
 
+/* The Titan Arum (web updArum): rooted in place, spits a fan of seeds and sprouts rats.
+   Watered, it blooms (B_STUN) and can be hit until it closes again. */
+void updArum(s16 dx, s16 dy, s16 d)
+{
+    s16 vx = dx * 22 / d, vy = dy * 22 / d;
+    bossT++;
+    if (bossT % 70 == 35)
+    {
+        shoot(bossX, bossY, vx, vy, 4);
+        /* +-0.32 rad (cos 61/64, sin 20/64), and +-0.64 rad (51/64, 38/64) once it's hurt */
+        shoot(bossX, bossY, (vx * 61 - vy * 20) / 64, (vx * 20 + vy * 61) / 64, 4);
+        shoot(bossX, bossY, (vx * 61 + vy * 20) / 64, (vy * 61 - vx * 20) / 64, 4);
+        if (bossHp <= 4)
+        {
+            shoot(bossX, bossY, (vx * 51 - vy * 38) / 64, (vx * 38 + vy * 51) / 64, 4);
+            shoot(bossX, bossY, (vx * 51 + vy * 38) / 64, (vy * 51 - vx * 38) / 64, 4);
+        }
+    }
+    if (bossT % 260 == 200 && enemyCount(T_RAT) < 2)
+        spawnEnemy(T_RAT, (bossX >> 4) + ((bossT & 256) ? 30 : -30), (bossY >> 4) + 20);
+}
+
 /* The Raven (web updEnemy 'raven'): hangs above you, throws a feather, then dives. */
 void updRaven(s16 dx, s16 dy, s16 d)
 {
@@ -648,6 +681,11 @@ void updBoss(void)
     if (bossType == BOSS_TURTLE) updTurtle(dx, dy);
     else if (bossType == BOSS_WRAITH) updWraith(dx, dy, d);
     else if (bossType == BOSS_RAVEN) updRaven(dx, dy, d);
+    else if (bossType == BOSS_ARUM)
+    {
+        updArum(dx, dy, d);
+        return; /* rooted: it never touches you */
+    }
     else if (bossType == BOSS_BELL)
     {
         updBell(dx, dy, d);
@@ -680,6 +718,8 @@ void drawBoss(void)
             f = (frameCount >> 3) & 1;
         else if (bossType == BOSS_BELL)
             f = bossState == B_STUN ? 1 : 0;
+        else if (bossType == BOSS_ARUM)
+            f = bossState == B_STUN ? 2 : (frameCount >> 5) & 1;
         else if (bossType == BOSS_TURTLE)
             f = bossState == B_STUN ? 2 + ((frameCount >> 2) & 1) : (frameCount >> (bossState == B_CHARGE ? 1 : 3)) & 1;
         else
@@ -1019,6 +1059,42 @@ void drawBug(void)
 /* ---------- items on B ---------- */
 
 /* The Gas Lantern lights a cold brazier in front of you (web useItem 'lantern', lightAt). */
+/* The Watering Can (web useItem 'can'): a sprout in front grows (and lays its vine bridges);
+   near the Titan Arum, it blooms. */
+void useCan(void)
+{
+    s16 fx = px + dirX[heroDir] * 14, fy = py + dirY[heroDir] * 14, bx, by;
+    u8 k, n, tx = fx >> 4, ty = fy >> 4;
+    u8 *g;
+    if (fx >= 0 && fy >= 0 && fx < MAP_PX_W && fy < MAP_PX_H && colGrid[ty * COL_STRIDE + tx] == CELL_SPROUT)
+    {
+        g = dynPtr + 1;
+        for (k = 0; k < dynPtr[0]; k++)
+        {
+            n = g[2];
+            if (g[0] == 4 && g[4] == tx && g[5] == ty)
+            {
+                linkOpen[g[1] >> 3] |= 1 << (g[1] & 7);
+                applyRoomState(0);
+                openTextAt((u8 *)&sys_txt + TXT_GROW);
+                return;
+            }
+            g += 4 + n * 10;
+        }
+    }
+    if (bossOn && bossType == BOSS_ARUM && bossState != B_STUN)
+    {
+        bx = (bossX >> 4) - fx;
+        by = (bossY >> 4) - fy;
+        if (ABS(bx) < 34 && ABS(by) < 34)
+        {
+            bossState = B_STUN;
+            bossSt = 230;
+            openTextAt((u8 *)&sys_txt + TXT_BLOOM);
+        }
+    }
+}
+
 void useLantern(void)
 {
     s16 fx = px + dirX[heroDir] * 14, fy = py + dirY[heroDir] * 14;
@@ -1048,6 +1124,7 @@ void useItem(void)
     else if (eqItem == ITEM_POWDER) dropBomb();
     else if (eqItem == ITEM_LANTERN) useLantern();
     else if (eqItem == ITEM_BUG) throwBug();
+    else if (eqItem == ITEM_CAN) useCan();
 }
 
 u8 hasItem(u8 item)
@@ -1057,6 +1134,7 @@ u8 hasItem(u8 item)
     if (item == ITEM_LANTERN) return hasLantern;
     if (item == ITEM_SHIELD) return hasShield;
     if (item == ITEM_BUG) return hasBug;
+    if (item == ITEM_CAN) return hasCan;
     return 0;
 }
 
@@ -1064,9 +1142,9 @@ u8 hasItem(u8 item)
 void nextItem(void)
 {
     u8 i, it = eqItem;
-    for (i = 0; i < 5; i++)
+    for (i = 0; i < 6; i++)
     {
-        it = it >= ITEM_BUG ? ITEM_HOOK : it + 1;
+        it = it >= ITEM_CAN ? ITEM_HOOK : it + 1;
         if (it != ITEM_SHIELD && hasItem(it))
         {
             eqItem = it;
@@ -1085,6 +1163,7 @@ void gotItem(u8 item)
     }
     if (item == ITEM_LANTERN) hasLantern = 1;
     if (item == ITEM_BUG) hasBug = 1;
+    if (item == ITEM_CAN) hasCan = 1;
     if (item == ITEM_SHIELD)
     {
         hasShield = 1; /* works on its own: not a B item */
@@ -1115,7 +1194,7 @@ void drawItemHud(void)
         sprHide(((OAM_BICON + 2) * 4) >> 2);
         return;
     }
-    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : eqItem == ITEM_BUG ? OBJ_I_BUG : OBJ_I_KEG, PAL_ITEM);
+    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : eqItem == ITEM_BUG ? OBJ_I_BUG : eqItem == ITEM_CAN ? OBJ_I_CAN : OBJ_I_KEG, PAL_ITEM);
     if (eqItem == ITEM_POWDER)
     {
         if (powder >= 10) sprPut(OAM_BICON + 1, 0, 137, 12, 3, 0, HUD_DIGIT + powder / 10, PAL_HUD);
@@ -1272,7 +1351,7 @@ void drawShots(void)
             sprHide((id) >> 2);
             continue;
         }
-        sprPut((id) >> 2, 0, sx, sy, 3, 0, shotRefl[i] ? OBJ_REFL : shotKind[i] == 3 ? OBJ_RING : shotKind[i] == 2 ? OBJ_FEATHER : shotKind[i] ? OBJ_ORB : OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
+        sprPut((id) >> 2, 0, sx, sy, 3, 0, shotRefl[i] ? OBJ_REFL : shotKind[i] == 4 ? OBJ_SEED : shotKind[i] == 3 ? OBJ_RING : shotKind[i] == 2 ? OBJ_FEATHER : shotKind[i] ? OBJ_ORB : OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
     }
 }
 
@@ -1335,6 +1414,11 @@ void dungeonLoad(void)
     {
         dmaCopyVram(&boss5_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss5_chrend - &boss5_chr));
         dmaCopyCGram(&boss5_pal, 128 + 16, 16 * 2);
+    }
+    else if (roomBoss == BOSS_ARUM)
+    {
+        dmaCopyVram(&boss6_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&boss6_chrend - &boss6_chr));
+        dmaCopyCGram(&boss6_pal, 128 + 16, 16 * 2);
     }
     blocksLoad();
     /* pickups lying in the room, unless already taken */

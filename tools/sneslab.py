@@ -85,7 +85,7 @@ class Lab:
         col = [int(wram[off + i]) for i in range(MAP_W * MAP_H)]
         w, h = self.ram('mapW'), self.ram('mapH')
         # doors and stairs (2, 3) count as walls for routing, so a route never wanders out of the map
-        walls = {1, 2, 3, 4, 5, 6, 7, 8, 9} | (set() if self.ram('hasKayak') else {10})
+        walls = {1, 2, 3, 4, 5, 6, 7, 8, 9, 11} | (set() if self.ram('hasKayak') else {10})
         grid = [[1 if (x >= w or y >= h or col[y * MAP_W + x] in walls) else 0
                  for x in range(MAP_W)] for y in range(MAP_H)]
         for k in range(self.ram('blkN')):
@@ -187,3 +187,60 @@ class Lab:
                         if self.pos != before:
                             break
         return None
+
+
+# ---------- getting around the overworld ----------
+
+def _neighbours(root):
+    import re
+    h = open(os.path.join(root, 'maps.h')).read()
+    return {d: [int(v) for v in re.search(r'nb%s\[MAP_COUNT\] = \{([^}]*)\}' % d, h).group(1).split(',')] for d in 'NSEW'}
+
+
+def route(lab, dest):
+    """The edges to take (N, S, E, W) from the current map to dest, breadth first."""
+    from collections import deque
+    nb = _neighbours(lab.root)
+    prev, q = {lab.map: None}, deque([lab.map])
+    while q:
+        m = q.popleft()
+        for d in 'NSEW':
+            n = nb[d][m]
+            if n != 255 and n not in prev:
+                prev[n] = (m, d)
+                q.append(n)
+    out, m = [], dest
+    while prev[m]:
+        m, d = prev[m]
+        out.append(d)
+    return out[::-1]
+
+
+def leave(lab, d, close_box):
+    """Walk off the map's d edge through the open cell nearest the middle."""
+    g, w, h = lab.solid_grid(), lab.ram('mapW'), lab.ram('mapH')
+    if d in 'NS':
+        y = 0 if d == 'N' else h - 1
+        cells, key = [(x, y) for x in range(w) if not g[y][x]], 'UP' if d == 'N' else 'DOWN'
+    else:
+        x = 0 if d == 'W' else w - 1
+        cells, key = [(x, y) for y in range(h) if not g[y][x]], 'LEFT' if d == 'W' else 'RIGHT'
+    cells.sort(key=lambda c: abs(c[0] - w // 2) + abs(c[1] - h // 2))
+    m0 = lab.map
+    for c in cells:
+        try:
+            lab.walk_to_cell(*c)
+        except RuntimeError:
+            continue
+        lab.run(key, 30)
+        lab.run(None, 40)
+        close_box()
+        if lab.map != m0:
+            return True
+    return False
+
+
+def travel(lab, dest, close_box):
+    for d in route(lab, dest):
+        if not leave(lab, d, close_box):
+            raise RuntimeError(f'stuck leaving map {lab.map} {d}')

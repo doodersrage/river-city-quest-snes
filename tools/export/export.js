@@ -39,7 +39,7 @@ for (const f of files) {
 // Top-level consts (SC, TS, g...) live in the context's shared script scope.
 // Scenes for the SNES port so far: the outdoor maps plus every single-room area (interiors, caves).
 vm.runInContext(`var SNES_AREAN={};for(const id in SC){const a=SC[id].area;SNES_AREAN[a]=(SNES_AREAN[a]||0)+1;}
-  var PORT_AREAS=${JSON.stringify((process.env.DUNGEONS || 'tredegar,quarry,pyramid,poe,carillon').split(','))};
+  var PORT_AREAS=${JSON.stringify((process.env.DUNGEONS || 'tredegar,quarry,pyramid,poe,carillon,conserv').split(','))};
   function portScene(s){return s.ow||SNES_AREAN[s.area]==1||PORT_AREAS.includes(s.area);}`, sb);
 vm.runInContext('shadow=()=>{};', sb);   // soft shadows don't survive palette reduction
 const dump = vm.runInContext(`(function(){
@@ -59,7 +59,13 @@ const dump = vm.runInContext(`(function(){
     const bushes=[];
     for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++)if(s.g[y][x]=='b')bushes.push([x,y]);
     let opened=null,closed=null;
-    const dynCells=[];for(const d of s.dyn)for(const [x,y] of d.cells)dynCells.push([x,y,d.open]);
+    // Sprouts (web refresh 'grow:' flags): watered, the sprout turns solid and vines bridge the gaps beside it.
+    const sprouts=[];
+    if(s.interior&&s.g0)s.g0.forEach((r,y)=>r.forEach((c,x)=>{if(c!='z')return;const flag='grow:'+s.id+':'+x+','+y,br=[];
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){let X=x+dx,Y=y+dy;while(s.g0[Y]&&s.g0[Y][X]=='_'){br.push([X,Y]);X+=dx;Y+=dy;}}
+      sprouts.push({cells:[[x,y]],closed:'z',open:'1',flag});if(br.length)sprouts.push({cells:br,closed:'_',open:'|',flag});}));
+    const dynAll=s.dyn.concat(sprouts);
+    const dynCells=[];for(const d of dynAll)for(const [x,y] of d.cells)dynCells.push([x,y,d.open]);
     if((s.chests||[]).length||bushes.length||dynCells.length||s.bossT){
       const keep=s.g.map(r=>r.slice());
       const paint=()=>{const c=renderMap(s,0),o2=g;g=c.getContext('2d');try{drawLandmarks(s,0);}catch(e){}try{drawDecor(s);}catch(e){}g=o2;return c;};
@@ -75,7 +81,7 @@ const dump = vm.runInContext(`(function(){
       pickups:(s.items||[]).filter(it=>['skey','carkey','piece'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
       blocks:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='#'?[x,y]:null).filter(Boolean)),
       switches:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='^'?[x,y]:null).filter(Boolean)),
-      dyn:s.dyn.map(d=>({cells:d.cells,closed:d.closed,open:d.open,flag:d.flag||null,solved:d.solved||null})),
+      dyn:dynAll.map(d=>({cells:d.cells,closed:d.closed,open:d.open,flag:d.flag||null,solved:d.solved||null})),
       doors:(s.doors||[]).map(d=>({tx:d.tx,ty:d.ty,to:d.to,need:d.need||null,ret:d.ret})),
       chests:(s.chests||[]).map(q=>({id:q.id,tx:q.tx,ty:q.ty,item:q.item,appear:!!q.appear})),bushes});
   }
@@ -245,6 +251,9 @@ const bossArt = vm.runInContext(`(function(){
   // The Bronze Bell, on the ground (the ROM lifts it by its height): hanging, and stunned.
   out.bell=['float','stun'].map(stt=>{const c=mkCanvas(48,48),old=g;g=c.getContext('2d');frame=0;
     drawBell({x:24,y:40,z:0,state:stt,t:1},false);g=old;return c;});
+  // The Titan Arum (web drawArum): closed bud swaying (2 frames) and in bloom. Centre (24,42).
+  out.arum=[['walk',31],['walk',94],['bloom',0]].map(([stt,f])=>{const c=mkCanvas(48,48),old=g;g=c.getContext('2d');frame=f;
+    drawArum({x:24,y:37,state:stt,t:1,hp:8,f:1},false);g=old;return c;});
   // a push block (web drawBlocks, without its soft shadow)
   {const c=mkCanvas(16,16),x=c.getContext('2d'),R3=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(a,b,w,h);};
    R3(0,0,16,15,'#1a1423');R3(1,1,14,13,'#8a7a6a');R3(1,1,14,3,'#b4a490');R3(1,11,14,3,'#5e5044');R3(4,5,8,5,'#6e5e4e');R3(5,6,6,3,'#9a8a76');out.block=c;}
@@ -252,7 +261,7 @@ const bossArt = vm.runInContext(`(function(){
     x.drawImage(SPR.raven.r.c,X-12,Y-9);x.drawImage(WINGS[fl].r.c,X-12+4,Y-9+(fl?6:-3));return c;});
   // 16x16 icons: keg, hook, keystones (granite, iron, brick, bronze); explosion 32x32 x2
   const icon=(img)=>{const c=mkCanvas(16,16),x=c.getContext('2d');x.drawImage(img,Math.floor((16-img.width)/2),Math.floor((16-img.height)/2));return c;};
-  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key),icon(IC.carkey),icon(IC.piece)];
+  out.icons=[icon(IC.keg),icon(IC.hook),icon(KSIC.granite),icon(KSIC.iron),icon(KSIC.brick),icon(KSIC.bronze),icon(IC.lantern),icon(IC.bug),icon(IC.key),icon(IC.carkey),icon(IC.piece),icon(IC.can)];
   out.boom=[0,1].map(i=>{const c=mkCanvas(32,32),old=g;g=c.getContext('2d');
     const cols=['#ffffff','#fff2a8','#f8e060','#f08020','#e83048'];const r0=i?14:10;
     for(let r=r0;r>0;r-=2){g.fillStyle=cols[Math.min(4,Math.floor((r0-r)/2.5)+i)];g.beginPath();g.arc(16,16,r,0,7);g.fill();}
@@ -261,7 +270,7 @@ const bossArt = vm.runInContext(`(function(){
   // heart container pickup (16x16, centre 8,9)
   {const c=mkCanvas(16,16),old=g;g=c.getContext('2d');frame=0;const k={kind:'container',x:8,y:9,life:1e9,t:0};
    R(1,1,15,14,'#1a1423');R(2,2,13,12,'#fff2a8');R(3,3,11,10,'#3a1c30');g.drawImage(HEART,4,4);g=old;out.container=c;}
-  out.text={foreman:BOSSTXT.foreman,foremanIntro:BOSSINTRO.foreman,turtle:BOSSTXT.turtle,turtleIntro:BOSSINTRO.turtle,wraith:BOSSTXT.wraith,wraithIntro:BOSSINTRO.wraith,raven:BOSSTXT.raven,ravenIntro:BOSSINTRO.raven,bell:BOSSTXT.bell,bellIntro:BOSSINTRO.bell};
+  out.text={foreman:BOSSTXT.foreman,foremanIntro:BOSSINTRO.foreman,turtle:BOSSTXT.turtle,turtleIntro:BOSSINTRO.turtle,wraith:BOSSTXT.wraith,wraithIntro:BOSSINTRO.wraith,raven:BOSSTXT.raven,ravenIntro:BOSSINTRO.raven,bell:BOSSTXT.bell,bellIntro:BOSSINTRO.bell,arum:BOSSTXT.arum,arumIntro:BOSSINTRO.arum,can:'The sprout drinks it up and grows!',bloom:'The Titan Arum unfurls!'};
   return out;})()`, sb);
 {
   const strip = createCanvas(48 * bossArt.foreman.length, 48), x = strip.getContext('2d');
@@ -269,7 +278,7 @@ const bossArt = vm.runInContext(`(function(){
   fs.writeFileSync(path.join(OUT, 'combat', 'foreman.png'), strip.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'container.png'), bossArt.container.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'block.png'), bossArt.block.toBuffer('image/png'));
-  for (const name of ['turtle', 'wraith', 'raven', 'bell']) {
+  for (const name of ['turtle', 'wraith', 'raven', 'bell', 'arum']) {
     const ts = createCanvas(48 * bossArt[name].length, 48), tx2 = ts.getContext('2d');
     bossArt[name].forEach((c, i) => tx2.drawImage(c, i * 48, 0));
     fs.writeFileSync(path.join(OUT, 'combat', name + '.png'), ts.toBuffer('image/png'));
@@ -281,14 +290,14 @@ const bossArt = vm.runInContext(`(function(){
   bossArt.boom.forEach((c, i) => bx.drawImage(c, i * 32, 0));
   fs.writeFileSync(path.join(OUT, 'combat', 'boom.png'), bm.toBuffer('image/png'));
   // spark shot (2 blinks) and the hook head and chain link, 8x8 each, drawn like the web game
-  const sm = createCanvas(64, 8), q = sm.getContext('2d');
+  const sm = createCanvas(72, 8), q = sm.getContext('2d');
   const R2 = (X, Y, W, H, C) => { q.fillStyle = C; q.fillRect(X, Y, W, H); };
   for (const [i, c] of [[0, '#f8e060'], [1, '#f08020']]) { const X = i * 8 + 4, Y = 4;
     R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
   { const X = 20, Y = 4; R2(X - 3, Y - 3, 7, 7, '#1a1423'); R2(X - 2, Y - 2, 5, 5, '#d8dce4'); R2(X - 1, Y - 1, 3, 3, '#8e909c'); }
   { const X = 28, Y = 4; R2(X - 1, Y - 1, 3, 3, '#1a1423'); R2(X, Y, 1, 1, '#aeb2c0'); }
   // orb (the Wraith's) and a reflected shot
-  for (const [i, c] of [[4, '#e83048'], [5, '#fff2a8'], [6, '#4a4662'], [7, '#f0c070']]) { const X = i * 8 + 4, Y = 4;
+  for (const [i, c] of [[4, '#e83048'], [5, '#fff2a8'], [6, '#4a4662'], [7, '#f0c070'], [8, '#84cc68']]) { const X = i * 8 + 4, Y = 4;
     R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
   fs.writeFileSync(path.join(OUT, 'combat', 'small.png'), sm.toBuffer('image/png'));
   const intro = vm.runInContext("(function(){try{return Object.entries(BANNERS||{})}catch(e){return null}})()", sb);
