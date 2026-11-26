@@ -165,6 +165,38 @@ void dropKind(s16 x, s16 y, u8 kind)
         }
 }
 
+/* the Wraith calls ghosts (web: enemies.push(mk('ghost', ...))) */
+void spawnEnemy(u8 type, s16 x, s16 y)
+{
+    u8 k;
+    for (k = 0; k < MAX_EN; k++)
+        if (!enAlive[k])
+        {
+            enType[k] = type;
+            enX[k] = x * 16;
+            enY[k] = y * 16;
+            enHp[k] = enemyHp[type];
+            enVX[k] = 0;
+            enVY[k] = 0;
+            enFlash[k] = 0;
+            enKt[k] = 0;
+            enStuck[k] = 0;
+            enStun[k] = 0;
+            enFlip[k] = 0;
+            enT[k] = 0;
+            enAlive[k] = 1;
+            return;
+        }
+}
+
+u8 enemyCount(u8 type)
+{
+    u8 k, n = 0;
+    for (k = 0; k < MAX_EN; k++)
+        if (enAlive[k] && enType[k] == type) n++;
+    return n;
+}
+
 u8 enemiesAlive(void)
 {
     u8 k;
@@ -420,7 +452,7 @@ void combatUpdate(u16 pad, u16 pressed)
                 d = dist(dx, dy);
                 if (d < 24) hitEnemy(k, 2, dx * 48 / d, dy * 48 / d);
             }
-        if (bossOn) bossHit(2, 0);
+        if (bossOn && bossNear(px, py)) bossHit(2, 0);
         /* web: every 4th spin frame, cut at 8 points 16px out */
         if ((spin & 3) == 0)
         {

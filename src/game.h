@@ -42,6 +42,7 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define ROOM_BOSS 2
 #define ROOM_CONTAINER 4
 #define ROOM_SEEN 8
+#define ROOM_SOLVED 16 /* clear rooms when cleared, lamp rooms when every brazier is lit */
 
 extern u8 *colGrid;
 extern u8 curMap;
@@ -63,7 +64,7 @@ extern u8 roomArea, roomSolve, roomBoss, roomEntry;
 extern u8 *dynPtr, *stairsPtr;
 extern u8 roomFlags[];
 extern u8 keys[];
-extern u8 hasHook, hasPowder, powder, eqItem, keystones, roomReward, dentMap, hookSt, bossOn;
+extern u8 hasHook, hasPowder, hasLantern, hasShield, powder, eqItem, keystones, roomReward, dentMap, hookSt, bossOn;
 extern u8 enemiesExisted;
 
 u8 solidAt(s16 x, s16 y);
@@ -77,6 +78,10 @@ void bombHitsEnemies(s16 x, s16 y);
 void useItem(void);
 void nextItem(void);
 void gotItem(u8 item);
+u8 hasItem(u8 item);
+void spawnEnemy(u8 type, s16 x, s16 y);
+u8 enemyCount(u8 type);
+extern u8 *brazPtr;
 void gotKeystone(u8 id);
 u8 enBlocked(s16 x, s16 y);
 u8 enemiesAlive(void);

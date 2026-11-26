@@ -459,6 +459,7 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     for (k = 0; k < dynPtr[0]; k++)
         rec += 4 + rec[2] * 10;
     stairsPtr = rec;
+    brazPtr = stairsPtr + 1 + stairsPtr[0] * 10;
     for (n = 0; n < COL_STRIDE * 22; n++)
         colRam[n] = col[n];
     colGrid = colRam;
@@ -466,7 +467,7 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     npcCount = wld[WLD_NNPC];
     for (k = 0; k < npcCount; k++)
     {
-        rec = wld + WLD_NPCS + k * 6;
+        rec = wld + WLD_NPCS + k * NPC_REC;
         npcX[k] = rec[0] * 16 + 8;
         npcY[k] = rec[1] * 16 + 8;
         npcDir[k] = 0;
@@ -651,14 +652,19 @@ u8 interact(void)
     for (k = 0; k < npcCount; k++)
         if (ABS(fx - npcX[k]) < 13 && ABS(fy - npcY[k]) < 13)
         {
-            rec = wld + WLD_NPCS + k * 6;
+            rec = wld + WLD_NPCS + k * NPC_REC;
             npcDir[k] = heroDir == 0 ? 1 : heroDir == 1 ? 0 : heroDir == 2 ? 3 : 2;
             if (rec[5])
             {
                 openShop(rec[5] - 1);
                 return 1;
             }
+            /* someone handing you something (the Archivist's Gas Lantern) */
+            if (rec[7] && !hasItem(rec[7]))
+                npcTalk[k] = rec[6];
             openText(rec[2] + npcTalk[k]);
+            if (rec[7] && npcTalk[k] == rec[6] && !hasItem(rec[7]))
+                gotItem(rec[7]);
             npcTalk[k]++;
             if (npcTalk[k] >= rec[3]) npcTalk[k] = 0;
             return 1;

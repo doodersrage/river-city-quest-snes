@@ -11,12 +11,14 @@
 u8 roomArea, roomSolve, roomBoss, roomEntry;
 u8 *dynPtr;    /* count, then groups: kind, ref, ncells, cells (tx, ty, 4 words) */
 u8 *stairsPtr; /* count, then cells (tx, ty, 4 words) */
+u8 *brazPtr;   /* count, then braziers (tx, ty, 4 words lit) */
+u8 roomBraz[MAP_COUNT]; /* lit braziers, a bit each */
 
 /* saved progress */
 u8 roomFlags[MAP_COUNT]; /* ROOM_* bits */
 u8 linkOpen[(LINK_COUNT + 7) / 8];
 u8 keys[AREA_COUNT];
-u8 hasHook, hasPowder, powder, eqItem; /* eqItem: ITEM_HOOK or ITEM_POWDER */
+u8 hasHook, hasPowder, hasLantern, hasShield, powder, eqItem; /* eqItem: ITEM_HOOK or ITEM_POWDER */
 u8 keystones;  /* bit per keystone: granite, iron, brick, bronze */
 u8 roomReward; /* keystone this boss room gives (1-4), 0 none */
 u8 hudEq, hudPowder; /* what the item HUD last showed */
@@ -29,7 +31,7 @@ u8 hookDir;
 
 /* projectiles (1/16 px) */
 #define MAX_SHOT 10
-u8 shotOn[MAX_SHOT];
+u8 shotOn[MAX_SHOT], shotKind[MAX_SHOT], shotRefl[MAX_SHOT]; /* kind: 0 spark, 1 orb */
 s16 shotX[MAX_SHOT], shotY[MAX_SHOT], shotVX[MAX_SHOT], shotVY[MAX_SHOT];
 u8 shotLife[MAX_SHOT];
 
@@ -41,6 +43,7 @@ u8 boomT;
 s16 boomX, boomY;
 
 /* the boss (1/16 px) */
+u8 bossVis; /* the Wraith: frames left solid after its own orb hits it */
 u8 bossOn, bossType, bossHp, bossState, bossSt, bossFlash, bossFlip;
 s16 bossX, bossY, bossVX, bossVY;
 u16 bossT;
@@ -51,13 +54,24 @@ const u16 *bossTiles;
 #define B_CHARGE 3
 #define BOSS_FOREMAN 1
 #define BOSS_TURTLE 2
+#define BOSS_WRAITH 3
+#define SRC_PADDLE 0
+#define SRC_BOMB 1
+#define SRC_REFL 2
+#define T_GHOST 6
 
 extern const s8 dirX[4], dirY[4];
 
 void dungeonInit(void)
 {
     u8 i;
-    for (i = 0; i < MAP_COUNT; i++) roomFlags[i] = 0;
+    for (i = 0; i < MAP_COUNT; i++)
+    {
+        roomFlags[i] = 0;
+        roomBraz[i] = 0;
+    }
+    hasLantern = 0;
+    hasShield = 0;
     for (i = 0; i < sizeof(linkOpen); i++) linkOpen[i] = 0;
     for (i = 0; i < AREA_COUNT; i++) keys[i] = 0;
     hasHook = 0;
@@ -77,7 +91,7 @@ void dungeonInit(void)
 
 u8 roomSolved(u8 m)
 {
-    return roomFlags[m] & ROOM_CLEARED;
+    return roomFlags[m] & ROOM_SOLVED;
 }
 
 u8 groupOpen(u8 *g)
@@ -122,6 +136,12 @@ void applyRoomState(u8 now)
             queuePatch(r[0], r[1], r + 7, now); /* a chest appears */
             colGrid[r[1] * COL_STRIDE + r[0]] = CELL_SOLID;
         }
+    }
+    for (k = 0; k < brazPtr[0]; k++)
+    {
+        r = brazPtr + 1 + k * 10;
+        if (now && (roomBraz[curMap] & (1 << k)))
+            queuePatch(r[0], r[1], r + 2, now);
     }
     if (roomFlags[curMap] & ROOM_BOSS)
         for (k = 0; k < stairsPtr[0]; k++)
@@ -173,18 +193,21 @@ void checkCleared(void)
     if (mapW == 32) return; /* outdoors, enemies always come back */
     if (roomBoss || (roomFlags[curMap] & ROOM_CLEARED) || !enemiesExisted || enemiesAlive()) return;
     roomFlags[curMap] |= ROOM_CLEARED;
+    if (roomSolve == 1) roomFlags[curMap] |= ROOM_SOLVED;
     applyRoomState(0);
 }
 
 /* ---------- projectiles ---------- */
 
-void shoot(s16 x, s16 y, s16 vx, s16 vy)
+void shoot(s16 x, s16 y, s16 vx, s16 vy, u8 kind)
 {
     u8 i;
     for (i = 0; i < MAX_SHOT; i++)
         if (!shotOn[i])
         {
             shotOn[i] = 1;
+            shotKind[i] = kind;
+            shotRefl[i] = 0;
             shotX[i] = x;
             shotY[i] = y;
             shotVX[i] = vx;
@@ -194,10 +217,34 @@ void shoot(s16 x, s16 y, s16 vx, s16 vy)
         }
 }
 
+u8 bossHit(u8 dmg, u8 src);
+
+/* Bat a shot back (web reflect): the Wraith's orbs fly straight at it, everything else reverses. */
+void reflectShot(u8 i)
+{
+    s16 dx, dy, d;
+    shotRefl[i] = 1;
+    shotLife[i] = 160;
+    if (shotKind[i] == 1 && bossOn && bossType == BOSS_WRAITH)
+    {
+        dx = (bossX - shotX[i]) >> 4;
+        dy = (bossY - shotY[i]) >> 4;
+        d = ABS(dx) > ABS(dy) ? ABS(dx) + (ABS(dy) >> 1) : ABS(dy) + (ABS(dx) >> 1);
+        if (!d) d = 1;
+        shotVX[i] = dx * 35 / d;
+        shotVY[i] = dy * 35 / d;
+    }
+    else
+    {
+        shotVX[i] = -shotVX[i] * 13 / 10;
+        shotVY[i] = -shotVY[i] * 13 / 10;
+    }
+}
+
 void updShots(void)
 {
     u8 i;
-    s16 sx, sy;
+    s16 sx, sy, hx, hy;
     for (i = 0; i < MAX_SHOT; i++)
         if (shotOn[i])
         {
@@ -210,8 +257,42 @@ void updShots(void)
                 shotOn[i] = 0;
                 continue;
             }
-            if (ABS(sx - px) < 6 && ABS(sy - py) < 7 && !dying)
+            if (shotRefl[i])
             {
+                /* a returned shot hits whatever it's sent at */
+                if (bossOn && ABS((bossX >> 4) - sx) < 13 && ABS((bossY >> 4) - 4 - sy) < 14)
+                {
+                    shotOn[i] = 0;
+                    bossHit(1, SRC_REFL);
+                }
+                else if (hookHitsEnemy(sx, sy - 4, shotVX[i], shotVY[i]))
+                    shotOn[i] = 0;
+                continue;
+            }
+            /* the paddle mid-swing, or a spin, knocks shots back */
+            if (atk > 5)
+            {
+                hx = px + dirX[heroDir] * 12;
+                hy = py - 2 + dirY[heroDir] * 12;
+                if (ABS(sx - hx) < 11 && ABS(sy - hy) < 11)
+                {
+                    reflectShot(i);
+                    continue;
+                }
+            }
+            if (spin && ABS(sx - px) < 22 && ABS(sy - (py - 3)) < 22)
+            {
+                reflectShot(i);
+                continue;
+            }
+            if (ABS(sx - px) < 7 && ABS(sy - (py - 4)) < 8 && !dying)
+            {
+                /* the Cast-Iron Shield turns shots you're facing */
+                if (hasShield && !atk && !spin && dirX[heroDir] * shotVX[i] + dirY[heroDir] * shotVY[i] < 0)
+                {
+                    reflectShot(i);
+                    continue;
+                }
                 shotOn[i] = 0;
                 hurtHero(sx, sy);
             }
@@ -235,11 +316,29 @@ void bossLoad(void)
     bossType = roomBoss;
     if (!roomBoss || (roomFlags[curMap] & ROOM_BOSS)) return;
     bossOn = 1;
-    bossTiles = bossType == BOSS_TURTLE ? boss2Tile : boss1Tile;
-    bossHp = bossType == BOSS_TURTLE ? 8 : 9;
-    bossX = (8 * 16 + 8) * 16;
-    bossY = (4 * 16 + 8) * 16;
-    if (bossType == BOSS_TURTLE) bossX = (9 * 16 + 8) * 16;
+    bossVis = 0;
+    /* hit points and starting cells from the web game (HPS, the rooms' en lists) */
+    if (bossType == BOSS_TURTLE)
+    {
+        bossTiles = boss2Tile;
+        bossHp = 8;
+        bossX = (9 * 16 + 8) * 16;
+        bossY = (4 * 16 + 8) * 16;
+    }
+    else if (bossType == BOSS_WRAITH)
+    {
+        bossTiles = boss3Tile;
+        bossHp = 6;
+        bossX = (8 * 16 + 8) * 16;
+        bossY = (3 * 16 + 8) * 16;
+    }
+    else
+    {
+        bossTiles = boss1Tile;
+        bossHp = 9;
+        bossX = (8 * 16 + 8) * 16;
+        bossY = (4 * 16 + 8) * 16;
+    }
     bossState = B_WALK;
     bossSt = 0;
     bossT = 0;
@@ -263,10 +362,27 @@ void bossDefeated(void)
     openTextAt((u8 *)&sys_txt + bossOutTxt[bossType]);
 }
 
-/* Something hit the boss. src: 0 paddle, 1 bomb. Returns 1 for a hit, 2 for a clank off the armour. */
+/* Something hit the boss. src: SRC_PADDLE, SRC_BOMB, SRC_REFL. Returns 1 for a hit, 2 for a clank. */
 u8 bossHit(u8 dmg, u8 src)
 {
     if (!bossOn || bossFlash) return 0;
+    if (bossType == BOSS_WRAITH)
+    {
+        /* faint, it can't be touched, except by its own orb sent back (web hitEnemy 'wraith') */
+        if (!bossVis)
+        {
+            if (src != SRC_REFL) return 0;
+            bossVis = 130;
+        }
+        bossFlash = 16;
+        if (bossHp <= dmg)
+        {
+            bossDefeated();
+            return 1;
+        }
+        bossHp -= dmg;
+        return 1;
+    }
     /* the Foreman only takes hits once the hook rips his plate off; Old Snapper takes bombs any
        time, and the paddle once he's stunned himself charging into a wall */
     if (bossState != B_STUN && !(bossType == BOSS_TURTLE && src == 1)) return 2;
@@ -292,7 +408,7 @@ void updForeman(s16 dx, s16 dy, s16 d)
             for (i = 0; i < 8; i++)
             {
                 a = i * 8 + (bossHp < 5 ? 4 : 0);
-                shoot(bossX, bossY, sinTab[(a + 16) & 63] * 24 / 64, sinTab[a & 63] * 24 / 64);
+                shoot(bossX, bossY, sinTab[(a + 16) & 63] * 24 / 64, sinTab[a & 63] * 24 / 64, 0);
             }
         }
         return;
@@ -309,7 +425,7 @@ void updForeman(s16 dx, s16 dy, s16 d)
         bossSt = 40;
     }
     if (bossHp <= 5 && bossT % 90 == 45)
-        shoot(bossX, bossY, dx * 27 / d, dy * 27 / d);
+        shoot(bossX, bossY, dx * 27 / d, dy * 27 / d, 0);
 }
 
 /* Old Snapper (web updEnemy 'turtle'): plods toward you, winds up, charges in a straight line,
@@ -362,6 +478,31 @@ void updTurtle(s16 dx, s16 dy)
     }
 }
 
+/* The Wraith (web updEnemy 'wraith'): drifts above you, throws orbs, calls ghosts. */
+void updWraith(s16 dx, s16 dy, s16 d)
+{
+    s16 tx, ty;
+    bossT++;
+    if (bossVis)
+    {
+        bossVis--;
+        bossX += sinTab[(bossT + (bossT >> 1) + (bossT >> 2)) & 63] * 5 / 64;
+        return;
+    }
+    tx = px;
+    if (tx < 40) tx = 40;
+    if (tx > MAP_PX_W - 40) tx = MAP_PX_W - 40;
+    ty = py - 56;
+    if (ty < 30) ty = 30;
+    if (ty > 90) ty = 90;
+    bossX += (tx * 16 - bossX) / 50 + sinTab[((bossT >> 1) + 16) & 63] * 8 / 64;
+    bossY += (ty * 16 - bossY) / 50;
+    if (bossT % 110 == 60)
+        shoot(bossX, bossY - 6 * 16, dx * 22 / d, (dy + 6) * 22 / d, 1);
+    if (bossT % 330 == 200 && enemyCount(T_GHOST) < 2)
+        spawnEnemy(T_GHOST, bossX >> 4, bossY >> 4);
+}
+
 void updBoss(void)
 {
     s16 dx, dy, d, bx, by;
@@ -384,10 +525,11 @@ void updBoss(void)
         return; /* stunned bosses don't hurt */
     }
     if (bossType == BOSS_TURTLE) updTurtle(dx, dy);
+    else if (bossType == BOSS_WRAITH) updWraith(dx, dy, d);
     else updForeman(dx, dy, d);
     bx = bossX >> 4;
     by = bossY >> 4;
-    if (ABS(bx - px) < 13 && ABS(by - py) < 13 && !dying)
+    if (ABS(bx - px) < (bossType == BOSS_WRAITH ? 11 : 13) && ABS(by - py) < (bossType == BOSS_WRAITH ? 11 : 13) && !dying)
         hurtHeroBy(bx, by, bossState == B_CHARGE ? 2 : 1);
 }
 
@@ -399,12 +541,15 @@ void drawBoss(void)
     for (k = 0; k < 9; k++)
     {
         id = (OAM_BOSS + k) * 4;
-        if (!bossOn || (bossFlash & 2))
+        /* the Wraith is see-through until its orb hits it: drawn every other frame */
+        if (!bossOn || (bossFlash & 2) || (bossType == BOSS_WRAITH && !bossVis && (frameCount & 1)))
         {
             sprHide((id) >> 2);
             continue;
         }
-        if (bossType == BOSS_TURTLE)
+        if (bossType == BOSS_WRAITH)
+            f = (bossVis ? 0 : 2) + ((frameCount >> 3) & 1);
+        else if (bossType == BOSS_TURTLE)
             f = bossState == B_STUN ? 2 + ((frameCount >> 2) & 1) : (frameCount >> (bossState == B_CHARGE ? 1 : 3)) & 1;
         else
             f = bossState == B_STUN ? 3 + ((frameCount >> 2) & 1) : bossState == B_WIND ? 2 : (bossT >> 3) & 1;
@@ -527,17 +672,59 @@ void drawBombs(void)
 
 /* ---------- items on B ---------- */
 
+/* The Gas Lantern lights a cold brazier in front of you (web useItem 'lantern', lightAt). */
+void useLantern(void)
+{
+    s16 fx = px + dirX[heroDir] * 14, fy = py + dirY[heroDir] * 14;
+    u8 k, all;
+    u8 *r;
+    for (k = 0; k < brazPtr[0]; k++)
+    {
+        r = brazPtr + 1 + k * 10;
+        if (r[0] == (fx >> 4) && r[1] == (fy >> 4) && !(roomBraz[curMap] & (1 << k)))
+        {
+            roomBraz[curMap] |= 1 << k;
+            queuePatch(r[0], r[1], r + 2, 0);
+            all = (1 << brazPtr[0]) - 1;
+            if (roomSolve == 2 && (roomBraz[curMap] & all) == all)
+            {
+                roomFlags[curMap] |= ROOM_SOLVED;
+                applyRoomState(0);
+            }
+            return;
+        }
+    }
+}
+
 void useItem(void)
 {
     if (eqItem == ITEM_HOOK) fireHook();
     else if (eqItem == ITEM_POWDER) dropBomb();
+    else if (eqItem == ITEM_LANTERN) useLantern();
 }
 
-/* SELECT swaps between the items you have (the web game picks them in its menu) */
+u8 hasItem(u8 item)
+{
+    if (item == ITEM_HOOK) return hasHook;
+    if (item == ITEM_POWDER) return hasPowder;
+    if (item == ITEM_LANTERN) return hasLantern;
+    if (item == ITEM_SHIELD) return hasShield;
+    return 0;
+}
+
+/* SELECT steps through the items you have for B (the web game picks them in its menu) */
 void nextItem(void)
 {
-    if (eqItem == ITEM_HOOK && hasPowder) eqItem = ITEM_POWDER;
-    else if (eqItem == ITEM_POWDER && hasHook) eqItem = ITEM_HOOK;
+    u8 i, it = eqItem;
+    for (i = 0; i < 3; i++)
+    {
+        it = it >= ITEM_LANTERN ? ITEM_HOOK : it + 1;
+        if (hasItem(it))
+        {
+            eqItem = it;
+            return;
+        }
+    }
 }
 
 void gotItem(u8 item)
@@ -547,6 +734,12 @@ void gotItem(u8 item)
     {
         hasPowder = 1;
         if (powder < 8) powder = 8; /* web give('powder') */
+    }
+    if (item == ITEM_LANTERN) hasLantern = 1;
+    if (item == ITEM_SHIELD)
+    {
+        hasShield = 1; /* works on its own: not a B item */
+        return;
     }
     eqItem = item;
 }
@@ -573,7 +766,7 @@ void drawItemHud(void)
         sprHide(((OAM_BICON + 2) * 4) >> 2);
         return;
     }
-    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : OBJ_I_KEG, PAL_ITEM);
+    sprPut((id) >> 2, 1, 120, 4, 3, 0, eqItem == ITEM_HOOK ? OBJ_I_HOOK : eqItem == ITEM_LANTERN ? OBJ_I_LANTERN : OBJ_I_KEG, PAL_ITEM);
     if (eqItem == ITEM_POWDER)
     {
         if (powder >= 10) sprPut(OAM_BICON + 1, 0, 137, 12, 3, 0, HUD_DIGIT + powder / 10, PAL_HUD);
@@ -730,7 +923,7 @@ void drawShots(void)
             sprHide((id) >> 2);
             continue;
         }
-        sprPut((id) >> 2, 0, sx, sy, 3, 0, OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
+        sprPut((id) >> 2, 0, sx, sy, 3, 0, shotRefl[i] ? OBJ_REFL : shotKind[i] ? OBJ_ORB : OBJ_SPARK + ((frameCount >> 1) & 1), PAL_HUD);
     }
 }
 
@@ -772,6 +965,11 @@ void dungeonLoad(void)
     {
         dmaCopyVram(&boss2_chr, VRAM_OBJ_CHR + 0x1000 + 64 * 16, (&boss2_chrend - &boss2_chr));
         dmaCopyCGram(&boss2_pal, 128 + 16, 16 * 2);
+    }
+    else if (roomBoss == BOSS_WRAITH)
+    {
+        dmaCopyVram(&boss3_chr, VRAM_OBJ_CHR + 0x1000 + 64 * 16, (&boss3_chrend - &boss3_chr));
+        dmaCopyCGram(&boss3_pal, 128 + 16, 16 * 2);
     }
 }
 
