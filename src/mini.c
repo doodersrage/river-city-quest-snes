@@ -604,14 +604,15 @@ static void pinSeg(s16 x1, s16 y1, s8 ux, s8 uy, u8 L, s8 boost, s8 side)
     }
 }
 
-static void pinStep(void)
+static void pinStep(u8 q)
 {
     u8 i, r;
     s16 dx, dy, nx, ny, dot, sx, sy;
     u8 d, s;
-    pbVY += 3;
-    pbX += pbVX >> 1;
-    pbY += pbVY >> 1;
+    /* quarter steps (the web game takes halves): a fast ball can't slip through a 3 px guide */
+    if (!(q & 1)) pbVY += 3;
+    pbX += pbVX >> 2;
+    pbY += pbVY >> 2;
     sx = pbVX >> 3;
     sy = pbVY >> 3;
     if (ABS(sx) > 40 || ABS(sy) > 40 || sx * sx + sy * sy > 3136)
@@ -713,8 +714,7 @@ static void pinUpdate(u16 pad)
         }
         return;
     }
-    pinStep();
-    pinStep();
+    for (i = 0; i < 4; i++) pinStep(i);
     if (ABS(pbVX) + ABS(pbVY) < 22)
     {
         if (++pbStill > 40)
