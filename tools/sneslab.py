@@ -197,6 +197,14 @@ def _neighbours(root):
     return {d: [int(v) for v in re.search(r'nb%s\[MAP_COUNT\] = \{([^}]*)\}' % d, h).group(1).split(',')] for d in 'NSEW'}
 
 
+def _edge_open(root, m, d):
+    """Whether map m has a walkable cell on its d edge (outdoor maps are 32x22)."""
+    col = open(os.path.join(root, 'data', f'm{m}.col'), 'rb').read()
+    cells = [col[(0 if d == 'N' else 21) * 32 + x] for x in range(32)] if d in 'NS' else \
+            [col[y * 32 + (0 if d == 'W' else 31)] for y in range(22)]
+    return any(c in (0, 10) for c in cells)
+
+
 def route(lab, dest):
     """The edges to take (N, S, E, W) from the current map to dest, breadth first."""
     from collections import deque
@@ -206,7 +214,7 @@ def route(lab, dest):
         m = q.popleft()
         for d in 'NSEW':
             n = nb[d][m]
-            if n != 255 and n not in prev:
+            if n != 255 and n not in prev and _edge_open(lab.root, m, d):
                 prev[n] = (m, d)
                 q.append(n)
     out, m = [], dest
