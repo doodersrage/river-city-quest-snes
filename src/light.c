@@ -61,6 +61,7 @@ static const u8 *hwFor(u8 r)
 void lightInit(void)
 {
     u16 a;
+    u8 k;
     dayClock = 4500; /* 9 in the morning */
     darkLevel = 0;
     lightR1 = lightR2 = 255;
@@ -80,6 +81,11 @@ void lightInit(void)
     REG_A1TH(5) = a >> 8;
     REG_A1B(5) = 0x7E;
     lightPrev[0] = lightPrev[1] = lightPrev[2] = lightPrev[3] = 112; /* first call clears every line */
+    for (k = 0; k < 24; k++)
+    { /* the HUD rows of window 1 are always lit: left 0, right 255 */
+        lightTab1[1 + k * 2] = 0;
+        lightTab1[2 + k * 2] = 255;
+    }
     lightCircle(hw15, 0, 0, 0, 0);
     lightCircle(hw15, 1, 0, 0, 0);
     srcMap = 255;
