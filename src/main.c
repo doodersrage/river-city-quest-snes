@@ -701,10 +701,10 @@ int main(void)
         oamSetEx(i * 4, OBJ_SMALL, OBJ_HIDE);
 
     /* RAM is not cleared at power-on: set every variable before use. */
-    px = MAP_PX_W / 2;
-    py = MAP_PX_H / 2;
     heroDir = 0;
     step = 0;
+    mapW = 32;
+    mapH = 22;
     frameCount = 0;
     npcCount = 0;
     boxState = BOX_CLOSED;
@@ -739,6 +739,8 @@ int main(void)
 
     curMap = MAP_START;
     rcqLoadMap(curMap);
+    px = MAP_PX_W / 2; /* the middle of the Fan */
+    py = MAP_PX_H / 2;
     settle();
     updateCamera();
     drawHero();
