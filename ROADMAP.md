@@ -20,7 +20,7 @@ Super Nintendo ROM, built in stages. Each stage ends with a ROM that boots and p
 | BG palettes | 8 × 15 colours | Greedy packing per map, global median cut if needed. Palette 0 keeps 3 colours for the text layer (BG3 shares CGRAM 1-3). |
 | VRAM | 64 KB | BG1 tiles 0x0000, BG1 map 0x4000 (64×64), BG3 font 0x5000, BG3 map 0x5800, sprites 0x6000 (hero tiles 0-31, NPCs 32-127) |
 | Work RAM | 128 KB | Game state, NPCs, enemies; save data to SRAM. WRAM is not cleared at power-on, so every variable is set in code; initialised globals land in bank $7F |
-| ROM | 1 MB now, up to 4 MB | Each outdoor map is about 26 KB |
+| ROM | 2 MB now, up to 4 MB | Each outdoor map is about 26 KB, each room about 15 KB (one 32 KB bank each) |
 | Sprites | 128 on screen, 32 per scanline | 8x8 small (HUD, pickups) and 16x16 large. OBJ tiles: hero 0-31, NPCs 32-127, enemies 128-159, paddle 160-223, HUD 224-255. Palettes: hero 0, NPCs 1-4, enemies 5-6, paddle and HUD 7 |
 | Sound | SPC700, 64 KB audio RAM | Chiptunes rebuilt as tracker modules (snesmod) |
 
@@ -31,7 +31,8 @@ Super Nintendo ROM, built in stages. Each stage ends with a ROM that boots and p
    Still to come with later stages: the journal menu for the 66 stories, Spanish text, NPCs walking around, and talk that changes with progress (gifts, trades and challenges currently show their opening lines only).
 3. **Combat** (done). Paddle swing (the game's own paddle drawn at 16 angles) and hold-to-charge spin, hearts and coin HUD, the 7 outdoor enemy types with the web game's behaviours, hit stun and knockback, coin and heart drops, waking in Capitol Square.
    Not yet: cutting bushes, hit sparks and puffs, sound, the hero's hurt flash colour, and night enemies (stage 8).
-4. **Doors and interiors.** Building entrances, the 11 interiors, the row house and the dog, shops and rupees.
+4. **Doors and interiors** (done). Doors into all 24 single-room interiors and caves and back out, rooms centred on screen, bush cutting (from stage 3), the 26 chests with coins and heart charms, Carytown Goods and the 17th Street Market. 2 MB ROM.
+   Not yet: the dog and furniture in the row house, cooking, the arcade, and what most shop items do (camera, rod, cards, satchel); they're recorded as bought for the stages that add them.
 5. **Dungeons.** Small keys, locked doors, push blocks, braziers, cracked walls. One dungeon end to end first (Tredegar), then the other six and the finale.
 6. **Items.** Gas Lantern, Baseballs, Blasting Powder, Gold-Bug, Running Shoes, Grappling Hook, Fishing Rod, Watering Can, Ginger Beer, shield, kayak.
 7. **Music and sound.** Every web game track rebuilt for the SPC700, plus sound effects.
