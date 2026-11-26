@@ -462,7 +462,7 @@ void bossDefeated(void)
         dropKind(112, 80, 4 + roomReward); /* the keystone (kinds 5-8) */
     applyRoomState(0);
     if (bossCard[bossType] != 255) cards |= 1 << bossCard[bossType]; /* its landmark card (the text says so) */
-    openTextAt((u8 *)&sys_txt + bossOutTxt[bossType]);
+    openNamed((u8 *)&sys_txt + bossOutTxt[bossType]); /* the vampire's: "Ada and the Fog" */
 }
 
 /* Something hit the boss. src: SRC_PADDLE, SRC_BOMB, SRC_REFL. Returns 1 for a hit, 2 for a clank. */

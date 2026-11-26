@@ -1177,7 +1177,7 @@ def main():
                  ('BELL_IN', 'The Great Bell', boss_text['bellIntro']),
                  ('BELL_OUT', 'The Great Bell', boss_text['bell']),
                  ('VAMPIRE_IN', 'Engine 231', boss_text['vampireIntro']),
-                 ('VAMPIRE_OUT', 'Engine 231', boss_text['vampire']),
+                 ('VAMPIRE_OUT', 'Engine 231', [t.replace('Rory', '@@@@@@@@') for t in boss_text['vampire']]),   # the story is named for you
                  ('SWARM', '', ['It bursts into a swarm of bats!']),
                  ('DESPERATE', '', ['Engine 231 groans. The thing is desperate!']),
                  ('ARUM_IN', 'Under the Dome', boss_text['arumIntro']),

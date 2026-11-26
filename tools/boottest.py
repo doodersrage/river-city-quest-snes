@@ -1000,6 +1000,9 @@ for _ in range(20000):
 check(not lab.ram('bossOn') and lab.ram('gameWon'), 'the Richmond Vampire is beaten')
 lab.run(None, 60)
 lab.screenshot(f'{out}/45-the-fog-lifts.png')
+lab.data.update_ram()
+sb = bytes(lab.data.memory.blocks[0x7E0000][lab.sym['saveBuf'] - 0x7E0000:][:400])
+check(b'Ada and the Fog' in sb.replace(b'\n', b' '), "the archivist's story is named for the hero (Ada and the Fog)")
 for _ in range(60):
     if not lab.ram('boxState'): break
     lab.press('A', 8)

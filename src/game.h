@@ -261,6 +261,7 @@ void saveGame(void);
 void playTick(void);
 u8 runTitle(void);
 void openIntro(void);
+void openNamed(u8 *s);
 void dungeonEntered(void);
 void rcqNmi(void);
 void runEnding(void);
