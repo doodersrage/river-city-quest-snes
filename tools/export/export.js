@@ -325,7 +325,7 @@ const bossArt = vm.runInContext(`(function(){
   for (const [i, c] of [[4, '#e83048'], [5, '#fff2a8'], [6, '#4a4662'], [7, '#f0c070'], [8, '#84cc68']]) { const X = i * 8 + 4, Y = 4;
     R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
   // weather (web drawRain, drawSnow): a slanted raindrop and a snowflake
-  R2(72 + 5, 0, 1, 2, '#7ab0f0'); R2(72 + 4, 2, 1, 2, '#7ab0f0'); R2(72 + 3, 4, 1, 2, '#7ab0f0');
+  R2(72 + 5, 0, 1, 2, '#d8dce4'); R2(72 + 4, 2, 1, 2, '#d8dce4'); R2(72 + 3, 4, 1, 3, '#d8dce4');  // grey: the HUD palette has no blue
   R2(80 + 3, 3, 2, 2, '#ffffff'); R2(80 + 2, 4, 1, 1, '#e8eeff'); R2(80 + 5, 3, 1, 1, '#e8eeff');
   fs.writeFileSync(path.join(OUT, 'combat', 'small.png'), sm.toBuffer('image/png'));
   const intro = vm.runInContext("(function(){try{return Object.entries(BANNERS||{})}catch(e){return null}})()", sb);
