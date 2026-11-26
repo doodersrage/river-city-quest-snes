@@ -28,7 +28,15 @@ static char slotName[3][9];
 static u8 slotHearts[3];
 static u16 slotMins[3];
 static u16 lastPad;
-static void tFrame(void);
+
+static void tFrame(void)
+{
+    u8 i;
+    WaitForVBlank();
+    for (i = 0; i < rqN; i++) dmaCopyVram((u8 *)rq[i], VRAM_BG3_MAP + rqRow[i] * 32, 64);
+    rqN = 0;
+    spcProcess();
+}
 
 /* ---- BG3 rows, copied in the next VBlank ---- */
 static u16 *rowBuf(u8 r)
@@ -60,14 +68,6 @@ static void rowText(u8 r, const char *s, u16 font)
     putAt(b, (32 - len(s)) / 2, s, font);
 }
 
-void frame(void)
-{
-    u8 i;
-    WaitForVBlank();
-    for (i = 0; i < rqN; i++) dmaCopyVram((u8 *)rq[i], VRAM_BG3_MAP + rqRow[i] * 32, 64);
-    rqN = 0;
-    spcProcess();
-}
 
 /* new presses since the last look (taps in a long frame still count: src/padnmi.asm) */
 static u16 presses(void)
