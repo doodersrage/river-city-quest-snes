@@ -8,11 +8,19 @@ export ROMTITLE := RIVER CITY QUEST
 export ROMBANKS := 64
 export ROMSIZE := 0B
 
+# Music and sound effects (tools/mkaudio.py): the effects module must come first.
+AUDIOFILES := data/audio/effects.it data/audio/city.it data/audio/south.it data/audio/dungeon.it data/audio/boss.it \
+              data/audio/forge.it data/audio/win.it data/audio/title.it data/audio/night.it
+export SOUNDBANK := data/audio/soundbank
+
 include ${PVSNESLIB_HOME}/devkitsnes/snes_rules
+
+# the soundbank goes in its own banks at the top of the ROM (banks 52 and up are free)
+SMCONVFLAGS := -s -o $(SOUNDBANK) -V -b 52
 
 .PHONY: all clean cleanLogs
 
 all: buildWithSummary
-buildActual: $(OBJS) $(ROMNAME).sfc
+buildActual: $(SOUNDBANK).obj $(OBJS) $(ROMNAME).sfc
 
 clean: cleanBuildRes cleanRom cleanLogs

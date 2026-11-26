@@ -25,6 +25,10 @@ def screen():
 lab = Lab(rom, sym, root)
 lab.run(None, 120)
 check(screen().std() > 10, 'boots to a drawn map')
+SONG = {1: 'town', 2: 'south', 3: 'dungeon', 4: 'boss', 5: 'forge', 6: 'win'}
+def song():
+    return SONG.get(lab.ram('curSong'), lab.ram('curSong'))
+check(song() == 'town', f'the town theme plays ({song()})')
 check(lab.map == 11, f'starts in the Fan (map {lab.map})')
 lab.screenshot(f'{out}/1-the-fan.png')
 
@@ -60,7 +64,10 @@ target = min(alive, key=lambda k: abs(lab.enemy(k)['x'] - lab.pos[0]) + abs(lab.
 used = lab.fight(target)
 check(used is not None, f'the paddle beats a {["rat","squirrel","goose","scooter","crab","bat","ghost"][lab.enemy(target)["type"]]} ({used} frames)')
 lab.screenshot(f'{out}/4-fight.png')
-lab.run('A', 1); lab.run('A', 70)
+for _ in range(4):                     # a rat bumping you cancels the charge: try again
+    lab.run('A', 1); lab.run('A', 70)
+    if lab.ram('charging') == 1 and lab.ram('charge') >= 40: break
+    lab.run(None, 30)
 check(lab.ram('charging') == 1 and lab.ram('charge') >= 40, 'holding A charges a spin')
 lab.run(None, 3)
 check(lab.ram('spin') > 0, 'letting go spins')
@@ -169,6 +176,7 @@ lab.walk_to_cell(28, 17)
 lab.run('UP', 20)
 lab.run(None, 70)
 check(lab.map == lab.map_named('Foundry Gate') and lab.ram('dentMap') == lab.map, 'the Tredegar door leads into the Foundry Gate')
+check(song() == 'forge', f'the ironworks play the forge theme ({song()})')
 check(clear_room() and lab.ram('roomFlags', 1, False, lab.map) & 1, 'the Foundry Gate is cleared')
 lab.walk_to_cell(14, 5)
 lab.run('RIGHT', 40)
@@ -211,6 +219,7 @@ lab.walk_to_cell(7, 1)
 lab.run('UP', 40)
 lab.run(None, 60)
 check(lab.map == lab.map_named('Furnace Hall') and lab.ram('boxState'), 'the Iron Foreman wakes up')
+check(song() == 'boss', f'the boss theme ({song()})')
 close_box()
 lab.screenshot(f'{out}/11-iron-foreman.png')
 clanked = stunned = False
@@ -247,6 +256,8 @@ lab.run(None, 30)
 lab.screenshot(f'{out}/12-foreman-beaten.png')
 check(not lab.ram('bossOn') and lab.ram('roomFlags', 1, False, lab.map) & 2, 'the Iron Foreman is beaten')
 close_box()
+lab.run(None, 10)
+check(song() == 'forge', f'and back to the forge theme once its last words are read ({song()})')
 hpmax = lab.ram('hpMax')
 try:
     lab.walk_to_cell(9, 3)      # the container is at (144, 80); walking past it picks it up
@@ -620,6 +631,7 @@ talk((8, 5), 'up')
 check(lab.ram('hasKayak') == 1, 'the Belle Isle kayaker lends a kayak')
 go('DOWN', (15, 21))
 check(lab.map == lab.map_named('Manchester'), 'paddle across the James to Manchester')
+check(song() == 'south', f'south of the river, its own theme ({song()})')
 go('LEFT', (0, 10))
 equip(2); lab.walk_to_cell(22, 9); lab.face('up'); lab.press('B', 2); lab.walk_to_cell(22, 12); lab.run(None, 90)
 lab.walk_to_cell(22, 8); lab.run('UP', 20); lab.run(None, 30)
@@ -780,7 +792,9 @@ def menu_pick(item):
     return lab.ram('eqItem') == item and not lab.ram('boxState')
 N = lab.map_named
 travel(lab, N("Scott's Addition"), close_box)
-talk2((13, 9), 'up')
+for _ in range(4):
+    talk2((13, 9), 'up')
+    if lab.ram('hasBalls'): break
 check(lab.ram('hasBalls') and lab.ram('balls') == 15, 'the Ballplayer in Scott\'s Addition gives you Baseballs')
 walk((23, 5)); lab.run('UP', 20); lab.run(None, 60); close_box()
 lab.poke('hp', 2)
@@ -827,7 +841,9 @@ for _ in range(60):
     if lab.pos[0] != x0: moved += lab.pos[0] - x0; frames += 1
 lab.screenshot(f'{out}/39-bike.png')
 check(lab.ram('riding') and frames and moved / frames >= 1.9, f'B hops on the bike: {moved / max(frames, 1):.2f} px a frame (walking is 1.5)')
-lab.press('A', 4)
+for _ in range(3):
+    lab.press('A', 4); close_box()
+    if not lab.ram('riding'): break
 check(not lab.ram('riding'), 'A hops off')
 check(menu_pick(10), 'Ginger Beer on B')
 lab.poke('hp', 1); lab.press('B', 10); close_box()
@@ -930,10 +946,13 @@ lab.run(None, 200)
 lab.screenshot(f'{out}/46-lamps-come-back-on.png')
 for t in range(200):
     lab.run(None, 20)
-    if t == 60: lab.screenshot(f'{out}/47-credits.png')
+    if t == 60:
+        lab.screenshot(f'{out}/47-credits.png')
+        check(song() == 'win', f'the credits roll to the victory theme ({song()})')
     if lab.map == N('Church Hill') and t > 40: break
 lab.run(None, 30)
 check(lab.map == N('Church Hill') and lab.pos == (72, 72), 'the lamps come back on, the credits roll, and you are back on Church Hill')
+check(song() == 'town', f'and the town theme again ({song()})')
 
 # Stage 3: let an enemy take the last half-heart; wake in Capitol Square.
 lab.poke('hp', 1)

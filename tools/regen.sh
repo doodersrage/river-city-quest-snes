@@ -9,3 +9,4 @@ cd "$HERE/tools/export"
 VARIANTS=4 node export.js "$WEB" "$HERE/build/export"
 cd "$HERE"
 python3 tools/snesconv.py build/export .
+python3 "$(dirname "$0")/mkaudio.py" build/export/music.json data/audio

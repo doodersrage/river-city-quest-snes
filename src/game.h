@@ -3,6 +3,18 @@
 #define GAME_H
 #include <snes.h>
 #include "maps.h"
+#include "../data/audio/sfx.h"
+
+/* audio (audio.c): every frame wait also feeds the sound driver */
+void audioInit(void);
+void playSong(u8 song);
+void songForMap(void);
+void sfx(u8 id);
+void rcqVBlank(void);
+extern u8 curSong;
+#ifndef RCQ_AUDIO_C
+#define WaitForVBlank() rcqVBlank()
+#endif
 
 extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define MAP_PX_W ((s16)mapW * 16)

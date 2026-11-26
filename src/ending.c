@@ -62,6 +62,7 @@ void runEnding(void)
     fade(0);
     closeText();
     hideSprites();
+    playSong(SONG_WIN);
     /* the lamps come back on, one neighbourhood after another */
     for (k = 0; k < RELIGHT_N; k++)
     {
@@ -117,6 +118,7 @@ void runEnding(void)
     hp = hpMax;
     settle();
     updateCamera();
+    songForMap();
     WaitForVBlank();
     fade(1);
 }

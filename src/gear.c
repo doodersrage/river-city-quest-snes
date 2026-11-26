@@ -43,6 +43,7 @@ void throwBall(void)
         if (!ballOn[i])
         {
             balls--;
+            sfx(SFX_SWING);
             ballOn[i] = 1;
             ballLife[i] = 70;
             ballX[i] = (px + dirX[heroDir] * 6) * 16;
@@ -143,7 +144,11 @@ void useGear(void)
     if (eqItem == ITEM_BALLS) throwBall();
     else if (eqItem == ITEM_SHOES)
     {
-        if (!dash) dash = 20;
+        if (!dash)
+        {
+            dash = 20;
+            sfx(SFX_SWING);
+        }
     }
     else if (eqItem == ITEM_BIKE)
     {
@@ -156,6 +161,7 @@ void useGear(void)
         {
             bottleFull = 0;
             hp = hpMax;
+            sfx(SFX_HEART);
             openTextAt((u8 *)&sys_txt + TXT_DRINK);
         }
         else openTextAt((u8 *)&sys_txt + TXT_EMPTY);
@@ -236,12 +242,14 @@ void updateMenu(u16 pressed)
     if (pressed & KEY_UP && menuCur > 0)
     {
         menuCur--;
+        sfx(SFX_MENU);
         if (menuCur < menuTop) menuTop = menuCur;
         drawMenu();
     }
     else if (pressed & KEY_DOWN && menuCur + 1 < menuN)
     {
         menuCur++;
+        sfx(SFX_MENU);
         if (menuCur >= menuTop + 4) menuTop = menuCur - 3;
         drawMenu();
     }

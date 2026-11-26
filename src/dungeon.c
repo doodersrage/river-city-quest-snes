@@ -212,6 +212,7 @@ u8 tryUnlock(s16 x, s16 y)
                 if (r[0] == tx && r[1] == ty)
                 {
                     linkOpen[g[1] >> 3] |= 1 << (g[1] & 7);
+                    sfx(SFX_SECRET);
                     keys[roomArea]--;
                     applyRoomState(0);
                     return 1;
@@ -228,15 +229,26 @@ void checkCleared(void)
     if (mapW == 32) return; /* outdoors, enemies always come back */
     if (roomBoss || (roomFlags[curMap] & ROOM_CLEARED) || !enemiesExisted || enemiesAlive()) return;
     roomFlags[curMap] |= ROOM_CLEARED;
-    if (roomSolve == 1) roomFlags[curMap] |= ROOM_SOLVED;
+    if (roomSolve == 1 && !(roomFlags[curMap] & ROOM_SOLVED))
+    {
+        roomFlags[curMap] |= ROOM_SOLVED;
+        sfx(SFX_SECRET);
+    }
     applyRoomState(0);
 }
 
 /* ---------- projectiles ---------- */
 
+u8 shotSfxAt;
+
 void shoot(s16 x, s16 y, s16 vx, s16 vy, u8 kind)
 {
     u8 i;
+    if (shotSfxAt != (u8)frameCount)
+    {
+        shotSfxAt = frameCount; /* one sound per volley */
+        sfx(SFX_SHOT);
+    }
     for (i = 0; i < MAX_SHOT; i++)
         if (!shotOn[i])
         {
@@ -421,6 +433,7 @@ void bossDefeated(void)
     u8 i;
     bossOn = 0;
     roomFlags[curMap] |= ROOM_BOSS | ROOM_CLEARED;
+    sfx(SFX_FANFARE);
     for (i = 0; i < MAX_SHOT; i++) shotOn[i] = 0;
     for (i = 0; i < enCount; i++) enAlive[i] = 0;
     if (bossType == BOSS_VAMPIRE)
@@ -462,7 +475,11 @@ u8 bossHit(u8 dmg, u8 src)
     /* the Bell can't be reached up high, and only a keg dents it unless it has just slammed down */
     if (bossType == BOSS_BELL && bossZ > 12) return 0;
     if (bossType == BOSS_VAMPIRE && (vampGone || vampSwarm)) return 0;
-    if (bossType != BOSS_RAVEN && bossType != BOSS_VAMPIRE && bossState != B_STUN && !((bossType == BOSS_TURTLE || bossType == BOSS_BELL) && src == SRC_BOMB)) return 2;
+    if (bossType != BOSS_RAVEN && bossType != BOSS_VAMPIRE && bossState != B_STUN && !((bossType == BOSS_TURTLE || bossType == BOSS_BELL) && src == SRC_BOMB))
+    {
+        sfx(SFX_CLANK);
+        return 2;
+    }
     bossFlash = 16;
     if (bossHp <= dmg)
     {
@@ -530,6 +547,7 @@ void updTurtle(s16 dx, s16 dy)
         {
             bossState = B_STUN;
             bossSt = 140;
+            sfx(SFX_SLAM);
             return;
         }
         bossX = nx;
@@ -575,6 +593,7 @@ void updBell(s16 dx, s16 dy, s16 d)
             bossZ = 0;
             bossState = B_STUN;
             bossSt = 110;
+            sfx(SFX_SLAM);
             for (i = 0; i < 8; i++)
                 shoot(bossX, bossY, sinTab[(i * 8 + 16) & 63] * 26 / 64, sinTab[(i * 8) & 63] * 26 / 64, 3);
         }
@@ -844,6 +863,7 @@ void dropBomb(void)
         {
             bombOn[i] = 1;
             bombT[i] = 80;
+            sfx(SFX_FUSE);
             bombX[i] = px + dirX[heroDir] * 12;
             bombY[i] = py + dirY[heroDir] * 12;
             powder--;
@@ -853,6 +873,7 @@ void dropBomb(void)
 
 void explode(s16 x, s16 y)
 {
+    sfx(SFX_BOOM);
     u8 k, n, c, opened = 0;
     u8 *g;
     u8 *r;
@@ -878,6 +899,7 @@ void explode(s16 x, s16 y)
                 if (ABS(r[0] * 16 + 8 - x) < 32 && ABS(r[1] * 16 + 8 - y) < 32)
                 {
                     linkOpen[g[1] >> 3] |= 1 << (g[1] & 7);
+                    sfx(SFX_SECRET);
                     opened = 1;
                     break;
                 }
@@ -1036,6 +1058,7 @@ void updBlocks(void)
             if (all)
             {
                 roomFlags[curMap] |= ROOM_SOLVED;
+                sfx(SFX_SECRET);
                 applyRoomState(0);
             }
         }
@@ -1164,6 +1187,7 @@ void useCan(void)
             if (g[0] == 4 && g[4] == tx && g[5] == ty)
             {
                 linkOpen[g[1] >> 3] |= 1 << (g[1] & 7);
+                sfx(SFX_SECRET);
                 applyRoomState(0);
                 openTextAt((u8 *)&sys_txt + TXT_GROW);
                 return;
@@ -1200,6 +1224,7 @@ void useLantern(void)
             if (roomSolve == 2 && (roomBraz[curMap] & all) == all)
             {
                 roomFlags[curMap] |= ROOM_SOLVED;
+                sfx(SFX_SECRET);
                 applyRoomState(0);
             }
             return;
@@ -1249,6 +1274,7 @@ void nextItem(void)
 
 void gotItem(u8 item)
 {
+    sfx(SFX_JING);
     if (item == ITEM_HOOK) hasHook = 1;
     if (item == ITEM_POWDER)
     {
@@ -1273,6 +1299,7 @@ void gotItem(u8 item)
 
 void gotKeystone(u8 id)
 {
+    sfx(SFX_FANFARE);
     u8 n = 0, b;
     keystones |= 1 << id;
     for (b = 0; b < 4; b++)

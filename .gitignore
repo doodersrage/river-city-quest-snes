@@ -13,3 +13,4 @@ src/*.ps
 src/*.asp
 screenshots-ci/
 __pycache__/
+data/audio/soundbank.*
