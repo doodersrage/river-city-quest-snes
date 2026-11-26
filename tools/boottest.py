@@ -1147,8 +1147,8 @@ def talk_to(k):
                 break
         lab.run(None, 30)
     return False
-def accept(k):
-    """Talk to them until they offer their challenge, then say yes."""
+def accept(k, want=None):
+    """Talk to them until they offer their challenge (or minigame: want=3), then say yes."""
     for _ in range(4):
         r = talk_to(k)
         if os.environ.get('DEBUG'):
@@ -1157,6 +1157,8 @@ def accept(k):
         for _ in range(30):
             if lab.ram('boxState') in (0, 6): break
             lab.press('A', 6)
+        if lab.ram('boxState') == 6 and want and lab.ram('askKind') != want:
+            lab.press('B', 10); close_box(); continue   # someone else's question (the person next to them)
         if lab.ram('boxState') == 6:
             for _ in range(3):
                 if not lab.ram('askCur'): break
@@ -1280,7 +1282,7 @@ close_box()
 # Stage 10, part 2: minigames.
 def play_mini(k, step, limit=4000):
     """Accept person k's minigame and run step() each frame until it's over; True if it started."""
-    if not accept(k): return False
+    if not accept(k, 3): return False
     for _ in range(30):
         if lab.ram('mgKind') and lab.ram('miniOn'): break
         lab.run(None, 1)
