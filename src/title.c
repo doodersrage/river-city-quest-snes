@@ -381,10 +381,11 @@ u8 runTitle(void)
     return 0;
 }
 
-/* the opening (web PANELS), with the hero's name where the \x01 is: shown as a text box */
-void openIntro(void)
+/* a text entry with the hero's name put in where the converter left a 1 byte (it goes through the save buffer,
+   which is free while a box is up) */
+void openNamed(u8 *s)
 {
-    u8 *s = (u8 *)&sys_txt + TXT_INTRO, *d = saveBuf, k;
+    u8 *d = saveBuf, k;
     do *d++ = *s; while (*s++); /* the title */
     while (*s)
     {
@@ -396,4 +397,10 @@ void openIntro(void)
     }
     *d = 0;
     openTextAt(saveBuf);
+}
+
+/* the opening (web PANELS), as a text box */
+void openIntro(void)
+{
+    openNamed((u8 *)&sys_txt + TXT_INTRO);
 }
