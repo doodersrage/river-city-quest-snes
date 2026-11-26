@@ -603,6 +603,8 @@ void enterMap(u8 i)
         WaitForVBlank();
     }
     setBrightness(0); /* forced blank: safe to DMA into VRAM */
+    kt = 0;           /* a hit taken at the edge doesn't carry you back across it */
+    dash = 0;
     curMap = i;
     rcqLoadMap(i);
     settle();
