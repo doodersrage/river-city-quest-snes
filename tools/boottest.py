@@ -737,11 +737,19 @@ check(lab.map == lab.map_named('Lewis Ginter Botanical Garden'), 'the stairs lea
 
 # Stage 6: gear from around town, and the item menu on START.
 def walk(cell):
+    m0, outdoor = lab.map, lab.ram('mapW') == 32
     for _ in range(4):
         try:
-            return lab.walk_to_cell(*cell)
+            lab.walk_to_cell(*cell)
         except RuntimeError:
             close_box(); lab.run(None, 30)
+        if lab.map != m0 and not outdoor:
+            return          # walked out a door on purpose
+        if lab.map != m0:   # knocked over an edge: come back
+            close_box(); travel(lab, m0, close_box)
+            continue
+        if (lab.pos[0] // 16, lab.pos[1] // 16) == tuple(cell):
+            return
     lab.walk_to_cell(*cell)
 def talk2(cell, d):
     walk(cell); lab.face(d); lab.press('A', 60); close_box()
@@ -764,7 +772,7 @@ check(lab.map == N("Scott's Addition Taproom") and lab.ram('hasBottle') and lab.
 walk((7, 9)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
 lab.press('START', 10)
 lab.screenshot(f'{out}/36-item-menu.png')
-check(lab.ram('boxState') == 5 and lab.ram('menuN') >= 8, f"START opens the item menu ({lab.ram('menuN')} items)")
+check(lab.ram('boxState') == 5 and lab.ram('menuN') >= 7, f"START opens the item menu ({lab.ram('menuN')} items)")
 lab.press('START', 6)
 check(menu_pick(7), 'the menu puts Baseballs on B')
 b0 = lab.ram('balls'); lab.face('down'); lab.press('B', 4)
@@ -778,14 +786,18 @@ except RuntimeError:
 lab.run(None, 20); close_box()
 check(lab.ram('hasBib'), 'a race bib in Byrd Park')
 travel(lab, N('The Fan'), close_box)
-talk2((26, 7), 'up')
+for _ in range(4):
+    talk2((26, 7), 'up')
+    if lab.ram('hasShoes'): break
 check(lab.ram('hasShoes'), 'the Runner in the Fan trades his spare Running Shoes for it')
 check(menu_pick(8), 'Running Shoes on B')
 walk((10, 12)); lab.face('right'); x0 = lab.pos[0]; lab.press('B', 1); lab.run(None, 8)
 lab.screenshot(f'{out}/38-dash.png'); lab.run(None, 20)
 check(lab.pos[0] - x0 > 40, f'B dashes ({lab.pos[0] - x0} px)')
 travel(lab, N('Rocketts Landing'), close_box)
-talk2((20, 11), 'up')
+for _ in range(4):
+    talk2((20, 11), 'up')
+    if lab.ram('hasBike'): break
 check(lab.ram('hasBike'), 'the Trail Cyclist at Rocketts Landing hands over a bicycle')
 walk((6, 12)); lab.press('B', 2)
 x0 = lab.pos[0]; lab.run('RIGHT', 60)

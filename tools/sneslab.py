@@ -227,16 +227,28 @@ def leave(lab, d, close_box):
         cells, key = [(x, y) for y in range(h) if not g[y][x]], 'LEFT' if d == 'W' else 'RIGHT'
     cells.sort(key=lambda c: abs(c[0] - w // 2) + abs(c[1] - h // 2))
     m0 = lab.map
+    want = _neighbours(lab.root)[d][m0]
     for c in cells:
         try:
             lab.walk_to_cell(*c)
         except RuntimeError:
-            continue
-        lab.run(key, 30)
-        lab.run(None, 40)
+            pass
+        if lab.map == m0:
+            lab.run(key, 30)
+            lab.run(None, 40)
         close_box()
-        if lab.map != m0:
+        if lab.map == want:
             return True
+        if lab.map != m0:
+            # stumbled through a door on the way: walk back out the way we came
+            for back in ('DOWN', 'UP', 'LEFT', 'RIGHT'):
+                lab.run(back, 40)
+                lab.run(None, 40)
+                close_box()
+                if lab.map == m0:
+                    break
+            if lab.map != m0:
+                return False
     return False
 
 
