@@ -228,76 +228,77 @@ extern char sys_txt;
 #define TXT_PINAGAIN 11812
 #define TXT_NEEDBUG 11860
 #define TXT_NEEDLAMP 11933
-#define TXT_QUIZFEW 11970
-#define TXT_QUIZ0 12083
-#define TXT_QUIZ1 12146
-#define TXT_QUIZ2 12209
-#define TXT_LORE0 12272
-#define TXT_LORE1 12350
-#define TXT_LORE2 12479
-#define TXT_LORE3 12622
-#define TXT_LORE4 12753
-#define TXT_LORE5 12896
-#define TXT_LORE6 13039
-#define TXT_LORE7 13146
-#define TXT_LORE8 13284
-#define TXT_LORE9 13427
-#define TXT_LORE10 13570
-#define TXT_LORE11 13627
-#define TXT_LORE12 13745
-#define TXT_LORE13 13888
-#define TXT_LORE14 14023
-#define TXT_LORE15 14166
-#define TXT_LORE16 14282
-#define TXT_LORE17 14417
-#define TXT_LORE18 14546
-#define TXT_LORE19 14689
-#define TXT_LORE20 14814
-#define TXT_LORE21 14957
-#define TXT_LORE22 15100
-#define TXT_LORE23 15224
-#define TXT_LORE24 15338
-#define TXT_LORE25 15460
-#define TXT_LORE26 15603
-#define TXT_LORE27 15746
-#define TXT_LORE28 15889
-#define TXT_LORE29 16032
-#define TXT_LORE30 16175
-#define TXT_LORE31 16312
-#define TXT_LORE32 16448
-#define TXT_LORE33 16591
-#define TXT_LORE34 16703
-#define TXT_LORE35 16847
-#define TXT_LORE36 16990
-#define TXT_LORE37 17085
-#define TXT_LORE38 17228
-#define TXT_LORE39 17371
-#define TXT_LORE40 17514
-#define TXT_LORE41 17657
-#define TXT_LORE42 17800
-#define TXT_LORE43 17938
-#define TXT_LORE44 18081
-#define TXT_LORE45 18191
-#define TXT_LORE46 18324
-#define TXT_LORE47 18385
-#define TXT_LORE48 18528
-#define TXT_LORE49 18628
-#define TXT_LORE50 18769
-#define TXT_LORE51 18821
-#define TXT_LORE52 18914
-#define TXT_LORE53 19028
-#define TXT_LORE54 19153
-#define TXT_LORE55 19296
-#define TXT_LORE56 19389
-#define TXT_LORE57 19532
-#define TXT_LORE58 19622
-#define TXT_LORE59 19763
-#define TXT_LORE60 19866
-#define TXT_LORE61 20009
-#define TXT_LORE62 20152
-#define TXT_LORE63 20295
-#define TXT_LORE64 20438
-#define TXT_LORE65 20540
+#define TXT_NEEDCOIN 11970
+#define TXT_QUIZFEW 12006
+#define TXT_QUIZ0 12119
+#define TXT_QUIZ1 12182
+#define TXT_QUIZ2 12245
+#define TXT_LORE0 12308
+#define TXT_LORE1 12386
+#define TXT_LORE2 12515
+#define TXT_LORE3 12658
+#define TXT_LORE4 12789
+#define TXT_LORE5 12932
+#define TXT_LORE6 13075
+#define TXT_LORE7 13182
+#define TXT_LORE8 13320
+#define TXT_LORE9 13463
+#define TXT_LORE10 13606
+#define TXT_LORE11 13663
+#define TXT_LORE12 13781
+#define TXT_LORE13 13924
+#define TXT_LORE14 14059
+#define TXT_LORE15 14202
+#define TXT_LORE16 14318
+#define TXT_LORE17 14453
+#define TXT_LORE18 14582
+#define TXT_LORE19 14725
+#define TXT_LORE20 14850
+#define TXT_LORE21 14993
+#define TXT_LORE22 15136
+#define TXT_LORE23 15260
+#define TXT_LORE24 15374
+#define TXT_LORE25 15496
+#define TXT_LORE26 15639
+#define TXT_LORE27 15782
+#define TXT_LORE28 15925
+#define TXT_LORE29 16068
+#define TXT_LORE30 16211
+#define TXT_LORE31 16348
+#define TXT_LORE32 16484
+#define TXT_LORE33 16627
+#define TXT_LORE34 16739
+#define TXT_LORE35 16883
+#define TXT_LORE36 17026
+#define TXT_LORE37 17121
+#define TXT_LORE38 17264
+#define TXT_LORE39 17407
+#define TXT_LORE40 17550
+#define TXT_LORE41 17693
+#define TXT_LORE42 17836
+#define TXT_LORE43 17974
+#define TXT_LORE44 18117
+#define TXT_LORE45 18227
+#define TXT_LORE46 18360
+#define TXT_LORE47 18421
+#define TXT_LORE48 18564
+#define TXT_LORE49 18664
+#define TXT_LORE50 18805
+#define TXT_LORE51 18857
+#define TXT_LORE52 18950
+#define TXT_LORE53 19064
+#define TXT_LORE54 19189
+#define TXT_LORE55 19332
+#define TXT_LORE56 19425
+#define TXT_LORE57 19568
+#define TXT_LORE58 19658
+#define TXT_LORE59 19799
+#define TXT_LORE60 19902
+#define TXT_LORE61 20045
+#define TXT_LORE62 20188
+#define TXT_LORE63 20331
+#define TXT_LORE64 20474
+#define TXT_LORE65 20576
 #define CHAL_COUNT 14
 #define CHAL_QUIZ 6
 #define CH_COLLECT 1
@@ -533,6 +534,7 @@ static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11,
 extern char mini0_chr, mini0_chrend, mini0_map, mini0_pal;  /* bat: 97 tiles, 8 palettes */
 extern char mini1_chr, mini1_chrend, mini1_map, mini1_pal;  /* hoops: 91 tiles, 8 palettes */
 extern char mini2_chr, mini2_chrend, mini2_map, mini2_pal;  /* tennis: 24 tiles, 1 palettes */
+extern char mini6_chr, mini6_chrend, mini6_map, mini6_pal;  /* pin: 129 tiles, 3 palettes */
 extern char race0_chr, race0_chrend, race0_map, race0_pal, race0_och, race0_ochend, race0_opl;  /* derby: 18 tiles */
 extern char race1_chr, race1_chrend, race1_map, race1_pal, race1_och, race1_ochend, race1_opl;  /* trail: 17 tiles */
 extern char race2_chr, race2_chrend, race2_map, race2_pal, race2_och, race2_ochend, race2_opl;  /* race: 34 tiles */
@@ -546,6 +548,12 @@ static const u8 raceKinds[12] = {1, 2, 67, 1, 1, 2, 67, 1, 129, 129, 67, 129};  
 static const char *const raceWho[3] = {"The Derby Kid", "The cyclist", "The race official"};
 static const char *const raceLabel[3] = {"LIBBY HILL", "CAPITAL TRAIL", "RICHMOND RACEWAY"};
 static const char *const raceName[3] = {"Libby Hill Soapbox Derby", "Capital Trail Time Trial", "Richmond Raceway Dash"};
+extern char pinlit_chr, pinlit_chrend, pinlit_pal;
+static const u16 pinLitTile[12] = {64, 66, 68, 70, 72, 74, 76, 78, 96, 98, 100, 102};  /* 3 sizes x 4 corners */
+static const s8 pinUX[18] = {58, 60, 62, 64, 64, 64, 62, 60, 58, -58, -60, -62, -64, -64, -64, -62, -60, -58};
+static const s8 pinUY[18] = {28, 21, 14, 7, 0, -7, -14, -21, -28, 28, 21, 14, 7, 0, -7, -14, -21, -28};  /* flipper, eighths up */
+#define ARCADE_N 1
+static const u8 arcadeAt[2] = {65, 0};  /* map, text */
 extern char minispr_chr, minispr_chrend, minispr_pal;
 #define MT_BALL2 32
 #define MT_BALL3 33
@@ -558,6 +566,8 @@ extern char minispr_chr, minispr_chrend, minispr_pal;
 #define MT_RACKETHEAD 40
 #define MT_BBALL 41
 #define MT_NEEDLE 42
+#define MT_PINDOT 43
+#define MT_PINBALL 44
 #define MINI_BAT 1
 #define MINI_HOOPS 2
 #define MINI_TENNIS 3

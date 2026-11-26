@@ -1871,6 +1871,16 @@ mini2_pal:
 .incbin "data/mini2.pal"
 .ends
 
+.section ".mini6" superfree
+mini6_chr:
+.incbin "data/mini6.chr"
+mini6_chrend:
+mini6_map:
+.incbin "data/mini6.map"
+mini6_pal:
+.incbin "data/mini6.pal"
+.ends
+
 .section ".race0" superfree
 race0_chr:
 .incbin "data/race0.chr"
@@ -1914,6 +1924,14 @@ race2_och:
 race2_ochend:
 race2_opl:
 .incbin "data/race2.opl"
+.ends
+
+.section ".pinlit" superfree
+pinlit_chr:
+.incbin "data/pinlit.chr"
+pinlit_chrend:
+pinlit_pal:
+.incbin "data/pinlit.pal"
 .ends
 
 .section ".minispr" superfree

@@ -879,6 +879,15 @@ u8 interact(void)
     if (!t)
         return 0;
     loreMark(t - 1);
+    /* Stone House pinball: one coin a game */
+    for (k = 0; k < ARCADE_N; k++)
+        if (arcadeAt[k * 2] == curMap && arcadeAt[k * 2 + 1] == t - 1)
+        {
+            miniOffer(MINI_PIN, t - 1);
+            askOpt[0] = "PLAY (1 COIN)";
+            askOpt[1] = "WALK AWAY";
+            return 1;
+        }
     openText(t - 1);
     return 1;
 }

@@ -1365,4 +1365,33 @@ for name, place, k, shotname in (('Derby Kid', 'Church Hill', 2, '67-soapbox-der
     check(lab.ram('coins', 2) == min(999, coins + won) and lab.ram('miniBest', 2, False, lab.ram('mgKind')) == lab.ram('rcTime', 2),
           f"{won} coins and a best time ({coins} -> {lab.ram('coins', 2)})")
     close_box()
+
+# Stone House pinball: one coin a game. Flip when the ball comes down to a flipper.
+travel(lab, N('Forest Hill Park'), close_box)
+walk((7, 6)); lab.run('UP', 30); lab.run(None, 60); close_box()
+check(lab.map == N('Stone House Arcade'), f'into the Stone House Arcade (map {lab.map})')
+coins = lab.ram('coins', 2)
+walk((2, 3)); lab.face('up'); lab.press('A', 20)
+for _ in range(30):
+    if lab.ram('boxState') in (0, 6): break
+    lab.press('A', 6)
+check(lab.ram('boxState') == 6 and lab.ram('askKind') == 3, 'a pinball machine: one coin a game')
+lab.press('A', 10)
+for _ in range(30):
+    if lab.ram('miniOn') and lab.ram('mgKind') == 7: break
+    lab.run(None, 1)
+check(lab.ram('miniOn') and lab.ram('coins', 2) == coins - 1, f"in goes the coin ({coins} -> {lab.ram('coins', 2)})")
+flips = 0
+for f in range(8000):
+    if not lab.ram('miniOn'): break
+    if f == 400: lab.screenshot(f'{out}/70-pinball.png')
+    x, y, vy = lab.ram('pbX', 2, True) >> 6, lab.ram('pbY', 2, True) >> 6, lab.ram('pbVY', 2, True)
+    if lab.ram('pbOn') and 160 < y < 184 and vy > 0 and 80 < x < 176:
+        lab.run('B' if x < 128 else 'A', 6); flips += 1
+    else: lab.run(None, 1)
+score = lab.ram('pbScore', 2)
+lab.run(None, 60)
+check(not lab.ram('miniOn') and lab.ram('pbBalls') == 0 and score > 0, f'three balls: {score} points, {flips} flips')
+check(lab.ram('coins', 2) == coins - 1 + score // 500 and lab.ram('boxState'), f"the machine pays a coin per 500 ({lab.ram('coins', 2)} coins)")
+close_box()
 sys.exit(0 if ok else 1)
