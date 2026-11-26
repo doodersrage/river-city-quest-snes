@@ -158,8 +158,26 @@ class Lab:
         """Write one byte of a game variable (for tests that need a set-up state)."""
         self.data.memory.assign(self.sym[name] + index, '|u1', value)
 
+    def _exit_ahead(self, d):
+        """Would a step in direction d put the hero's feet on a door or an exit?"""
+        x, y = self.pos
+        dx, dy = {'UP': (0, -6), 'DOWN': (0, 6), 'LEFT': (-6, 0), 'RIGHT': (6, 0)}[d]
+        nx, ny = x + dx, y + dy
+        w, h = self.ram('mapW'), self.ram('mapH')
+        if nx < 0 or ny < 0 or nx >= w * 16 or ny >= h * 16:
+            return True
+        return self.ram('colRam', 1, False, (ny // 16) * MAP_W + nx // 16) in (2, 3)
+
+    def run_safe(self, d, frames):
+        """Run in direction d unless that walks out of the room."""
+        for _ in range(frames):
+            if self._exit_ahead(d):
+                return
+            self.run(d, 1)
+
     def fight(self, k, limit=1500):
-        """Chase enemy k and swing at it until it is gone. Returns frames used, or None."""
+        """Chase enemy k and swing at it until it is gone. Returns frames used, or None.
+        Never steps onto a door, an exit or off the map."""
         for f in range(limit):
             e = self.enemy(k)
             if not e['alive']:
@@ -168,7 +186,7 @@ class Lab:
             dx, dy = e['x'] - x, e['y'] - y
             if abs(dx) + abs(dy) < 20 and (abs(dx) < 8 or abs(dy) < 8):
                 d = ('RIGHT' if dx > 0 else 'LEFT') if abs(dx) >= abs(dy) else ('DOWN' if dy > 0 else 'UP')
-                self.run(d, 1)
+                self.run_safe(d, 1)
                 self.press('A', 15)
             else:
                 if abs(dx) > abs(dy) and abs(dy) > 3:
@@ -177,13 +195,13 @@ class Lab:
                     order = ['RIGHT' if dx > 0 else 'LEFT', 'DOWN' if dy > 0 else 'UP']
                 else:
                     order = ['DOWN' if dy > 0 else 'UP', 'RIGHT' if dx > 0 else 'LEFT']
-                self.run(order[0], 1)
+                self.run_safe(order[0], 1)
                 if self.pos == (x, y):
                     # blocked: sidestep a whole half-cell, whichever way is open
                     side = [order[1]] + [d for d in ('UP', 'DOWN', 'LEFT', 'RIGHT') if d != order[1] and d != order[0]]
                     for d in side:
                         before = self.pos
-                        self.run(d, 8)
+                        self.run_safe(d, 8)
                         if self.pos != before:
                             break
         return None
