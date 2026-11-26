@@ -133,6 +133,7 @@ void lifeLoad(void)
         lastOn[k] = 1;
         townHide(k);
     }
+    chalLoad();
     lifeAny = carAny || birdSt[0] != 255 || birdSt[1] != 255;
     /* their art goes where a boss would load: outdoor maps never have one */
     if (!roomBoss && !mapDark[curMap])   /* outdoors: also the challenge tokens and the '!' */

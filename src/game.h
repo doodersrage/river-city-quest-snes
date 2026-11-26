@@ -117,6 +117,7 @@ void chalKill(u8 k);
 u8 chalAt(u8 type, s16 fx, s16 fy);
 void chalUpdate(void);
 void chalDraw(void);
+void chalLoad(void);
 void loreMark(u8 text);
 u8 pinCount(void);
 

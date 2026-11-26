@@ -19,7 +19,23 @@ const char *askOpt[3];
 /* the quiz */
 u8 quizI, quizScore, quizAns, quizQ[3];
 
-static u8 hudSecs, hudGot, hudShown;
+static u8 hudSecs, hudGot, hudShown, bangK;
+static u16 bangBit;
+
+/* Called when a map loads: who here has a challenge (for the "!"). */
+void chalLoad(void)
+{
+    u8 i;
+    u8 *rec = wld + WLD_NPCS;
+    bangK = 255;
+    sprHide(OAM_BANG);
+    for (i = 0; i < npcCount; i++, rec += NPC_REC)
+        if (rec[12])
+        {
+            bangK = i;
+            bangBit = 1 << (rec[12] - 1);
+        }
+}
 
 static void chalCells(u8 c, u8 i, s16 *x, s16 *y)
 {
@@ -302,26 +318,18 @@ static void put8(u8 slot, s16 x, u16 tile)
 /* Seconds left and how many so far, top middle (web: name, seconds, got/need). */
 void chalDraw(void)
 {
-    u8 s, i, k, x;
-    u8 *rec;
+    u8 s, i, x;
     s16 sx, sy;
     /* the "!" over the person with a challenge you haven't won, blinking */
-    k = 255;
-    sx = sy = -100;
-    for (i = 0; i < npcCount; i++)
+    if (bangK != 255)
     {
-        rec = wld + WLD_NPCS + i * NPC_REC;
-        if (rec[12] && !(pins & (1 << (rec[12] - 1)))) k = i;
+        sx = npcX[bangK] - camX - 8;
+        sy = npcY[bangK] - camY - 32;
+        if (chalOn || boxState || ((frameCount >> 4) & 1) || (pins & bangBit) || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
+            sprHide(OAM_BANG);
+        else
+            sprPut(OAM_BANG, 1, sx, sy, 3, 0, townTile[TOWN_BANG], PAL_ITEM);
     }
-    if (k != 255)
-    {
-        sx = npcX[k] - camX - 8;
-        sy = npcY[k] - camY - 32;
-    }
-    if (k == 255 || chalOn || boxState || ((frameCount >> 4) & 1) || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
-        sprHide(OAM_BANG);
-    else
-        sprPut(OAM_BANG, 1, sx, sy, 3, 0, townTile[TOWN_BANG], PAL_ITEM);
     if (!chalOn)
     {
         if (hudShown)
