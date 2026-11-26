@@ -2,7 +2,7 @@
 #ifndef MAPS_H
 #define MAPS_H
 
-#define MAP_COUNT 66
+#define MAP_COUNT 71
 #define COL_STRIDE 32
 
 extern char m0_chr, m0_chrend, m0_map, m0_pal, m0_col, m0_wld, m0_och, m0_opl, m0_ene, m0_xtr;  /* Richmond Raceway */
@@ -35,42 +35,47 @@ extern char m26_chr, m26_chrend, m26_map, m26_pal, m26_col, m26_wld, m26_och, m2
 extern char m27_chr, m27_chrend, m27_map, m27_pal, m27_col, m27_wld, m27_och, m27_opl, m27_ene, m27_xtr;  /* Rocketts Boathouse */
 extern char m28_chr, m28_chrend, m28_map, m28_pal, m28_col, m28_wld, m28_och, m28_opl, m28_ene, m28_xtr;  /* The Byrd Theatre */
 extern char m29_chr, m29_chrend, m29_map, m29_pal, m29_col, m29_wld, m29_och, m29_opl, m29_ene, m29_xtr;  /* Capitol Rotunda */
-extern char m30_chr, m30_chrend, m30_map, m30_pal, m30_col, m30_wld, m30_och, m30_opl, m30_ene, m30_xtr;  /* The Hippodrome */
-extern char m31_chr, m31_chrend, m31_map, m31_pal, m31_col, m31_wld, m31_och, m31_opl, m31_ene, m31_xtr;  /* The Jefferson Hotel */
-extern char m32_chr, m32_chrend, m32_map, m32_pal, m32_col, m32_wld, m32_och, m32_opl, m32_ene, m32_xtr;  /* Cave Under Libby Hill */
-extern char m33_chr, m33_chrend, m33_map, m33_pal, m33_col, m33_wld, m33_och, m33_opl, m33_ene, m33_xtr;  /* Maymont House */
-extern char m34_chr, m34_chrend, m34_map, m34_pal, m34_col, m34_wld, m34_och, m34_opl, m34_ene, m34_xtr;  /* John Marshall House */
-extern char m35_chr, m35_chrend, m35_map, m35_pal, m35_col, m35_wld, m35_och, m35_opl, m35_ene, m35_xtr;  /* Enchanted Garden */
-extern char m36_chr, m36_chrend, m36_map, m36_pal, m36_col, m36_wld, m36_och, m36_opl, m36_ene, m36_xtr;  /* Hidden Vault */
-extern char m37_chr, m37_chrend, m37_map, m37_pal, m37_col, m37_wld, m37_och, m37_opl, m37_ene, m37_xtr;  /* The Raven's Roost */
-extern char m38_chr, m38_chrend, m38_map, m38_pal, m38_col, m38_wld, m38_och, m38_opl, m38_ene, m38_xtr;  /* Raven's Study */
-extern char m39_chr, m39_chrend, m39_map, m39_pal, m39_col, m39_wld, m39_och, m39_opl, m39_ene, m39_xtr;  /* Cellar Stair */
-extern char m40_chr, m40_chrend, m40_map, m40_pal, m40_col, m40_wld, m40_och, m40_opl, m40_ene, m40_xtr;  /* Wine Cellar */
-extern char m41_chr, m41_chrend, m41_map, m41_pal, m41_col, m41_wld, m41_och, m41_opl, m41_ene, m41_xtr;  /* Burial Vault */
-extern char m42_chr, m42_chrend, m42_map, m42_pal, m42_col, m42_wld, m42_och, m42_opl, m42_ene, m42_xtr;  /* Hall of Lamps */
-extern char m43_chr, m43_chrend, m43_map, m43_pal, m43_col, m43_wld, m43_och, m43_opl, m43_ene, m43_xtr;  /* Ossuary */
-extern char m44_chr, m44_chrend, m44_map, m44_pal, m44_col, m44_wld, m44_och, m44_opl, m44_ene, m44_xtr;  /* Heart of the Pyramid */
-extern char m45_chr, m45_chrend, m45_map, m45_pal, m45_col, m45_wld, m45_och, m45_opl, m45_ene, m45_xtr;  /* Powder Store */
-extern char m46_chr, m46_chrend, m46_map, m46_pal, m46_col, m46_wld, m46_och, m46_opl, m46_ene, m46_xtr;  /* Quarry Floor */
-extern char m47_chr, m47_chrend, m47_map, m47_pal, m47_col, m47_wld, m47_och, m47_opl, m47_ene, m47_xtr;  /* Quarry Pond */
-extern char m48_chr, m48_chrend, m48_map, m48_pal, m48_col, m48_wld, m48_och, m48_opl, m48_ene, m48_xtr;  /* Flooded Cut */
-extern char m49_chr, m49_chrend, m49_map, m49_pal, m49_col, m49_wld, m49_och, m49_opl, m49_ene, m49_xtr;  /* Your Row House */
-extern char m50_chr, m50_chrend, m50_map, m50_pal, m50_col, m50_wld, m50_och, m50_opl, m50_ene, m50_xtr;  /* Power Plant Ruins */
-extern char m51_chr, m51_chrend, m51_map, m51_pal, m51_col, m51_wld, m51_och, m51_opl, m51_ene, m51_xtr;  /* Science Museum of Virginia */
-extern char m52_chr, m52_chrend, m52_map, m52_pal, m52_col, m52_wld, m52_och, m52_opl, m52_ene, m52_xtr;  /* Carytown Goods */
-extern char m53_chr, m53_chrend, m53_map, m53_pal, m53_col, m53_wld, m53_och, m53_opl, m53_ene, m53_xtr;  /* The Siegel Center */
-extern char m54_chr, m54_chrend, m54_map, m54_pal, m54_col, m54_wld, m54_och, m54_opl, m54_ene, m54_xtr;  /* Main Street Station */
-extern char m55_chr, m55_chrend, m55_map, m55_pal, m55_col, m55_wld, m55_och, m55_opl, m55_ene, m55_xtr;  /* St. John's Church */
-extern char m56_chr, m56_chrend, m56_map, m56_pal, m56_col, m56_wld, m56_och, m56_opl, m56_ene, m56_xtr;  /* Stone House Arcade */
-extern char m57_chr, m57_chrend, m57_map, m57_pal, m57_col, m57_wld, m57_och, m57_opl, m57_ene, m57_xtr;  /* Manchester Art Studio */
-extern char m58_chr, m58_chrend, m58_map, m58_pal, m58_col, m58_wld, m58_och, m58_opl, m58_ene, m58_xtr;  /* Scott's Addition Taproom */
-extern char m59_chr, m59_chrend, m59_map, m59_pal, m59_col, m59_wld, m59_och, m59_opl, m59_ene, m59_xtr;  /* Miller & Rhoads Tea Room */
-extern char m60_chr, m60_chrend, m60_map, m60_pal, m60_col, m60_wld, m60_och, m60_opl, m60_ene, m60_xtr;  /* Furnace Hall */
-extern char m61_chr, m61_chrend, m61_map, m61_pal, m61_col, m61_wld, m61_och, m61_opl, m61_ene, m61_xtr;  /* Casting Floor */
-extern char m62_chr, m62_chrend, m62_map, m62_pal, m62_col, m62_wld, m62_och, m62_opl, m62_ene, m62_xtr;  /* Foundry Gate */
-extern char m63_chr, m63_chrend, m63_map, m63_pal, m63_col, m63_wld, m63_och, m63_opl, m63_ene, m63_xtr;  /* Pattern Shop */
-extern char m64_chr, m64_chrend, m64_map, m64_pal, m64_col, m64_wld, m64_och, m64_opl, m64_ene, m64_xtr;  /* Virginia Museum of Fine Arts */
-extern char m65_chr, m65_chrend, m65_map, m65_pal, m65_col, m65_wld, m65_och, m65_opl, m65_ene, m65_xtr;  /* Virginia Museum of History & Culture */
+extern char m30_chr, m30_chrend, m30_map, m30_pal, m30_col, m30_wld, m30_och, m30_opl, m30_ene, m30_xtr;  /* Bell Loft */
+extern char m31_chr, m31_chrend, m31_map, m31_pal, m31_col, m31_wld, m31_och, m31_opl, m31_ene, m31_xtr;  /* The Great Bell */
+extern char m32_chr, m32_chrend, m32_map, m32_pal, m32_col, m32_wld, m32_och, m32_opl, m32_ene, m32_xtr;  /* Rope Room */
+extern char m33_chr, m33_chrend, m33_map, m33_pal, m33_col, m33_wld, m33_och, m33_opl, m33_ene, m33_xtr;  /* Carillon Base */
+extern char m34_chr, m34_chrend, m34_map, m34_pal, m34_col, m34_wld, m34_och, m34_opl, m34_ene, m34_xtr;  /* Belfry Ledge */
+extern char m35_chr, m35_chrend, m35_map, m35_pal, m35_col, m35_wld, m35_och, m35_opl, m35_ene, m35_xtr;  /* The Hippodrome */
+extern char m36_chr, m36_chrend, m36_map, m36_pal, m36_col, m36_wld, m36_och, m36_opl, m36_ene, m36_xtr;  /* The Jefferson Hotel */
+extern char m37_chr, m37_chrend, m37_map, m37_pal, m37_col, m37_wld, m37_och, m37_opl, m37_ene, m37_xtr;  /* Cave Under Libby Hill */
+extern char m38_chr, m38_chrend, m38_map, m38_pal, m38_col, m38_wld, m38_och, m38_opl, m38_ene, m38_xtr;  /* Maymont House */
+extern char m39_chr, m39_chrend, m39_map, m39_pal, m39_col, m39_wld, m39_och, m39_opl, m39_ene, m39_xtr;  /* John Marshall House */
+extern char m40_chr, m40_chrend, m40_map, m40_pal, m40_col, m40_wld, m40_och, m40_opl, m40_ene, m40_xtr;  /* Enchanted Garden */
+extern char m41_chr, m41_chrend, m41_map, m41_pal, m41_col, m41_wld, m41_och, m41_opl, m41_ene, m41_xtr;  /* Hidden Vault */
+extern char m42_chr, m42_chrend, m42_map, m42_pal, m42_col, m42_wld, m42_och, m42_opl, m42_ene, m42_xtr;  /* The Raven's Roost */
+extern char m43_chr, m43_chrend, m43_map, m43_pal, m43_col, m43_wld, m43_och, m43_opl, m43_ene, m43_xtr;  /* Raven's Study */
+extern char m44_chr, m44_chrend, m44_map, m44_pal, m44_col, m44_wld, m44_och, m44_opl, m44_ene, m44_xtr;  /* Cellar Stair */
+extern char m45_chr, m45_chrend, m45_map, m45_pal, m45_col, m45_wld, m45_och, m45_opl, m45_ene, m45_xtr;  /* Wine Cellar */
+extern char m46_chr, m46_chrend, m46_map, m46_pal, m46_col, m46_wld, m46_och, m46_opl, m46_ene, m46_xtr;  /* Burial Vault */
+extern char m47_chr, m47_chrend, m47_map, m47_pal, m47_col, m47_wld, m47_och, m47_opl, m47_ene, m47_xtr;  /* Hall of Lamps */
+extern char m48_chr, m48_chrend, m48_map, m48_pal, m48_col, m48_wld, m48_och, m48_opl, m48_ene, m48_xtr;  /* Ossuary */
+extern char m49_chr, m49_chrend, m49_map, m49_pal, m49_col, m49_wld, m49_och, m49_opl, m49_ene, m49_xtr;  /* Heart of the Pyramid */
+extern char m50_chr, m50_chrend, m50_map, m50_pal, m50_col, m50_wld, m50_och, m50_opl, m50_ene, m50_xtr;  /* Powder Store */
+extern char m51_chr, m51_chrend, m51_map, m51_pal, m51_col, m51_wld, m51_och, m51_opl, m51_ene, m51_xtr;  /* Quarry Floor */
+extern char m52_chr, m52_chrend, m52_map, m52_pal, m52_col, m52_wld, m52_och, m52_opl, m52_ene, m52_xtr;  /* Quarry Pond */
+extern char m53_chr, m53_chrend, m53_map, m53_pal, m53_col, m53_wld, m53_och, m53_opl, m53_ene, m53_xtr;  /* Flooded Cut */
+extern char m54_chr, m54_chrend, m54_map, m54_pal, m54_col, m54_wld, m54_och, m54_opl, m54_ene, m54_xtr;  /* Your Row House */
+extern char m55_chr, m55_chrend, m55_map, m55_pal, m55_col, m55_wld, m55_och, m55_opl, m55_ene, m55_xtr;  /* Power Plant Ruins */
+extern char m56_chr, m56_chrend, m56_map, m56_pal, m56_col, m56_wld, m56_och, m56_opl, m56_ene, m56_xtr;  /* Science Museum of Virginia */
+extern char m57_chr, m57_chrend, m57_map, m57_pal, m57_col, m57_wld, m57_och, m57_opl, m57_ene, m57_xtr;  /* Carytown Goods */
+extern char m58_chr, m58_chrend, m58_map, m58_pal, m58_col, m58_wld, m58_och, m58_opl, m58_ene, m58_xtr;  /* The Siegel Center */
+extern char m59_chr, m59_chrend, m59_map, m59_pal, m59_col, m59_wld, m59_och, m59_opl, m59_ene, m59_xtr;  /* Main Street Station */
+extern char m60_chr, m60_chrend, m60_map, m60_pal, m60_col, m60_wld, m60_och, m60_opl, m60_ene, m60_xtr;  /* St. John's Church */
+extern char m61_chr, m61_chrend, m61_map, m61_pal, m61_col, m61_wld, m61_och, m61_opl, m61_ene, m61_xtr;  /* Stone House Arcade */
+extern char m62_chr, m62_chrend, m62_map, m62_pal, m62_col, m62_wld, m62_och, m62_opl, m62_ene, m62_xtr;  /* Manchester Art Studio */
+extern char m63_chr, m63_chrend, m63_map, m63_pal, m63_col, m63_wld, m63_och, m63_opl, m63_ene, m63_xtr;  /* Scott's Addition Taproom */
+extern char m64_chr, m64_chrend, m64_map, m64_pal, m64_col, m64_wld, m64_och, m64_opl, m64_ene, m64_xtr;  /* Miller & Rhoads Tea Room */
+extern char m65_chr, m65_chrend, m65_map, m65_pal, m65_col, m65_wld, m65_och, m65_opl, m65_ene, m65_xtr;  /* Furnace Hall */
+extern char m66_chr, m66_chrend, m66_map, m66_pal, m66_col, m66_wld, m66_och, m66_opl, m66_ene, m66_xtr;  /* Casting Floor */
+extern char m67_chr, m67_chrend, m67_map, m67_pal, m67_col, m67_wld, m67_och, m67_opl, m67_ene, m67_xtr;  /* Foundry Gate */
+extern char m68_chr, m68_chrend, m68_map, m68_pal, m68_col, m68_wld, m68_och, m68_opl, m68_ene, m68_xtr;  /* Pattern Shop */
+extern char m69_chr, m69_chrend, m69_map, m69_pal, m69_col, m69_wld, m69_och, m69_opl, m69_ene, m69_xtr;  /* Virginia Museum of Fine Arts */
+extern char m70_chr, m70_chrend, m70_map, m70_pal, m70_col, m70_wld, m70_och, m70_opl, m70_ene, m70_xtr;  /* Virginia Museum of History & Culture */
 extern char sys_txt;
 #define TXT_DEAD 0
 #define TXT_KEYSTONES 66
@@ -92,27 +97,35 @@ extern char sys_txt;
 #define TXT_RAVEN_IN 1271
 #define TXT_RAVEN_OUT 1379
 #define TXT_SKEY 1509
-#define TXT_NOPOWDER 1549
-#define TXT_KEY0_1 1574
-#define TXT_KEY0_2 1657
-#define TXT_KEY0_3 1740
-#define TXT_KEY0_4 1823
-#define TXT_KEY1_1 1934
-#define TXT_KEY1_2 2014
-#define TXT_KEY1_3 2094
-#define TXT_KEY1_4 2174
-#define TXT_KEY2_1 2282
-#define TXT_KEY2_2 2363
-#define TXT_KEY2_3 2444
-#define TXT_KEY2_4 2525
-#define TXT_KEY3_1 2634
-#define TXT_KEY3_2 2716
-#define TXT_KEY3_3 2798
-#define TXT_KEY3_4 2880
+#define TXT_BELL_IN 1549
+#define TXT_BELL_OUT 1657
+#define TXT_CARKEY_GOT 1777
+#define TXT_PIECE1 1845
+#define TXT_PIECE2 1905
+#define TXT_PIECE3 1965
+#define TXT_PIECE4 2025
+#define TXT_NOPOWDER 2091
+#define TXT_KEY0_1 2116
+#define TXT_KEY0_2 2199
+#define TXT_KEY0_3 2282
+#define TXT_KEY0_4 2365
+#define TXT_KEY1_1 2476
+#define TXT_KEY1_2 2556
+#define TXT_KEY1_3 2636
+#define TXT_KEY1_4 2716
+#define TXT_KEY2_1 2824
+#define TXT_KEY2_2 2905
+#define TXT_KEY2_3 2986
+#define TXT_KEY2_4 3067
+#define TXT_KEY3_1 3176
+#define TXT_KEY3_2 3258
+#define TXT_KEY3_3 3340
+#define TXT_KEY3_4 3422
 #define MAP_CAPITOL 12
 static const u16 keystoneTxt[16] = {TXT_KEY0_1, TXT_KEY0_2, TXT_KEY0_3, TXT_KEY0_4, TXT_KEY1_1, TXT_KEY1_2, TXT_KEY1_3, TXT_KEY1_4, TXT_KEY2_1, TXT_KEY2_2, TXT_KEY2_3, TXT_KEY2_4, TXT_KEY3_1, TXT_KEY3_2, TXT_KEY3_3, TXT_KEY3_4};
-static const u16 bossInTxt[5] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN};
-static const u16 bossOutTxt[5] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT, TXT_RAVEN_OUT};
+static const u16 bossInTxt[6] = {0, TXT_FOREMAN_IN, TXT_TURTLE_IN, TXT_WRAITH_IN, TXT_RAVEN_IN, TXT_BELL_IN};
+static const u16 bossOutTxt[6] = {0, TXT_FOREMAN_OUT, TXT_TURTLE_OUT, TXT_WRAITH_OUT, TXT_RAVEN_OUT, TXT_BELL_OUT};
+static const u16 pieceTxt[4] = {TXT_PIECE4, TXT_PIECE1, TXT_PIECE2, TXT_PIECE3};  /* by pieces % 4 */
 
 extern char shops_bin;
 #define SHOP_HEAD 26
@@ -127,7 +140,7 @@ extern char shops_bin;
 #define SHOP_OFS_MARKET 458
 #define SHOP_MSGS 736
 #define MAX_SHOP_ITEMS 16
-#define CHEST_COUNT 37
+#define CHEST_COUNT 40
 #define CELL_OPEN 0
 #define CELL_SOLID 1
 #define CELL_DOOR 2
@@ -147,15 +160,17 @@ extern char boss1_chr, boss1_chrend, boss1_pal;
 extern char boss2_chr, boss2_chrend, boss2_pal;
 extern char boss3_chr, boss3_chrend, boss3_pal;
 extern char boss4_chr, boss4_chrend, boss4_pal;
+extern char boss5_chr, boss5_chrend, boss5_pal;
 static const u16 boss1Tile[36] = {0, 352, 354, 356, 358, 360, 362, 364, 366, 0, 384, 386, 388, 390, 392, 394, 396, 398, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452, 454, 456, 458, 460, 462, 480, 482};  /* foreman: frame*9 + cell, 0 = empty */
 static const u16 boss2Tile[36] = {0, 0, 0, 352, 354, 356, 358, 360, 362, 0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 0, 0, 392, 394, 396, 398, 416, 418, 0, 0, 0, 420, 422, 424, 426, 428, 430};  /* turtle: frame*9 + cell, 0 = empty */
 static const u16 boss3Tile[36] = {0, 0, 0, 352, 354, 356, 358, 360, 362, 0, 0, 0, 364, 366, 384, 386, 388, 390, 0, 0, 0, 392, 394, 396, 398, 416, 418, 0, 0, 0, 420, 422, 424, 426, 428, 430};  /* wraith: frame*9 + cell, 0 = empty */
 static const u16 boss4Tile[18] = {0, 0, 0, 0, 352, 354, 356, 358, 360, 0, 0, 0, 0, 362, 364, 366, 384, 386};  /* raven: frame*9 + cell, 0 = empty */
+static const u16 boss5Tile[18] = {0, 0, 0, 352, 354, 356, 358, 360, 362, 0, 364, 366, 384, 386, 388, 390, 392, 394};  /* bell: frame*9 + cell, 0 = empty */
 #define VRAM_BOSS_OFS 1536  /* words into the second OBJ table */
 #define PAL_BOSS 1
 #define PAL_ITEM 7
-#define AREA_COUNT 5
-#define LINK_COUNT 12
+#define AREA_COUNT 6
+#define LINK_COUNT 14
 #define ITEM_HOOK 1
 #define ITEM_POWDER 2
 #define ITEM_LANTERN 3
@@ -163,9 +178,11 @@ static const u16 boss4Tile[18] = {0, 0, 0, 0, 352, 354, 356, 358, 360, 0, 0, 0, 
 #define ITEM_BUG 5
 #define EFFECT_KEY 3
 #define EFFECT_ITEM 4
-#define PICKUP_COUNT 1
+#define EFFECT_PIECE 5
+#define PICKUP_COUNT 9
+#define PAL_BLOCK 3
 
-extern char items_chr, items_chrend;
+extern char items_chr, items_chrend, block_pal;
 extern char combat_chr, combat_chrend, combat_pal;
 
 /* Combat tables (generated). */
@@ -184,6 +201,7 @@ extern char combat_chr, combat_chrend, combat_pal;
 #define OBJ_ORB 243
 #define OBJ_REFL 244
 #define OBJ_FEATHER 245
+#define OBJ_RING 246
 #define ENEMY_TYPES 7
 /* 0=rat 1=squirrel 2=goose 3=scooter 4=crab 5=bat 6=ghost */
 static const u8 enemyHp[7] = {1, 1, 2, 2, 2, 1, 2};
@@ -208,6 +226,9 @@ static const s8 sinTab[64] = {0, 6, 12, 19, 24, 30, 36, 41, 45, 49, 53, 56, 59, 
 #define OBJ_I_BOOM 288
 #define OBJ_I_BUG 320
 #define OBJ_I_KEY 322
+#define OBJ_I_CARKEY 324
+#define OBJ_I_PIECE 326
+#define OBJ_I_BLOCK 328
 #define OBJ_I_KEYSTONE OBJ_I_GRANITE  /* +2 per keystone: granite, iron, brick, bronze */
 
 
@@ -232,10 +253,10 @@ extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;
 #define FRAME_BR 200
 #define FRAME_MORE 201
 
-static const u8 nbN[MAP_COUNT] = {255, 255, 255, 255, 0, 1, 2, 3, 255, 255, 5, 6, 7, 8, 9, 255, 10, 11, 12, 13, 16, 17, 18, 19, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 35, 255, 37, 38, 255, 255, 41, 255, 43, 255, 45, 255, 47, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 60, 61, 255, 255, 255};
-static const u8 nbS[MAP_COUNT] = {4, 5, 6, 7, 255, 10, 11, 12, 13, 14, 16, 17, 18, 19, 255, 255, 20, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 36, 255, 38, 39, 255, 255, 42, 255, 44, 255, 46, 255, 48, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 61, 62, 255, 255, 255, 255};
-static const u8 nbE[MAP_COUNT] = {1, 2, 3, 255, 5, 6, 7, 8, 9, 255, 11, 12, 13, 14, 255, 16, 17, 18, 19, 255, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 38, 39, 255, 255, 40, 255, 43, 44, 255, 255, 47, 48, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 63, 255, 255, 255};
-static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11, 12, 13, 255, 15, 16, 17, 18, 255, 20, 21, 22, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 35, 36, 39, 255, 255, 41, 42, 255, 255, 45, 46, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 62, 255, 255};
+static const u8 nbN[MAP_COUNT] = {255, 255, 255, 255, 0, 1, 2, 3, 255, 255, 5, 6, 7, 8, 9, 255, 10, 11, 12, 13, 16, 17, 18, 19, 255, 255, 255, 255, 255, 255, 255, 255, 31, 32, 255, 255, 255, 255, 255, 255, 255, 40, 255, 42, 43, 255, 255, 46, 255, 48, 255, 50, 255, 52, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 65, 66, 255, 255, 255};
+static const u8 nbS[MAP_COUNT] = {4, 5, 6, 7, 255, 10, 11, 12, 13, 14, 16, 17, 18, 19, 255, 255, 20, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 32, 33, 255, 255, 255, 255, 255, 255, 255, 41, 255, 43, 44, 255, 255, 47, 255, 49, 255, 51, 255, 53, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 66, 67, 255, 255, 255, 255};
+static const u8 nbE[MAP_COUNT] = {1, 2, 3, 255, 5, 6, 7, 8, 9, 255, 11, 12, 13, 14, 255, 16, 17, 18, 19, 255, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 32, 255, 34, 255, 255, 255, 255, 255, 255, 255, 43, 44, 255, 255, 45, 255, 48, 49, 255, 255, 52, 53, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 68, 255, 255, 255};
+static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11, 12, 13, 255, 15, 16, 17, 18, 255, 20, 21, 22, 255, 255, 255, 255, 255, 255, 255, 255, 30, 255, 32, 255, 255, 255, 255, 255, 255, 255, 255, 40, 41, 44, 255, 255, 46, 47, 255, 255, 50, 51, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 67, 255, 255};
 
 #define MAP_START 11  /* The Fan */
 
