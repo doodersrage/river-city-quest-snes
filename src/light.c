@@ -184,7 +184,8 @@ void lightFrame(void)
         lightY1 = hy;
         lightCircle(hwFor(r1), 0, hx, hy, r1);
     }
-    if (r2 != lightR2 || (r2 && (bx != lightX2 || by != lightY2)))
+    /* the second light follows the camera every other frame (a full redraw costs a lot of a frame) */
+    if (r2 != lightR2 || (r2 && (frameCount & 1) && (bx != lightX2 || by != lightY2)))
     {
         lightR2 = r2;
         lightX2 = bx;
