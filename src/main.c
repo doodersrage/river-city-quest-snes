@@ -922,6 +922,7 @@ int main(void)
         shopOwned[1][i] = 0;
     }
     audioInit();
+    lightInit();
     combatInit();
     dungeonInit();
     gearInit();
@@ -1040,6 +1041,7 @@ int main(void)
         drawBalls();
         drawBike();
         hudDraw();
+        lightFrame();
         WaitForVBlank();
         flushText();
     }

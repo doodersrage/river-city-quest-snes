@@ -73,6 +73,8 @@ void runEnding(void)
         px = MAP_PX_W / 2;
         py = MAP_PX_H / 2;
         updateCamera();
+        dayClock = 15 * 1500; /* 9 at night: the lamps come back on */
+        lightFrame();
         hideSprites();
         bg3Clear();
         bg3Line(1, "THE LAMPS COME BACK ON", FONT_GOLD);
@@ -86,6 +88,8 @@ void runEnding(void)
     setBrightness(0);
     bgSetDisable(0);
     hideSprites();
+    dayClock = 0; /* the credits run through to morning */
+    lightFrame();
     i = 0;
     while (i < CREDIT_LINES)
     {

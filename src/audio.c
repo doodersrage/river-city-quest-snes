@@ -41,5 +41,6 @@ void sfx(u8 id)
 void rcqVBlank(void)
 {
     WaitForVBlank();
+    lightVBlank();
     spcProcess();
 }

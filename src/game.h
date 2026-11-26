@@ -11,6 +11,13 @@ void playSong(u8 song);
 void songForMap(void);
 void sfx(u8 id);
 void rcqVBlank(void);
+
+/* day, night and dark rooms (light.c) */
+extern u16 dayClock;
+extern u8 darkLevel;
+void lightInit(void);
+void lightFrame(void);
+void lightVBlank(void);
 extern u8 curSong;
 #ifndef RCQ_AUDIO_C
 #define WaitForVBlank() rcqVBlank()

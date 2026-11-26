@@ -52,6 +52,9 @@ const dump = vm.runInContext(`(function(){
     let c; try{ c=renderMap(s,0); const old=g; g=c.getContext('2d');
       try{drawLandmarks(s,0);}catch(e){} try{drawDecor(s);}catch(e){} g=old; }
     catch(e){ out.push({id,err:String(e)}); continue; }
+    // Light sources for night and dark rooms (web drawNight/drawLight): wall torches, lit windows, street lamps; pixel centres
+    const lights={torches:(s.torches||[]).slice(),wins:Object.values(s.wins||{}).filter(w=>w[2]).map(w=>[w[0]+8,w[1]+9]),
+      lamps:(s.lamps||[]).map(([x,y])=>[x*16+8,y*16+4])};
     // Same map with every chest open, for the tiles the ROM swaps in when you open one.
     // Alternate renders for tiles the ROM swaps in at runtime:
     //  alt1: every locked door / gate / cracked wall open, every chest closed (including ones that
@@ -77,7 +80,7 @@ const dump = vm.runInContext(`(function(){
       s.g=keep;}
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
       grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,
-      solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],
+      solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],lights,lit:!!s.lit,
       pickups:(s.items||[]).filter(it=>['skey','carkey','piece','bib'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
       blocks:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='#'?[x,y]:null).filter(Boolean)),
       switches:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='^'?[x,y]:null).filter(Boolean)),
