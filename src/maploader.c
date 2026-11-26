@@ -89,3 +89,14 @@ void rcqLoadMap(u8 i)
     case 78: rcqUpload(&m78_chr, &m78_chrend - &m78_chr, &m78_map, &m78_pal, &m78_col, &m78_wld, &m78_och, &m78_opl, &m78_ene, &m78_xtr); break;
     }
 }
+
+void rcqMiniUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal);
+void rcqLoadMini(u8 k)
+{
+    switch (k)
+    {
+    case 0: rcqMiniUpload(&mini0_chr, &mini0_chrend - &mini0_chr, &mini0_map, &mini0_pal); break;
+    case 1: rcqMiniUpload(&mini1_chr, &mini1_chrend - &mini1_chr, &mini1_map, &mini1_pal); break;
+    case 2: rcqMiniUpload(&mini2_chr, &mini2_chrend - &mini2_chr, &mini2_map, &mini2_pal); break;
+    }
+}

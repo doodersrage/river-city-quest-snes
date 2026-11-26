@@ -205,7 +205,7 @@ void lightFrame(void)
 void lightVBlank(void)
 {
     u8 kind;
-    if (!lightDirty) return;
+    if (!lightDirty || miniOn) return; /* a minigame keeps the screen as it is */
     lightDirty = 0;
     if (!darkLevel)
     {

@@ -171,7 +171,11 @@ const world = vm.runInContext(`(function(){
         try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
         if(r&&st.f.bateau){const after=pages(TALK[n.talk](n));quest.push({need:'parts',give:'bateau',pages:pages(r),after});}st=keep;}
       let sp;try{sp=n0.spr&&n0.spr.down?n0.spr:npcSpr(n0);}catch(e){sp=npcSpr(Object.assign({hat:['#888','#666','#aaa'],shirt:['#888','#666','#aaa']},n0));}
-      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',wander:!!n0.wander,chal:n0.chal||null,talks,gifts,quest,refill,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
+      // A minigame this person runs, and how they offer it (with the gift given and the challenge won).
+      const MG={ballplayer:'bat',hoops:'hoops',tennis:'tennis',racer:'derby',cyclist:'trail',racedir:'race'}[n0.talk]||null;let mtext=null;
+      if(MG){const keep=st;st=newState();st.items.bike=st.items.balls=1;st.ammo.balls=st.cap.balls;st.pins.flies=1;const n=Object.assign({},n0);SAID=null;let r=null;
+        try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}st=keep;mtext=r?pages(r):null;}
+      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',wander:!!n0.wander,chal:n0.chal||null,mini:MG,miniText:mtext,talks,gifts,quest,refill,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
     });
     out[id]={reads,npcs};
   }
@@ -185,7 +189,7 @@ for (const id in world) {
     n.spr.forEach((f, i) => x.drawImage(f, i * 16 + Math.floor((16 - f.width) / 2), 16 - f.height));
     const file = 'npcs/' + safe + '_' + k + '.png';
     fs.writeFileSync(path.join(OUT, file), c.toBuffer('image/png'));
-    return { tx: n.tx, ty: n.ty, who: n.who, wander: n.wander, chal: n.chal, talks: n.talks, gifts: n.gifts, quest: n.quest, refill: n.refill, shop: n.shop, file };
+    return { tx: n.tx, ty: n.ty, who: n.who, wander: n.wander, chal: n.chal, mini: n.mini, miniText: n.miniText, talks: n.talks, gifts: n.gifts, quest: n.quest, refill: n.refill, shop: n.shop, file };
   }) };
 }
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1));
@@ -304,6 +308,16 @@ const bossArt = vm.runInContext(`(function(){
    [0,1].forEach(f=>{const x=64+f*16+4,y=15;R(x-1,y-14,2,14,'#1a1423');R(x+1,y-14,10,7,'#1a1423');R(x+1,y-13,9,5,f?'#e83048':'#f2c14e');R(x+1,y-13,4,2,'#ffffff');});
    R(96+6,1,5,10,'#1a1423');R(96+7,2,3,7,'#f2c14e');R(96+6,11,5,4,'#1a1423');R(96+7,12,3,2,'#f2c14e');
    g=old;out.tokens=c;}
+  // Minigame backgrounds (stage 10): each game's own draw with nothing moving in it. The bat, the racket and the
+  // free-throw needle are 2x2 and 3x16 rectangles the ROM draws as sprites, so leave those out; the tennis player
+  // moves too. 256x200 like the web game's screen.
+  {const R0=R,skip=(w,h)=>(w==2&&h==2)||(w==3&&h==16);
+   const bg=(fn)=>{const c=mkCanvas(256,200),old=g;g=c.getContext('2d');frame=0;R=(x,y,w,h,col)=>{if(!skip(w,h))R0(x,y,w,h,col);};
+     try{fn();}finally{R=R0;g=old;texts.length=0;}return c;};
+   out.minibg={
+     bat:bg(()=>drawBat({t:0,n:0,hits:0,hr:0,ball:null,swing:0})),
+     hoops:bg(()=>MINI.hoops.draw({n:0,made:0,ph:0,ball:null})),
+     tennis:bg(()=>{const di=g.drawImage.bind(g);g.drawImage=(im,...r)=>{if(im!==HERO.up[0].r.c)di(im,...r);};MINI.tennis.draw({x:128,ball:null,sw:0,ret:0,miss:0});})};}
   out.chal=Object.entries(CHAL).map(([id,d])=>({id,name:d.name,type:d.type,time:d.time||0,ic:d.ic||null,foe:d.foe||null,n:d.n||0,needs:d.needs||null,intro:d.intro}));
   out.lore=LORE.map(([id,t,s])=>{const sn=s.split('. ')[0];return {id,title:t,quote:sn.length>95?sn.slice(0,92)+'...':sn+'.'};});
   out.keynames=KEYNAME;
@@ -322,6 +336,7 @@ const bossArt = vm.runInContext(`(function(){
   fs.writeFileSync(path.join(OUT, 'combat', 'block.png'), bossArt.block.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'town.png'), bossArt.town.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'tokens.png'), bossArt.tokens.toBuffer('image/png'));
+  for (const k in bossArt.minibg) fs.writeFileSync(path.join(OUT, 'combat', 'mini_' + k + '.png'), bossArt.minibg[k].toBuffer('image/png'));
   for (const name of ['turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']) {
     const ts = createCanvas(48 * bossArt[name].length, 48), tx2 = ts.getContext('2d');
     bossArt[name].forEach((c, i) => tx2.drawImage(c, i * 48, 0));

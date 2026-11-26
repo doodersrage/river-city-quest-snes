@@ -230,9 +230,27 @@ static void chalStart(u8 c)
 }
 
 /* A on the question at the end of a text. */
+/* Someone who runs a minigame offers it (their own words, then the question). */
+void miniOffer(u8 k, u8 text)
+{
+    openText(text);
+    askKind = ASK_MINI;
+    askChal = k;
+    askN = 2;
+    askCur = 0;
+    askOpt[0] = "LET'S PLAY!";
+    askOpt[1] = "NOT NOW";
+}
+
 void askChoose(u8 i)
 {
     closeText();
+    if (askKind == ASK_MINI)
+    {
+        askKind = 0;
+        if (i == 0) runMini(askChal);
+        return;
+    }
     if (askKind == ASK_CHAL)
     {
         askKind = 0;
