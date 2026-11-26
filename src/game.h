@@ -106,6 +106,12 @@ extern u8 pkKind[];
 /* stage 10: neighbourhood challenges and the history quiz (chal.c) */
 #define ASK_CHAL 1
 #define ASK_QUIZ 2
+#define ASK_MINI 3
+extern u8 miniOn, lightDirty;
+void runMini(u8 k);
+extern u16 miniBest[];
+void chalReset(void);
+void miniOffer(u8 k, u8 text);
 extern u8 askKind, askN, askCur, chalOn, goldPaddle;
 extern const char *askOpt[];
 extern u16 pins;
@@ -171,6 +177,7 @@ void fireHook(void);
 u8 blocked(s16 x, s16 y);
 void enterMap(u8 i);
 void openTextAt(u8 *p);
+void openText(u8 i);
 
 void combatInit(void);
 void combatLoad(u8 *ene);

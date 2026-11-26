@@ -200,7 +200,7 @@ def convert_sprite_strip(path):
 # ---------- Stage 2: text, signs, NPCs, font ----------
 BOX_COLS, BOX_LINES = 28, 4
 WLD_GRID, WLD_NNPC, WLD_NTXT, WLD_NPCS, MAX_NPCS = 0, 704, 705, 706, 4
-WLD_TOFS = WLD_NPCS + MAX_NPCS * 13   # NPC_REC
+WLD_TOFS = WLD_NPCS + MAX_NPCS * 15   # NPC_REC
 ASCII_FIX = {'‘': "'", '’': "'", '“': '"', '”': '"', '—': '-', '–': '-', '…': '...', 'é': 'e'}
 
 
@@ -232,7 +232,9 @@ def encode_text(title, pages):
 
 
 GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug', 'can', 'balls', 'shoes', 'bike', 'bottle']   # ITEM_* in the ROM, from 1
-NPC_REC = 13
+NPC_REC = 15
+MINIS = ['bat', 'hoops', 'tennis', 'derby', 'trail', 'race', 'pin']   # minigame kind 1, 2, ... (NPC byte 13)
+MINI_BUILT = ['bat', 'hoops', 'tennis']
 CHAL_IDS = ['flies', 'bus', 'taps', 'lamps', 'melons', 'tenk', 'quiz', 'rats', 'lures', 'ghosts', 'cleanup', 'crabs', 'trolley', 'murals']
 RADII = [15, 32, 38, 44, 46, 48, 54, 68]   # windows, night, dark room, brazier, torch, lamp, night+lantern, dark+lantern
 
@@ -302,7 +304,12 @@ def build_world(w, extra_texts=()):
             refill = len(texts)
             texts.append(encode_text(n['who'], n['refill']['pages']))
         chal = CHAL_IDS.index(n['chal']) + 1 if n.get('chal') else 0
-        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), (k + 1) | (0x80 if n.get('wander') else 0), shop, gift_talk, gift_item, q_need, q_text, q_give, refill, chal))
+        # a minigame they run (only the ones built so far), and how they offer it
+        mini, mini_text = 0, 0
+        if n.get('mini') in MINI_BUILT and n.get('miniText'):
+            mini, mini_text = MINIS.index(n['mini']) + 1, len(texts)
+            texts.append(encode_text(n['who'], n['miniText']))
+        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), (k + 1) | (0x80 if n.get('wander') else 0), shop, gift_talk, gift_item, q_need, q_text, q_give, refill, chal, mini, mini_text))
     extra_ids = []
     for title, pages in extra_texts:
         extra_ids.append(text_id(title, pages))
@@ -670,6 +677,64 @@ def town_tables(maps):
     return [f'static const u8 carLane[MAP_COUNT * 2] = {{{j(lanes)}}};',
             f'static const u8 birdTx[MAP_COUNT * 2] = {{{j(bx)}}};',
             f'static const u8 birdTy[MAP_COUNT * 2] = {{{j(by)}}};']
+
+
+# ---------- Stage 10: minigames ----------
+# Each game's background is one screen on BG1 (the web game's 256x200, 12 px down); what moves is 8x8 sprites
+# from a small sheet at OBJ tile 32 (the NPC area, reloaded with the map), sprite palette 1.
+MINI_COLS = ['#ffffff', '#1a1423', '#c9a26b', '#f0dc98', '#d8f060', '#5a5662', '#e8ecf0', '#e07a28']
+MINI_TILES = ['ball2', 'ball3', 'ball4', 'ball5', 'bat', 'battip', 'tball', 'racket', 'rackethead', 'bball', 'needle']
+
+
+def convert_mini_sprites():
+    W, D, BAT, TIP, TB, RK, RH, OR = range(1, 9)   # palette indexes (MINI_COLS + 1)
+    def blank(): return [[0] * 8 for _ in range(8)]
+    def sq(n, c):
+        t = blank()
+        for y in range(n):
+            for x in range(n): t[y][x] = c
+        return t
+    tb = blank()
+    for y in range(5):
+        for x in range(5): tb[y][x] = TB if 0 < x < 4 and 0 < y < 4 else D
+    bb = blank()
+    for y in range(7):
+        for x in range(7): bb[y][x] = OR if 0 < x < 6 and 0 < y < 6 else D
+    for x in range(1, 6): bb[4][x] = D
+    nd = blank()
+    for y in range(8):
+        for x in range(3): nd[y][x] = W
+    tiles = [sq(2, W), sq(3, W), sq(4, W), sq(5, W), sq(2, BAT), sq(2, TIP), tb, sq(2, RK), sq(2, RH), bb, nd]
+    chr_ = b''.join(tile4bpp([v for r in t for v in r]) for t in tiles)
+    pal = sprite_palette([hexc(c) for c in MINI_COLS])
+    defs = [f'#define MT_{n.upper()} {32 + i}' for i, n in enumerate(MINI_TILES)]
+    return chr_, pal, defs
+
+
+def convert_minis(exp, out, asm, hdr):
+    loader = ['void rcqMiniUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal);', 'void rcqLoadMini(u8 k)', '{', '    switch (k)', '    {']
+    for k, name in enumerate(MINI_BUILT):
+        src = Image.open(os.path.join(exp, 'combat', f'mini_{name}.png')).convert('RGB')
+        full = Image.new('RGB', (256, 224), (0, 0, 0)); full.paste(src, (0, 12))
+        path = os.path.join(exp, f'mini_{name}_full.png'); full.save(path)
+        chr_, tm, pal, nt, npal, _ = convert_bg(path)
+        for ext, data in (('chr', chr_), ('map', tm[:2048]), ('pal', pal)):
+            open(os.path.join(out, f'mini{k}.{ext}'), 'wb').write(data)
+        asm += [f'.section ".mini{k}" superfree', f'mini{k}_chr:', f'.incbin "data/mini{k}.chr"', f'mini{k}_chrend:',
+                f'mini{k}_map:', f'.incbin "data/mini{k}.map"', f'mini{k}_pal:', f'.incbin "data/mini{k}.pal"', '.ends', '']
+        end = len(hdr) - 1 - hdr[::-1].index('#endif')
+        hdr.insert(end, f'extern char mini{k}_chr, mini{k}_chrend, mini{k}_map, mini{k}_pal;  /* {name}: {nt} tiles, {npal} palettes */')
+        loader.append(f'    case {k}: rcqMiniUpload(&mini{k}_chr, &mini{k}_chrend - &mini{k}_chr, &mini{k}_map, &mini{k}_pal); break;')
+    loader += ['    }', '}', '']
+    mchr, mpal, mdefs = convert_mini_sprites()
+    open(os.path.join(out, 'minispr.chr'), 'wb').write(mchr)
+    open(os.path.join(out, 'minispr.pal'), 'wb').write(mpal)
+    asm += ['.section ".minispr" superfree', 'minispr_chr:', '.incbin "data/minispr.chr"', 'minispr_chrend:',
+            'minispr_pal:', '.incbin "data/minispr.pal"', '.ends', '']
+    end = len(hdr) - 1 - hdr[::-1].index('#endif')
+    hdr[end:end] = ['extern char minispr_chr, minispr_chrend, minispr_pal;'] + mdefs + \
+                   [f'#define MINI_{n.upper()} {i + 1}' for i, n in enumerate(MINIS)]
+    return loader
 
 
 # ---------- Stage 4: shops ----------
@@ -1128,6 +1193,7 @@ def main():
     for i in range(len(maps)):
         loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_chrend - &m{i}_chr, &m{i}_map, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl, &m{i}_ene, &m{i}_xtr); break;')
     loader += ['    }', '}', '']
+    loader += convert_minis(exp, out, asm, hdr)
 
     open(os.path.join(root, 'maps.asm'), 'w').write('\n'.join(asm))
     open(os.path.join(root, 'maps.h'), 'w').write('\n'.join(hdr))

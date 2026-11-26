@@ -378,7 +378,7 @@ void updateAsk(u16 pressed)
     }
     else if (pressed & KEY_A)
         askChoose(askCur);
-    else if ((pressed & KEY_B) && askKind == ASK_CHAL)
+    else if ((pressed & KEY_B) && askKind != ASK_QUIZ)
         askChoose(1); /* not now */
 }
 
@@ -805,6 +805,13 @@ u8 interact(void)
                     openText(rec[11]);
                     return 1;
                 }
+            }
+            /* someone with a minigame (the Ballplayer once you've won his challenge; the Trail Cyclist once
+               he's given you the bike) */
+            if (rec[13] && !(rec[7] && !hasItem(rec[7])) && (!rec[12] || (pins & (1 << (rec[12] - 1)))))
+            {
+                miniOffer(rec[13], rec[14]);
+                return 1;
             }
             /* someone with a challenge: after anything they have to give you, and between their other lines */
             if (rec[12] && !(rec[7] && !hasItem(rec[7])) && !chalOn && npcTalk[k] >= rec[3])

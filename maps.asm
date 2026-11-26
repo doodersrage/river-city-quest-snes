@@ -1840,3 +1840,41 @@ font_chr:
 .incbin "data/font.chr"
 font_chrend:
 .ends
+
+.section ".mini0" superfree
+mini0_chr:
+.incbin "data/mini0.chr"
+mini0_chrend:
+mini0_map:
+.incbin "data/mini0.map"
+mini0_pal:
+.incbin "data/mini0.pal"
+.ends
+
+.section ".mini1" superfree
+mini1_chr:
+.incbin "data/mini1.chr"
+mini1_chrend:
+mini1_map:
+.incbin "data/mini1.map"
+mini1_pal:
+.incbin "data/mini1.pal"
+.ends
+
+.section ".mini2" superfree
+mini2_chr:
+.incbin "data/mini2.chr"
+mini2_chrend:
+mini2_map:
+.incbin "data/mini2.map"
+mini2_pal:
+.incbin "data/mini2.pal"
+.ends
+
+.section ".minispr" superfree
+minispr_chr:
+.incbin "data/minispr.chr"
+minispr_chrend:
+minispr_pal:
+.incbin "data/minispr.pal"
+.ends

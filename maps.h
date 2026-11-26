@@ -507,9 +507,9 @@ extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;
 #define WLD_GRID 0
 #define WLD_NNPC 704
 #define WLD_NPCS 706
-#define WLD_TOFS 758
+#define WLD_TOFS 766
 #define MAX_NPCS 4
-#define NPC_REC 13
+#define NPC_REC 15
 #define BOX_COLS 28
 #define FONT_WHITE 1  /* tile for char c is FONT_WHITE + c - 32 */
 #define FONT_GOLD 97
@@ -530,4 +530,26 @@ static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11,
 
 #define MAP_START 11  /* The Fan */
 
+extern char mini0_chr, mini0_chrend, mini0_map, mini0_pal;  /* bat: 97 tiles, 8 palettes */
+extern char mini1_chr, mini1_chrend, mini1_map, mini1_pal;  /* hoops: 91 tiles, 8 palettes */
+extern char mini2_chr, mini2_chrend, mini2_map, mini2_pal;  /* tennis: 24 tiles, 1 palettes */
+extern char minispr_chr, minispr_chrend, minispr_pal;
+#define MT_BALL2 32
+#define MT_BALL3 33
+#define MT_BALL4 34
+#define MT_BALL5 35
+#define MT_BAT 36
+#define MT_BATTIP 37
+#define MT_TBALL 38
+#define MT_RACKET 39
+#define MT_RACKETHEAD 40
+#define MT_BBALL 41
+#define MT_NEEDLE 42
+#define MINI_BAT 1
+#define MINI_HOOPS 2
+#define MINI_TENNIS 3
+#define MINI_DERBY 4
+#define MINI_TRAIL 5
+#define MINI_RACE 6
+#define MINI_PIN 7
 #endif
