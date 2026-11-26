@@ -718,7 +718,7 @@ u8 interact(void)
                 return 1;
             }
             /* the Brewer tops up your hearts, and refills an empty bottle; the Ballplayer refills your balls */
-            if (rec[7] == ITEM_BOTTLE && hasBottle) hp = hpMax;
+            if (rec[7] == ITEM_BOTTLE) hp = hpMax;
             if (rec[11] != 255 && rec[7] && hasItem(rec[7]))
             {
                 if (rec[7] == ITEM_BOTTLE && !bottleFull)
