@@ -106,6 +106,10 @@ void dungeonInit(void)
     parts = 0;
     bateauDone = 0;
     hasLure = 0;
+    chalOn = 0;
+    pins = 0;
+    goldPaddle = 0;
+    for (i = 0; i < (LORE_COUNT + 7) / 8; i++) loreRead[i] = 0;
     blkN = 0;
     bugOn = 0;
     for (i = 0; i < sizeof(pickupGot); i++) pickupGot[i] = 0;
@@ -1219,6 +1223,7 @@ void useLantern(void)
     s16 fx = px + dirX[heroDir] * 14, fy = py + dirY[heroDir] * 14;
     u8 k, all;
     u8 *r;
+    if (chalAt(CH_LIGHT, fx, fy)) return; /* Light the Gas Lamps */
     for (k = 0; k < brazPtr[0]; k++)
     {
         r = brazPtr + 1 + k * 10;

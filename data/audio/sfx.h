@@ -19,9 +19,12 @@
 #define SFX_FANFARE 15
 #define SFX_HORN 16
 #define SFX_FLAP 17
-#define SFX_COUNT 18
-static const u8 sfxPitch[18] = {4, 4, 4, 2, 2, 4, 4, 4, 4, 2, 2, 2, 2, 4, 2, 2, 2, 4}; /* 1 = 4 kHz */
-static const u8 sfxVol[18] = {9, 10, 10, 13, 12, 9, 11, 7, 7, 9, 14, 11, 11, 8, 14, 12, 9, 6};
+#define SFX_CHAL 18
+#define SFX_GO 19
+#define SFX_FAIL 20
+#define SFX_COUNT 21
+static const u8 sfxPitch[21] = {4, 4, 4, 2, 2, 4, 4, 4, 4, 2, 2, 2, 2, 4, 2, 2, 2, 4, 4, 2, 2}; /* 1 = 4 kHz */
+static const u8 sfxVol[21] = {9, 10, 10, 13, 12, 9, 11, 7, 7, 9, 14, 11, 11, 8, 14, 12, 9, 6, 10, 11, 12};
 #define SONG_CITY 1   /* module number: 0 is the effects */
 #define SONG_SOUTH 2   /* module number: 0 is the effects */
 #define SONG_DUNGEON 3   /* module number: 0 is the effects */

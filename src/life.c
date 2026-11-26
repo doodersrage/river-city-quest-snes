@@ -135,7 +135,7 @@ void lifeLoad(void)
     }
     lifeAny = carAny || birdSt[0] != 255 || birdSt[1] != 255;
     /* their art goes where a boss would load: outdoor maps never have one */
-    if (!roomBoss && (carAny || birdSt[0] != 255 || birdSt[1] != 255))
+    if (!roomBoss && !mapDark[curMap])   /* outdoors: also the challenge tokens and the '!' */
         dmaCopyVram(&town_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&town_chrend - &town_chr));
 }
 

@@ -155,6 +155,177 @@ extern char sys_txt;
 #define TXT_PART2_1 5351
 #define TXT_PART2_2 5457
 #define TXT_PART2_3 5563
+#define TXT_CH0_OFFER 5682
+#define TXT_CH0_AGAIN 5810
+#define TXT_CH0_FAIL 5959
+#define TXT_CH0_GO 6018
+#define TXT_CH1_OFFER 6033
+#define TXT_CH1_AGAIN 6168
+#define TXT_CH1_FAIL 6324
+#define TXT_CH1_GO 6384
+#define TXT_CH2_OFFER 6402
+#define TXT_CH2_AGAIN 6527
+#define TXT_CH2_FAIL 6673
+#define TXT_CH2_GO 6731
+#define TXT_CH3_OFFER 6745
+#define TXT_CH3_AGAIN 6883
+#define TXT_CH3_FAIL 7042
+#define TXT_CH3_GO 7111
+#define TXT_CH4_OFFER 7135
+#define TXT_CH4_AGAIN 7262
+#define TXT_CH4_FAIL 7410
+#define TXT_CH4_GO 7474
+#define TXT_CH5_OFFER 7492
+#define TXT_CH5_AGAIN 7616
+#define TXT_CH5_FAIL 7761
+#define TXT_CH5_GO 7825
+#define TXT_CH6_OFFER 7849
+#define TXT_CH6_AGAIN 7962
+#define TXT_CH6_FAIL 8096
+#define TXT_CH6_GO 8166
+#define TXT_CH7_OFFER 8192
+#define TXT_CH7_AGAIN 8308
+#define TXT_CH7_FAIL 8445
+#define TXT_CH7_GO 8508
+#define TXT_CH8_OFFER 8524
+#define TXT_CH8_AGAIN 8648
+#define TXT_CH8_FAIL 8793
+#define TXT_CH8_GO 8848
+#define TXT_CH9_OFFER 8863
+#define TXT_CH9_AGAIN 8983
+#define TXT_CH9_FAIL 9124
+#define TXT_CH9_GO 9193
+#define TXT_CH10_OFFER 9214
+#define TXT_CH10_AGAIN 9331
+#define TXT_CH10_FAIL 9469
+#define TXT_CH10_GO 9536
+#define TXT_CH11_OFFER 9554
+#define TXT_CH11_AGAIN 9658
+#define TXT_CH11_FAIL 9783
+#define TXT_CH11_GO 9839
+#define TXT_CH12_OFFER 9854
+#define TXT_CH12_AGAIN 9986
+#define TXT_CH12_FAIL 10139
+#define TXT_CH12_GO 10203
+#define TXT_CH13_OFFER 10220
+#define TXT_CH13_AGAIN 10354
+#define TXT_CH13_FAIL 10509
+#define TXT_CH13_GO 10571
+#define TXT_PIN1 10586
+#define TXT_PIN2 10667
+#define TXT_PIN3 10748
+#define TXT_PIN4 10829
+#define TXT_PIN5 10910
+#define TXT_PIN6 10991
+#define TXT_PIN7 11072
+#define TXT_PIN8 11153
+#define TXT_PIN9 11234
+#define TXT_PIN10 11315
+#define TXT_PIN11 11397
+#define TXT_PIN12 11479
+#define TXT_PIN13 11561
+#define TXT_PIN14 11643
+#define TXT_PINAGAIN 11812
+#define TXT_NEEDBUG 11860
+#define TXT_NEEDLAMP 11933
+#define TXT_QUIZFEW 11970
+#define TXT_QUIZ0 12083
+#define TXT_QUIZ1 12146
+#define TXT_QUIZ2 12209
+#define TXT_LORE0 12272
+#define TXT_LORE1 12350
+#define TXT_LORE2 12479
+#define TXT_LORE3 12622
+#define TXT_LORE4 12753
+#define TXT_LORE5 12896
+#define TXT_LORE6 13039
+#define TXT_LORE7 13146
+#define TXT_LORE8 13284
+#define TXT_LORE9 13427
+#define TXT_LORE10 13570
+#define TXT_LORE11 13627
+#define TXT_LORE12 13745
+#define TXT_LORE13 13888
+#define TXT_LORE14 14023
+#define TXT_LORE15 14166
+#define TXT_LORE16 14282
+#define TXT_LORE17 14417
+#define TXT_LORE18 14546
+#define TXT_LORE19 14689
+#define TXT_LORE20 14814
+#define TXT_LORE21 14957
+#define TXT_LORE22 15100
+#define TXT_LORE23 15224
+#define TXT_LORE24 15338
+#define TXT_LORE25 15460
+#define TXT_LORE26 15603
+#define TXT_LORE27 15746
+#define TXT_LORE28 15889
+#define TXT_LORE29 16032
+#define TXT_LORE30 16175
+#define TXT_LORE31 16312
+#define TXT_LORE32 16448
+#define TXT_LORE33 16591
+#define TXT_LORE34 16703
+#define TXT_LORE35 16847
+#define TXT_LORE36 16990
+#define TXT_LORE37 17085
+#define TXT_LORE38 17228
+#define TXT_LORE39 17371
+#define TXT_LORE40 17514
+#define TXT_LORE41 17657
+#define TXT_LORE42 17800
+#define TXT_LORE43 17938
+#define TXT_LORE44 18081
+#define TXT_LORE45 18191
+#define TXT_LORE46 18324
+#define TXT_LORE47 18385
+#define TXT_LORE48 18528
+#define TXT_LORE49 18628
+#define TXT_LORE50 18769
+#define TXT_LORE51 18821
+#define TXT_LORE52 18914
+#define TXT_LORE53 19028
+#define TXT_LORE54 19153
+#define TXT_LORE55 19296
+#define TXT_LORE56 19389
+#define TXT_LORE57 19532
+#define TXT_LORE58 19622
+#define TXT_LORE59 19763
+#define TXT_LORE60 19866
+#define TXT_LORE61 20009
+#define TXT_LORE62 20152
+#define TXT_LORE63 20295
+#define TXT_LORE64 20438
+#define TXT_LORE65 20540
+#define CHAL_COUNT 14
+#define CHAL_QUIZ 6
+#define CH_COLLECT 1
+#define CH_RACE 2
+#define CH_DEFEAT 3
+#define CH_LIGHT 4
+#define CH_TAG 5
+#define CH_QUIZ 6
+/* 1=flies 2=bus 3=taps 4=lamps 5=melons 6=tenk 7=quiz 8=rats 9=lures 10=ghosts 11=cleanup 12=crabs 13=trolley 14=murals (NPC byte 12) */
+static const u8 chalType[14] = {1, 2, 1, 4, 1, 2, 6, 3, 1, 3, 1, 3, 2, 5};
+static const u8 chalSecs[14] = {30, 8, 40, 60, 35, 9, 0, 40, 60, 45, 40, 40, 7, 60};
+static const u8 chalFoe[14] = {255, 255, 255, 255, 255, 255, 255, 0, 255, 6, 255, 4, 255, 255};
+static const u8 chalN[14] = {0, 0, 0, 0, 0, 0, 0, 8, 0, 6, 0, 6, 0, 0};
+static const u8 chalNeeds[14] = {0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0};  /* 1 the Gold-Bug, 2 the lantern */
+static const u8 chalTok[14] = {255, 255, 12, 255, 13, 255, 255, 255, 14, 255, 15, 255, 255, 255};  /* town cell, 255 a baseball */
+static const u8 chalMap[14] = {5, 6, 7, 8, 10, 11, 12, 13, 16, 17, 18, 19, 21, 22};
+static const u8 chalOff[15] = {0, 8, 9, 15, 20, 28, 29, 29, 35, 39, 45, 51, 55, 56, 61};
+static const u8 chalXY[122] = {3, 3, 10, 3, 2, 4, 11, 4, 6, 5, 10, 6, 3, 7, 9, 7, 30, 13, 17, 5, 23, 5, 5, 7, 20, 12, 25, 13, 6, 18, 8, 4, 17, 6, 24, 8, 4, 15, 22, 19, 21, 7, 9, 8, 21, 12, 8, 17, 21, 17, 9, 18, 21, 19, 13, 20, 1, 11, 6, 1, 5, 12, 15, 12, 25, 12, 8, 19, 23, 19, 21, 2, 22, 3, 19, 5, 28, 6, 6, 1, 17, 1, 6, 11, 21, 11, 26, 12, 11, 14, 5, 3, 23, 6, 23, 7, 23, 12, 5, 17, 17, 18, 13, 5, 9, 8, 22, 8, 6, 11, 30, 11, 3, 3, 9, 3, 20, 3, 23, 8, 23, 16};  /* spots, lamps or murals: tx, ty */
+static const u16 chalOfferTxt[14] = {TXT_CH0_OFFER, TXT_CH1_OFFER, TXT_CH2_OFFER, TXT_CH3_OFFER, TXT_CH4_OFFER, TXT_CH5_OFFER, TXT_CH6_OFFER, TXT_CH7_OFFER, TXT_CH8_OFFER, TXT_CH9_OFFER, TXT_CH10_OFFER, TXT_CH11_OFFER, TXT_CH12_OFFER, TXT_CH13_OFFER};
+static const u16 chalAgainTxt[14] = {TXT_CH0_AGAIN, TXT_CH1_AGAIN, TXT_CH2_AGAIN, TXT_CH3_AGAIN, TXT_CH4_AGAIN, TXT_CH5_AGAIN, TXT_CH6_AGAIN, TXT_CH7_AGAIN, TXT_CH8_AGAIN, TXT_CH9_AGAIN, TXT_CH10_AGAIN, TXT_CH11_AGAIN, TXT_CH12_AGAIN, TXT_CH13_AGAIN};
+static const u16 chalFailTxt[14] = {TXT_CH0_FAIL, TXT_CH1_FAIL, TXT_CH2_FAIL, TXT_CH3_FAIL, TXT_CH4_FAIL, TXT_CH5_FAIL, TXT_CH6_FAIL, TXT_CH7_FAIL, TXT_CH8_FAIL, TXT_CH9_FAIL, TXT_CH10_FAIL, TXT_CH11_FAIL, TXT_CH12_FAIL, TXT_CH13_FAIL};
+static const u16 chalGoTxt[14] = {TXT_CH0_GO, TXT_CH1_GO, TXT_CH2_GO, TXT_CH3_GO, TXT_CH4_GO, TXT_CH5_GO, TXT_CH6_GO, TXT_CH7_GO, TXT_CH8_GO, TXT_CH9_GO, TXT_CH10_GO, TXT_CH11_GO, TXT_CH12_GO, TXT_CH13_GO};
+static const u16 pinTxt[14] = {TXT_PIN1, TXT_PIN2, TXT_PIN3, TXT_PIN4, TXT_PIN5, TXT_PIN6, TXT_PIN7, TXT_PIN8, TXT_PIN9, TXT_PIN10, TXT_PIN11, TXT_PIN12, TXT_PIN13, TXT_PIN14};
+#define LORE_COUNT 66
+#define LORE_REFS 68
+static const u8 loreRef[204] = {0, 0, 51, 1, 0, 38, 2, 0, 39, 3, 0, 54, 3, 1, 55, 3, 3, 56, 4, 0, 47, 4, 1, 48, 4, 3, 49, 4, 4, 50, 5, 0, 15, 5, 1, 14, 6, 0, 13, 6, 2, 12, 7, 1, 9, 7, 2, 11, 8, 0, 1, 8, 2, 3, 8, 3, 2, 8, 4, 0, 9, 0, 40, 9, 2, 61, 10, 0, 18, 10, 2, 17, 10, 3, 16, 11, 0, 19, 11, 2, 20, 12, 0, 6, 12, 1, 5, 12, 3, 8, 13, 0, 33, 13, 2, 34, 13, 3, 41, 14, 1, 58, 14, 2, 59, 14, 3, 60, 15, 0, 52, 15, 1, 53, 16, 0, 22, 16, 2, 23, 17, 0, 25, 17, 1, 26, 17, 2, 24, 18, 0, 62, 18, 1, 28, 18, 2, 27, 19, 0, 31, 19, 2, 32, 20, 0, 35, 21, 0, 44, 22, 1, 45, 22, 2, 46, 23, 0, 36, 23, 1, 34, 24, 0, 52, 26, 0, 56, 29, 0, 7, 40, 0, 57, 43, 0, 55, 44, 0, 43, 48, 0, 42, 57, 0, 29, 60, 0, 47, 64, 0, 1, 71, 0, 30, 74, 0, 3, 77, 0, 18, 78, 0, 48};  /* map, text, story */
+static const u16 loreTxt[66] = {TXT_LORE0, TXT_LORE1, TXT_LORE2, TXT_LORE3, TXT_LORE4, TXT_LORE5, TXT_LORE6, TXT_LORE7, TXT_LORE8, TXT_LORE9, TXT_LORE10, TXT_LORE11, TXT_LORE12, TXT_LORE13, TXT_LORE14, TXT_LORE15, TXT_LORE16, TXT_LORE17, TXT_LORE18, TXT_LORE19, TXT_LORE20, TXT_LORE21, TXT_LORE22, TXT_LORE23, TXT_LORE24, TXT_LORE25, TXT_LORE26, TXT_LORE27, TXT_LORE28, TXT_LORE29, TXT_LORE30, TXT_LORE31, TXT_LORE32, TXT_LORE33, TXT_LORE34, TXT_LORE35, TXT_LORE36, TXT_LORE37, TXT_LORE38, TXT_LORE39, TXT_LORE40, TXT_LORE41, TXT_LORE42, TXT_LORE43, TXT_LORE44, TXT_LORE45, TXT_LORE46, TXT_LORE47, TXT_LORE48, TXT_LORE49, TXT_LORE50, TXT_LORE51, TXT_LORE52, TXT_LORE53, TXT_LORE54, TXT_LORE55, TXT_LORE56, TXT_LORE57, TXT_LORE58, TXT_LORE59, TXT_LORE60, TXT_LORE61, TXT_LORE62, TXT_LORE63, TXT_LORE64, TXT_LORE65};
+static const char *const loreTitle[66] = {"Named for a View", "St. John's Church", "Eliza Poe's Grave", "The Church Hill Tunnel", "The Richmond Vampire", "A Temple for a Capitol", "Capital Since 1780", "Houdon's Washington", "Civil Rights Memorial", "Harlem of the South", "St. Luke Penny Savings", "Bojangles' Traffic Light", "First Electric Streetcars", "Department Store Row", "Scott's Addition", "Baseball on the Boulevard", "Carytown", "The Byrd Theatre", "Imperial Easter Eggs", "Why It's Called the Fan", "Arthur Ashe", "Monument Avenue 10K", "The Carillon", "Maymont", "Hollywood Cemetery", "The Granite Pyramid", "The Iron Dog", "The Falls of the James", "Belle Isle", "The Quarry Pond", "Tredegar Iron Works", "Rocketts Landing", "Virginia Capital Trail", "Shockoe Bottom", "The Richmond Slave Trail", "Pony Pasture", "Ancarrow's Landing", "James River Bateaux", "Bryan Park", "Lewis Ginter Botanical Ga..", "Chimborazo", "The Old Stone House", "Poe in Richmond", "The Gold-Bug", "Forest Hill Park", "Manchester", "Mayo's Bridge", "Science Museum of Virginia", "Virginia Museum of Histor..", "Arthur Ashe Boulevard", "The Sauer's Sign", "Richmond Raceway", "Agecroft Hall", "Texas Beach", "VCU and the Rams", "John Marshall House", "Black History Museum", "The Jefferson Hotel", "The Canal Walk", "Brown's Island", "The Pipeline Walk", "The View That Named Richm..", "The Belle Isle Footbridge", "Hanover Tomatoes", "Ukrop's Rainbow Cookies", "Sally Bell's Kitchen"};
 static const u8 mapSong[MAP_COUNT] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 1, 3, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 3, 3, 1, 3, 1, 1, 3, 1, 1, 1, 5, 5, 5, 5, 3, 3, 3, 3, 1, 3};
 static const u8 mapDark[MAP_COUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1};
 static const u16 lightOff[80] = {0, 4, 4, 6, 33, 38, 60, 95, 129, 129, 131, 159, 206, 210, 240, 269, 269, 272, 275, 275, 283, 283, 283, 301, 301, 305, 309, 313, 317, 321, 325, 329, 333, 337, 341, 345, 349, 353, 357, 361, 365, 369, 373, 377, 381, 385, 389, 393, 397, 401, 405, 409, 413, 417, 421, 425, 429, 433, 437, 441, 445, 449, 453, 457, 461, 465, 469, 473, 477, 481, 485, 489, 493, 497, 501, 505, 509, 513, 517, 521};
@@ -261,7 +432,13 @@ extern char town_chr, town_chrend;
 #define TOWN_BUS 6
 #define TOWN_SIT 9
 #define TOWN_FLY 10
-static const u16 townTile[12] = {384, 386, 388, 390, 392, 394, 396, 398, 416, 418, 420, 422};  /* OBJ tile of each town cell */
+#define TOWN_TAP 12
+#define TOWN_MELON 13
+#define TOWN_LURE 14
+#define TOWN_TRASH 15
+#define TOWN_FLAG 16
+#define TOWN_BANG 18
+static const u16 townTile[19] = {384, 386, 388, 390, 392, 394, 396, 398, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452};  /* OBJ tile of each town cell */
 extern char combat_chr, combat_chrend, combat_pal;
 
 /* Combat tables (generated). */
@@ -284,6 +461,7 @@ extern char combat_chr, combat_chrend, combat_pal;
 #define OBJ_SEED 247
 #define OBJ_RAIN 248
 #define OBJ_SNOW 249
+#define HUD_SLASH 250
 #define ENEMY_TYPES 7
 /* 0=rat 1=squirrel 2=goose 3=scooter 4=crab 5=bat 6=ghost */
 static const u8 enemyHp[7] = {1, 1, 2, 2, 2, 1, 2};
@@ -328,9 +506,9 @@ extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;
 #define WLD_GRID 0
 #define WLD_NNPC 704
 #define WLD_NPCS 706
-#define WLD_TOFS 754
+#define WLD_TOFS 758
 #define MAX_NPCS 4
-#define NPC_REC 12
+#define NPC_REC 13
 #define BOX_COLS 28
 #define FONT_WHITE 1  /* tile for char c is FONT_WHITE + c - 32 */
 #define FONT_GOLD 97
