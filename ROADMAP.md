@@ -21,7 +21,7 @@ Super Nintendo ROM, built in stages. Each stage ends with a ROM that boots and p
 | VRAM | 64 KB | BG1 tiles 0x0000, BG1 map 0x4000 (64×64), BG3 font 0x5000, BG3 map 0x5800, sprites 0x6000 (hero tiles 0-31, NPCs 32-127) |
 | Work RAM | 128 KB | Game state, NPCs, enemies; save data to SRAM. WRAM is not cleared at power-on, so every variable is set in code; initialised globals land in bank $7F |
 | ROM | 2 MB now, up to 4 MB | Each outdoor map is about 26 KB, each room about 15 KB (one 32 KB bank each) |
-| Sprites | 128 on screen, 32 per scanline | 8x8 small (HUD, pickups) and 16x16 large. OBJ tiles: hero 0-31, NPCs 32-127, enemies 128-159, paddle 160-223, HUD 224-255. Palettes: hero 0, NPCs 1-4, enemies 5-6, paddle and HUD 7 |
+| Sprites | 128 on screen, 32 per scanline | 8x8 small (HUD, pickups) and 16x16 large; the hero and townspeople are 16x32 (two sprites). OBJ tiles: hero 0-3 and 16-19 (the frame on show), townspeople 32-63 (likewise), 64-127 free, enemies 128-159, paddle 160-223, HUD 224-255. Palettes: hero 0, NPCs 1-4, enemies 5-6, paddle and HUD 7 |
 | Sound | SPC700, 64 KB audio RAM | Chiptunes rebuilt as tracker modules (snesmod) |
 
 ## Stages
@@ -48,7 +48,7 @@ Super Nintendo ROM, built in stages. Each stage ends with a ROM that boots and p
 
 12. **A later-SNES look (in progress, branch stage12-art).** Toward Chrono Trigger and Secret of Mana: shaded colour ramps, taller characters, depth and effects, a richer HUD. The art is the SNES edition's own; the web game keeps its look. The ROM is now 4 MB, and each map's tiles get a bank of their own (shaded tiles roughly double a map's tile count, still under the 1,024 a layer allows).
    - **12a Tiles (sample done).** tools/export/snes_style.js replaces the web game's drawing functions during export: grass, flowers, paving, cobbles, sand, the grass edge, trees, slate roofs, brick and interior walls. Colours come from fixed ramps (shadows lean violet, highlights warm) so maps still fit eight 15-colour palettes. Buildings three cells tall show an upper storey with windows under an eave, and buildings cast shadows down and to the right. Still to do: water and rapids, interior floors and furniture, the dungeons, fences, lamps, benches, and the hand-drawn landmarks.
-   - **12b Sprites (hero done).** The hero is 16x32 (tools/art/hero32.py): two sprites, three frames a direction, and only the frame on show is in VRAM. heroVBlank copies a new one at the start of VBlank when it changes, as later SNES games do; that frees the sprite memory for bigger characters. Next: townspeople at 16x32 the same way (a VRAM slot per person on screen), shaded enemies and bosses, swing poses.
+   - **12b Sprites (hero and townspeople done).** The hero is 16x32 (tools/art/hero32.py): two sprites, three frames a direction, and only the frame on show is in VRAM. heroVBlank copies a new one at the start of VBlank when it changes, as later SNES games do; that frees the sprite memory for bigger characters. Townspeople are built from the same templates with their own colours from the web game (hat, shirt, and skin, hair and trousers by the web game's hash; about half go bareheaded) and stream the same way: each of the four on a map has a 16x32 slot (OBJ tiles 32+4k and 48+4k, so 64-127 are free now), one person's new frame is copied a VBlank, and wanderers walk with a step cycle. Sprite slots: the hero's head is OAM 13 (above his body), people's heads 36-39, the coin digits moved to 60-62. Next: shaded enemies and bosses, swing poses.
    - **12c Depth and effects.** Treetops and rooftops on a second layer you walk behind, shadows under characters, animated water and flames, and see-through fog and water with colour math.
    - **12d HUD and text box.** A framed, shaded HUD, text box and menus.
 
@@ -63,4 +63,5 @@ Super Nintendo ROM, built in stages. Each stage ends with a ROM that boots and p
 
 - Every sprite goes through `sprPut` / `sprHide` (main.c), which skip OAM calls for sprites that stay hidden. Calling `oamSetEx` and `oamSet` for every slot every frame cost about 20% of the frame budget.
 - The HUD redraws only when health, coins or the B item change.
+- Stage 12: sprPut remembers what each slot was last set to and skips oamSet when nothing changed. The 16x32 characters go through sprPair (src/sprpair.asm), which writes both OAM entries in one call: two C calls a character cost about 7% of the frame while the camera scrolls. Walking in the Fan with three townspeople: 216 of 240 frames (stage 11: 220). Most of what's left is the wanderers' own update in life.c (about 20 frames in 240).
 - The play test measures nothing yet, but `frameCount` against emulator frames is the check to use: 120/120 outdoors and in boss rooms as of the Quarry.
