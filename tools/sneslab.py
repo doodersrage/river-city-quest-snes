@@ -162,6 +162,8 @@ class Lab:
         """Would a step in direction d put the hero's feet on a door or an exit?"""
         x, y = self.pos
         dx, dy = {'UP': (0, -6), 'DOWN': (0, 6), 'LEFT': (-6, 0), 'RIGHT': (6, 0)}[d]
+        if (x + dx * 2 < 0 or y + dy * 2 < 0 or x + dx * 2 >= self.ram('mapW') * 16 or y + dy * 2 >= self.ram('mapH') * 16):
+            return True   # keep well clear of the room's open edges
         nx, ny = x + dx, y + dy
         w, h = self.ram('mapW'), self.ram('mapH')
         if nx < 0 or ny < 0 or nx >= w * 16 or ny >= h * 16:

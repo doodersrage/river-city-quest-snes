@@ -3,7 +3,7 @@
 Usage: boottest.py RiverCityQuest.sfc RiverCityQuest.sym <out-dir>"""
 import os, sys
 import numpy as np
-from sneslab import Lab, travel
+from sneslab import Lab, travel, _neighbours
 
 rom, sym, out = sys.argv[1], sys.argv[2], sys.argv[3]
 os.makedirs(out, exist_ok=True)
@@ -137,6 +137,7 @@ lab.screenshot(f'{out}/9-hollywood-cemetery.png')
 
 # Stage 5: Tredegar Iron Works, start to finish.
 def clear_room():
+    start = lab.map
     missed = set()
     for _ in range(24):
         alive = [k for k in range(lab.ram('enCount')) if lab.enemy(k)['alive']]
@@ -150,11 +151,19 @@ def clear_room():
             continue
         x, y = lab.pos
         k = min(tries, key=lambda k: abs(lab.enemy(k)['x'] - x) + abs(lab.enemy(k)['y'] - y))
+        m0 = lab.map
         if lab.fight(k, 600) is None:
             missed.add(k)
+        if lab.map != m0:
+            # knocked out of the room: step straight back in
+            nb = _neighbours(root)
+            back = next((k2 for d, k2 in (('N', 'UP'), ('S', 'DOWN'), ('W', 'LEFT'), ('E', 'RIGHT')) if nb[d][lab.map] == m0), 'DOWN')
+            for _ in range(3):
+                close_box(); lab.run(back, 30); lab.run(None, 40)
+                if lab.map == m0: break
         if lab.ram('hp') <= 2:
             lab.poke('hp', lab.ram('hpMax'))  # this test checks the dungeon, not our dodging
-    return not any(lab.enemy(k)['alive'] for k in range(lab.ram('enCount')))
+    return lab.map == start and not any(lab.enemy(k)['alive'] for k in range(lab.ram('enCount')))
 
 lab.walk_to_cell(28, 17)
 lab.run('UP', 20)
