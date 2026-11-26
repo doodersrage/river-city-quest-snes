@@ -1031,4 +1031,84 @@ walk((28, 17)); lab.run('UP', 30); lab.run(None, 60); close_box()
 lab.screenshot(f'{out}/51-dark-room.png')
 check(lab.ram('darkLevel') == 4 and lab.ram('lightR1') == (68 if lab.ram('hasLantern') else 38),
       f"the Foundry Gate is dark but for your light (map {lab.map}, radius {lab.ram('lightR1')})")
+
+# Stage 9: town life. Cars and the bus, townspeople out for a walk, pigeons, the bateau.
+def poke16k(name, k, v):
+    lab.poke(name, v & 0xFF, 2 * k); lab.poke(name, (v >> 8) & 0xFF, 2 * k + 1)
+set_clock(4500)
+travel(lab, N('Broad Street'), close_box)
+lab.run(None, 10)
+cars = [(lab.ram('carOn', 1, False, k), lab.ram('carBus', 1, False, k)) for k in range(2)]
+check(cars == [(1, 1), (1, 0)], f'Broad Street has the Pulse bus and a car ({cars})')
+x0 = lab.ram('carX', 2, True, 1)
+lab.run(None, 30)
+check(lab.ram('carX', 2, True, 1) != x0, 'the car drives along')
+# wait for the bus to come onto the screen, then take a picture
+for _ in range(600):
+    bx = lab.ram('carX', 2, True, 0) >> 4
+    if lab.ram('camX', 2, True) + 40 < bx < lab.ram('camX', 2, True) + 200:
+        break
+    lab.run(None, 1)
+lab.screenshot(f'{out}/52-broad-street-bus.png')
+check(lab.ram('oamShown', 1, False, 112) == 2, 'the bus is drawn')
+# step into the car's lane just ahead of it: it stops for you and waits
+cx, cy = lab.ram('carX', 2, True, 1) >> 4, lab.ram('carY', 2, True, 1)
+lab.poke('inv', 255)
+poke16('px', max(24, min(488, cx - 24))); poke16('py', cy)
+lab.run(None, 30)
+xs = lab.ram('carX', 2, True, 1); lab.run(None, 60)
+check(lab.ram('carStop', 1, False, 1) == 1 and lab.ram('carX', 2, True, 1) == xs, 'a car stops for you')
+lab.screenshot(f'{out}/53-car-stops.png')
+r = lab.pos
+lab.run('RIGHT', 20)
+check(lab.pos[0] <= r[0] + 2, "and you can't walk through it")
+lab.run('DOWN', 30); lab.run(None, 90)
+check(lab.ram('carX', 2, True, 1) != xs, 'it drives on once you are out of the way')
+# the Local on Broad Street wanders near home
+k = 1
+home = (lab.ram('npcX', 2, True, k), lab.ram('npcY', 2, True, k))
+moved = False
+for _ in range(40):
+    lab.run(None, 30)
+    p_ = (lab.ram('npcX', 2, True, k), lab.ram('npcY', 2, True, k))
+    moved |= p_ != home
+    if abs(p_[0] - home[0]) >= 40 or abs(p_[1] - home[1]) >= 40: moved = None; break
+check(moved is True, f'a townsperson walks about, staying near home ({home} -> {p_})')
+# pigeons take off when you come close
+bird = (lab.ram('birdX', 2, True, 0) >> 4, lab.ram('birdY', 2, True, 0) >> 4)
+check(lab.ram('birdSt', 1, False, 0) == 0, f'a pigeon sits on Broad Street {bird}')
+walk((bird[0] // 16, bird[1] // 16 - 2))
+for _ in range(30):
+    if lab.ram('birdSt', 1, False, 0): break
+    lab.run('DOWN', 2)
+lab.run(None, 12)
+lab.screenshot(f'{out}/54-pigeon.png')
+check(lab.ram('birdSt', 1, False, 0) == 1, 'and flies off as you come near')
+# the bateau: three parts for the river historian at Ancarrow's Landing
+def take_pickup(kind):
+    for k in range(6):
+        if lab.ram('pkKind', 1, False, k) == kind:
+            back = lab.pos   # the sandbar is out in the water: hop over and back
+            poke16('px', lab.ram('pkX', 2, True, k)); poke16('py', lab.ram('pkY', 2, True, k))
+            lab.run(None, 10)
+            poke16('px', back[0]); poke16('py', back[1])
+            return True
+    return False
+travel(lab, N('Pony Pasture'), close_box)
+lab.run(None, 10)
+got = take_pickup(14)
+check(got and lab.ram('parts') == 1 and lab.ram('boxState'), f"a bateau part at Pony Pasture ({lab.ram('parts')} of 3)")
+lab.screenshot(f'{out}/55-bateau-oar.png')
+close_box(); take_pickup(14); close_box()
+check(lab.ram('parts') == 2, 'and another')
+travel(lab, N("Ancarrow's Landing"), close_box)
+lab.run(None, 10)
+take_pickup(14); close_box()
+check(lab.ram('parts') == 3, 'the third on the island off the landing')
+coins, hpm = lab.ram('coins', 2), lab.ram('hpMax')
+walk((16, 12)); lab.face('up'); lab.press('A', 40)
+lab.screenshot(f'{out}/56-the-bateau.png')
+close_box()
+check(lab.ram('bateauDone') and lab.ram('coins', 2) == min(999, coins + 50) and lab.ram('hpMax') == min(20, hpm + 2),
+      f"the river historian rebuilds the bateau: 50 coins and a heart charm ({coins} -> {lab.ram('coins', 2)}, {hpm} -> {lab.ram('hpMax')})")
 sys.exit(0 if ok else 1)
