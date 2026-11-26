@@ -144,6 +144,9 @@ def effects(music):
         ('FANFARE', tune(F, 'triangle'), 8000, 12),
         ('HORN', [(0, 440, .12, 'square', .03)], 8000, 9),        # a car stopping for you (web updLife)
         ('FLAP', [(0, 1300, .04, 'square', .01)], 16000, 6),      # a pigeon taking off
+        ('CHAL', [(0, 988, .06, 'triangle', .04)], 16000, 10),    # a challenge token, lamp or mural (web chalProgress)
+        ('GO', tune([[523, .08], [784, .08], [1047, .16]], 'square'), 8000, 11),   # a challenge starts
+        ('FAIL', [(0, 150, .3, 'sawtooth', .04)], 8000, 12),      # time's up
     ]
 
 # ---------------------------------------------------------------- IT writer

@@ -69,6 +69,7 @@ void sprPut(u8 slot, u8 large, s16 x, s16 y, u8 prio, u8 flip, u16 tile, u8 pal)
 #define BOX_TYPING 1
 #define BOX_PAGE 2 /* page full, waiting for A */
 #define BOX_END 3  /* text done, waiting for A */
+#define BOX_ASK 6  /* a question: pick one of askN answers */
 #define BOX_SHOP 4 /* shop list */
 
 u8 shopId, shopCur, shopTop, shopCount, shopReturn;
@@ -348,8 +349,46 @@ void typeChars(u8 n)
     }
 }
 
+/* The question at the end of a text: the answers on the lines below the title, > on the chosen one. */
+void drawAsk(void)
+{
+    u8 i;
+    boxFillLines();
+    for (i = 0; i < askN; i++)
+    {
+        boxPut(3 + i, 2, i == askCur ? FONT_GOLD + '>' - 32 : FILL);
+        boxText(3 + i, 3, (u8 *)askOpt[i], i == askCur ? FONT_GOLD : FONT_WHITE);
+    }
+    boxState = BOX_ASK;
+}
+
+void updateAsk(u16 pressed)
+{
+    if ((pressed & KEY_UP) && askCur > 0)
+    {
+        askCur--;
+        sfx(SFX_MENU);
+        drawAsk();
+    }
+    else if ((pressed & KEY_DOWN) && askCur + 1 < askN)
+    {
+        askCur++;
+        sfx(SFX_MENU);
+        drawAsk();
+    }
+    else if (pressed & KEY_A)
+        askChoose(askCur);
+    else if ((pressed & KEY_B) && askKind == ASK_CHAL)
+        askChoose(1); /* not now */
+}
+
 void updateText(u16 pressed)
 {
+    if (boxState == BOX_ASK)
+    {
+        updateAsk(pressed);
+        return;
+    }
     if (boxState == BOX_SHOP)
     {
         updateShop(pressed);
@@ -379,6 +418,8 @@ void updateText(u16 pressed)
                 boxCol = 0;
                 boxState = BOX_TYPING;
             }
+            else if (askKind)
+                drawAsk();
             else
                 closeText();
         }
@@ -765,6 +806,14 @@ u8 interact(void)
                     return 1;
                 }
             }
+            /* someone with a challenge: after anything they have to give you, and between their other lines */
+            if (rec[12] && !(rec[7] && !hasItem(rec[7])) && !chalOn && npcTalk[k] >= rec[3])
+            {
+                npcTalk[k] = 0;
+                chalOffer(rec[12] - 1);
+                return 1;
+            }
+            if (!rec[3]) return 1; /* nothing else to say (mid-challenge) */
             /* someone handing you something (the Archivist's Gas Lantern) */
             if (rec[7] && !hasItem(rec[7]))
                 npcTalk[k] = rec[6];
@@ -772,7 +821,7 @@ u8 interact(void)
             if (rec[7] && npcTalk[k] == rec[6] && !hasItem(rec[7]))
                 gotItem(rec[7]);
             npcTalk[k]++;
-            if (npcTalk[k] >= rec[3]) npcTalk[k] = 0;
+            if (npcTalk[k] >= rec[3] && !rec[12]) npcTalk[k] = 0; /* (a challenge-giver offers it next) */
             return 1;
         }
     if (fx < 0 || fy < 0 || fx >= MAP_PX_W || fy >= MAP_PX_H)
@@ -817,9 +866,12 @@ u8 interact(void)
         openTextAt((u8 *)&sys_txt + TXT_LOCKED);
         return 1;
     }
+    /* the Mural Hunt: A at a mural you haven't found yet */
+    if (chalAt(CH_TAG, fx, fy)) return 1;
     t = wld[WLD_GRID + (fy >> 4) * COL_STRIDE + (fx >> 4)];
     if (!t)
         return 0;
+    loreMark(t - 1);
     openText(t - 1);
     return 1;
 }
@@ -857,6 +909,8 @@ void useDoor(u8 tx, u8 ty)
 /* Doors and the way out of interiors are checked under the hero's feet. */
 u16 lastCell = 0xFFFF; /* doors and exits fire when you step onto them, not while knocked onto one */
 u16 lastPad;
+extern u16 padSeen;
+extern void rcqNmi(void);
 
 void checkCells(void)
 {
@@ -986,6 +1040,8 @@ int main(void)
         WaitForVBlank();
     }
 
+    nmiSet(rcqNmi); /* every VBlank: catch taps in long frames */
+    padSeen = 0;
     lastPad = 0xFFFF; /* nothing held at the start counts as a press */
     while (1)
     {
@@ -993,7 +1049,9 @@ int main(void)
         /* new presses since our last look (not padsDown, which only holds a press for one frame:
            when a busy frame runs long, that press would be lost) */
         pad = padsCurrent(0);
-        pressed = pad & ~lastPad;
+        /* a tap that came and went during a long frame still counts (src/padnmi.asm) */
+        pressed = (pad | padSeen) & ~lastPad;
+        padSeen = 0;
         lastPad = pad;
 
         if (boxState != BOX_CLOSED)
@@ -1030,6 +1088,7 @@ int main(void)
             combatUpdate(pad, pressed);
             dungeonUpdate();
             lifeUpdate();
+            chalUpdate();
             dx = 0;
             dy = 0;
             /* 1.5 px per frame like the web game's walk; slower while charging a spin */
@@ -1068,6 +1127,7 @@ int main(void)
         drawHero();
         drawNpcs();
         lifeDraw();
+        chalDraw();
         combatDraw();
         dungeonDraw();
         drawBalls();

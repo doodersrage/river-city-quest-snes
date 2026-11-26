@@ -79,7 +79,8 @@ def close_box():
     for _ in range(60):
         if not lab.ram('boxState'):
             return
-        lab.press('A', 6)
+        # a question (stage 10's challenge offers): B says "not now"
+        lab.press('B' if lab.ram('boxState') == 6 else 'A', 6)
 
 lab.walk_to_cell(3, 20)
 lab.face('left')
@@ -289,9 +290,7 @@ lab.run(None, 60)
 check(lab.map == 17 and lab.ram('dentMap') == 255, 'the stairs lead back out to Hollywood Cemetery')
 
 # Stage 6: the Belle Isle Quarry, Blasting Powder and Old Snapper.
-lab.walk_to_cell(31, 10)
-lab.run('RIGHT', 30)
-lab.run(None, 40)
+travel(lab, lab.map_named('Belle Isle'), close_box)
 lab.walk_to_cell(19, 6)
 lab.run('UP', 20)
 lab.run(None, 70)
@@ -647,7 +646,7 @@ talk_until((25, 18), 'up', lambda: lab.ram('tradeItem') == 1)
 check(lab.ram('tradeItem') == 1, 'a Carytown vendor hands over a melon')
 travel(lab, N('Jackson Ward'), close_box)
 talk_until((12, 4), 'up', lambda: lab.ram('tradeItem') == 2)
-check(lab.map == N('Jackson Ward') and lab.ram('tradeItem') == 2, 'the Jackson Ward musician trades sheet music for it')
+check(lab.map == N('Jackson Ward') and lab.ram('tradeItem') == 2, f"the Jackson Ward musician trades sheet music for it (map {lab.map}, trade {lab.ram('tradeItem')}, challenge {lab.ram('chalOn')}, at {lab.pos}, box {lab.ram('boxState')})")
 travel(lab, N('Carytown'), close_box)
 walk((22, 17)); lab.run('UP', 20); lab.run(None, 60)
 talk_until((10, 3), 'up', lambda: lab.ram('tradeItem') == 3)
@@ -1069,7 +1068,7 @@ lab.run('DOWN', 30); lab.run(None, 90)
 check(lab.ram('carX', 2, True, 1) != xs, 'it drives on once you are out of the way')
 # the Local on Broad Street wanders near home
 k = 1
-home = (lab.ram('npcX', 2, True, k), lab.ram('npcY', 2, True, k))
+home = (lab.ram('npcHx', 2, True, k), lab.ram('npcHy', 2, True, k))
 moved = False
 for _ in range(40):
     lab.run(None, 30)
@@ -1117,4 +1116,152 @@ lab.screenshot(f'{out}/56-the-bateau.png')
 close_box()
 check(lab.ram('bateauDone') and lab.ram('coins', 2) == min(999, coins + 50) and lab.ram('hpMax') == min(20, hpm + 2),
       f"the river historian rebuilds the bateau: 50 coins and a heart charm ({coins} -> {lab.ram('coins', 2)}, {hpm} -> {lab.ram('hpMax')}; map {lab.map} {lab.pos})")
+
+# Stage 10: the neighbourhood challenges.
+import re
+hdr = open(os.path.join(root, 'maps.h')).read()
+def carr(name):
+    return [int(v) for v in re.search(r'%s\[\d+\] = \{([^}]*)\}' % name, hdr).group(1).split(',')]
+CH = ['flies', 'bus', 'taps', 'lamps', 'melons', 'tenk', 'quiz', 'rats', 'lures', 'ghosts', 'cleanup', 'crabs', 'trolley', 'murals']
+chal_off, chal_xy = carr('chalOff'), carr('chalXY')
+def chal_cells(c):
+    return [(chal_xy[2 * i], chal_xy[2 * i + 1]) for i in range(chal_off[c], chal_off[c + 1])]
+def talk_to(k):
+    """Walk up to person k on this map and press A (from below, else the other sides)."""
+    for _ in range(4):
+        nx, ny = lab.ram('npcX', 2, True, k) // 16, lab.ram('npcY', 2, True, k) // 16
+        g = lab.solid_grid()
+        for (cx, cy), d in (((nx, ny + 1), 'up'), ((nx - 1, ny), 'right'), ((nx + 1, ny), 'left'), ((nx, ny - 1), 'down')):
+            if 0 <= cx < 32 and 0 <= cy < 22 and not g[cy][cx]:
+                walk((cx, cy)); lab.face(d); lab.press('A', 30)
+                if lab.ram('boxState'): return True
+                break
+        lab.run(None, 30)
+    return False
+def accept(k):
+    """Talk to them until they offer their challenge, then say yes."""
+    for _ in range(4):
+        talk_to(k)
+        for _ in range(30):
+            if lab.ram('boxState') in (0, 6): break
+            lab.press('A', 6)
+        if lab.ram('boxState') == 6:
+            for _ in range(3):
+                if not lab.ram('askCur'): break
+                lab.press('UP', 4)
+            lab.press('A', 10)
+            return True
+        close_box()
+    return False
+def poke16(name, v, k=0):
+    lab.poke(name, v & 0xFF, 2 * k); lab.poke(name, (v >> 8) & 0xFF, 2 * k + 1)
+def hop(x, y):
+    back = lab.pos
+    poke16('px', x); poke16('py', y); lab.run(None, 6)
+    poke16('px', back[0]); poke16('py', back[1]); lab.run(None, 2)
+lab.poke('inv', 0)
+set_clock(4500)
+# Melon Roundup in Carytown: eight melons
+travel(lab, N('Carytown'), close_box)
+lab.run(None, 4)
+seen = False
+for _ in range(40):
+    seen |= lab.ram('oamShown', 1, False, 127) == 2
+    lab.run(None, 1)
+check(seen, 'a "!" over someone with a challenge')
+coins = lab.ram('coins', 2)
+check(accept(2) and lab.ram('chalOn') == CH.index('melons') + 1, f"the Melon Vendor's challenge starts (chalOn {lab.ram('chalOn')})")
+close_box()
+lab.run(None, 30)
+lab.screenshot(f'{out}/57-melon-roundup.png')
+toks = [(lab.ram('pkX', 2, True, k), lab.ram('pkY', 2, True, k)) for k in range(10) if lab.ram('pkKind', 1, False, k) == 15]
+check(len(toks) == len(chal_cells(CH.index('melons'))) and lab.ram('chalNeed') == len(toks), f'melons all over Cary Street ({len(toks)})')
+check(lab.ram('oamShown', 1, False, 120) == 1, 'a countdown at the top of the screen')
+for x, y in toks:
+    hop(x, y)
+    if lab.ram('boxState'): break
+lab.run(None, 40); lab.screenshot(f'{out}/58-city-pin.png')
+check(not lab.ram('chalOn') and lab.ram('pins', 2) & (1 << CH.index('melons')) and lab.ram('coins', 2) == min(999, coins + 25),
+      f"gather them all: a city pin and 25 coins ({coins} -> {lab.ram('coins', 2)})")
+close_box()
+# Catch the Bus on Broad Street: take too long and it's over
+travel(lab, N('Broad Street'), close_box)
+lab.run(None, 4)
+check(accept(0) and lab.ram('chalOn') == CH.index('bus') + 1, 'the Commuter dares you to beat the bus')
+close_box()
+for _ in range(9 * 60 + 30):
+    if lab.ram('boxState'): break
+    lab.run(None, 1)
+lab.screenshot(f'{out}/59-times-up.png')
+check(not lab.ram('chalOn') and lab.ram('boxState') and not any(lab.ram('pkKind', 1, False, k) == 16 for k in range(10)), "time's up, the flag goes away")
+close_box()
+accept(0); close_box()
+fl = [k for k in range(10) if lab.ram('pkKind', 1, False, k) == 16]
+check(len(fl) == 1, 'second try: the flag at the bus shelter')
+if fl: hop(lab.ram('pkX', 2, True, fl[0]), lab.ram('pkY', 2, True, fl[0]))
+check(lab.ram('pins', 2) & (1 << CH.index('bus')), 'reach it in time: another pin')
+close_box()
+# Market Rats in Shockoe Bottom: eight rats, six at a time
+travel(lab, N('Shockoe Bottom'), close_box)
+lab.run(None, 4)
+accept(1); close_box()
+c = CH.index('rats')
+spawned = sum(lab.ram('enChal', 1, False, k) for k in range(6))
+check(lab.ram('chalOn') == c + 1 and spawned >= 2, f'Market Rats: rats come out ({spawned} at once, more as you beat them)')
+lab.poke('inv', 255)
+for _ in range(40):
+    if not lab.ram('chalOn'): break
+    poke16('chalT', 3000)
+    left = [k for k in range(6) if lab.ram('enChal', 1, False, k) and lab.ram('enAlive', 1, False, k)]
+    if not left: lab.run(None, 10); continue
+    lab.poke('enHp', 1, left[0])
+    lab.fight(left[0], 400)
+check(lab.ram('pins', 2) & (1 << c), f"clear out eight: a pin ({lab.ram('chalGot')} of {lab.ram('chalNeed')})")
+close_box()
+lab.poke('inv', 0)
+# Light the Gas Lamps on Church Hill with the lantern
+travel(lab, N('Church Hill'), close_box)
+lab.run(None, 4)
+c = CH.index('lamps')
+accept(1); close_box()
+check(lab.ram('chalOn') == c + 1, 'the Lamplighter hands you the job')
+equip(3)
+g = lab.solid_grid()
+for tx, ty in chal_cells(c):
+    for (cx, cy), d in (((tx, ty + 1), 'up'), ((tx, ty - 1), 'down'), ((tx - 1, ty), 'right'), ((tx + 1, ty), 'left')):
+        if 0 <= cy < 22 and 0 <= cx < 32 and not g[cy][cx]:
+            poke16('px', cx * 16 + 8); poke16('py', cy * 16 + 8); lab.run(None, 2)
+            lab.face(d); lab.press('B', 6)
+            break
+    poke16('chalT', 3000)
+    if not lab.ram('chalOn'): break
+lab.run(None, 40); lab.screenshot(f'{out}/60-gas-lamps.png')
+check(lab.ram('pins', 2) & (1 << c), f"every lamp lit: a pin ({lab.ram('chalGot')} of {lab.ram('chalNeed')})")
+close_box()
+# The history quiz in Capitol Square: three stories from your journal
+travel(lab, N('Capitol Square'), close_box)
+lab.run(None, 4)
+n_read = sum(bin(lab.ram('loreRead', 1, False, i)).count('1') for i in range(9))
+check(n_read >= 1, f'markers read along the way go in the journal ({n_read} so far)')
+accept(1)
+check(lab.ram('boxState') and lab.ram('askKind') == 0, 'the Tour Guide wants three stories first')
+close_box()
+for i in range(9): lab.poke('loreRead', 0xFF, i)   # (as if you'd read every marker in town)
+accept(1)
+allbut = ((1 << len(CH)) - 1) & ~(1 << CH.index('quiz'))   # every other pin, to see the gold paddle
+lab.poke('pins', allbut & 0xFF, 0); lab.poke('pins', allbut >> 8, 1)
+for q in range(3):
+    for _ in range(40):
+        if lab.ram('boxState') == 6: break
+        lab.press('A', 6)
+    if lab.ram('boxState') != 6: break
+    if q == 0: lab.screenshot(f'{out}/61-quiz.png')
+    for _ in range(3):
+        if lab.ram('askCur') >= lab.ram('quizAns'): break
+        lab.press('DOWN', 4)
+    lab.press('A', 10)
+lab.run(None, 20)
+lab.screenshot(f'{out}/62-gold-paddle.png')
+check(lab.ram('pins', 2) == (1 << len(CH)) - 1 and lab.ram('goldPaddle'), 'three right answers: the last pin, and the paddle turns gold')
+close_box()
 sys.exit(0 if ok else 1)

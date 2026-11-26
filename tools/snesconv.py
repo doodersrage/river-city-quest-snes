@@ -199,7 +199,8 @@ def convert_sprite_strip(path):
 
 # ---------- Stage 2: text, signs, NPCs, font ----------
 BOX_COLS, BOX_LINES = 28, 4
-WLD_GRID, WLD_NNPC, WLD_NTXT, WLD_NPCS, WLD_TOFS, MAX_NPCS = 0, 704, 705, 706, 754, 4
+WLD_GRID, WLD_NNPC, WLD_NTXT, WLD_NPCS, MAX_NPCS = 0, 704, 705, 706, 4
+WLD_TOFS = WLD_NPCS + MAX_NPCS * 13   # NPC_REC
 ASCII_FIX = {'‘': "'", '’': "'", '“': '"', '”': '"', '—': '-', '–': '-', '…': '...', 'é': 'e'}
 
 
@@ -231,7 +232,8 @@ def encode_text(title, pages):
 
 
 GIFT_ITEMS = ['hook', 'powder', 'lantern', 'shield', 'bug', 'can', 'balls', 'shoes', 'bike', 'bottle']   # ITEM_* in the ROM, from 1
-NPC_REC = 12
+NPC_REC = 13
+CHAL_IDS = ['flies', 'bus', 'taps', 'lamps', 'melons', 'tenk', 'quiz', 'rats', 'lures', 'ghosts', 'cleanup', 'crabs', 'trolley', 'murals']
 RADII = [15, 32, 38, 44, 46, 48, 54, 68]   # windows, night, dark room, brazier, torch, lamp, night+lantern, dark+lantern
 
 
@@ -270,8 +272,11 @@ def build_world(w, extra_texts=()):
         return tindex[k]
 
     grid = bytearray(704)
+    lore_refs = []   # (text id, lore id): reading it adds the story to your journal (for the history quiz)
     for r in w['reads']:
-        grid[r['ty'] * 32 + r['tx']] = text_id(r['title'], r['pages']) + 1
+        tid = text_id(r['title'], r['pages'])
+        grid[r['ty'] * 32 + r['tx']] = tid + 1
+        if r.get('lore'): lore_refs.append((tid, r['lore']))
     npcs = w['npcs'][:MAX_NPCS]
     recs = bytearray()
     for k, n in enumerate(npcs):
@@ -296,7 +301,8 @@ def build_world(w, extra_texts=()):
         if n.get('refill'):
             refill = len(texts)
             texts.append(encode_text(n['who'], n['refill']['pages']))
-        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), (k + 1) | (0x80 if n.get('wander') else 0), shop, gift_talk, gift_item, q_need, q_text, q_give, refill))
+        chal = CHAL_IDS.index(n['chal']) + 1 if n.get('chal') else 0
+        recs += bytes((n['tx'], n['ty'], first, len(n['talks']), (k + 1) | (0x80 if n.get('wander') else 0), shop, gift_talk, gift_item, q_need, q_text, q_give, refill, chal))
     extra_ids = []
     for title, pages in extra_texts:
         extra_ids.append(text_id(title, pages))
@@ -310,7 +316,7 @@ def build_world(w, extra_texts=()):
     for i, t in enumerate(texts):
         head[WLD_TOFS + 2 * i] = off & 0xFF; head[WLD_TOFS + 2 * i + 1] = off >> 8
         off += len(t)
-    return bytes(head) + b''.join(texts), npcs, extra_ids
+    return bytes(head) + b''.join(texts), npcs, extra_ids, lore_refs
 
 
 def sprite_palette(colors):
@@ -460,8 +466,9 @@ def convert_combat(exp):
     hud_tiles = [full, half, empty, coin0, coin1]
     font = Image.open(os.path.join(exp, 'font.png')).convert('L')
     white, black = (255, 255, 255, 255), (0, 0, 0, 255)
-    for dgt in range(10):
-        gx, gy = ((16 + dgt) % 16) * 8, ((16 + dgt) // 16) * 8
+    for dgt in list(range(10)) + [-1]:     # digits, then '/' (challenge counts) at OBJ_HUD + 26
+        ch = 16 + dgt if dgt >= 0 else 15
+        gx, gy = (ch % 16) * 8, (ch // 16) * 8
         ink = [[font.getpixel((gx + x, gy + y)) > 127 for x in range(8)] for y in range(8)]
         t = []
         for y in range(8):
@@ -472,8 +479,10 @@ def convert_combat(exp):
                 else: row.append((0, 0, 0, 0))
             t.append(row)
         hud_tiles.append(t)
+    slash = hud_tiles.pop()
     for i, t in enumerate(hud_tiles):
         sheet[OBJ_HUD - 128 + i] = tile4bpp([ix(p) for r in t for p in r])
+    sheet[OBJ_HUD - 128 + 26] = tile4bpp([ix(p) for r in slash for p in r])
     # spark shot x2, hook head, chain link (nearest palette-7 colours)
     sm = Image.open(os.path.join(d, 'small.png')).convert('RGBA')
     for i in range(11):
@@ -499,7 +508,7 @@ def convert_combat(exp):
               f'#define HUD_EMPTY {OBJ_HUD + HUD_EMPTY}', f'#define HUD_COIN {OBJ_HUD + HUD_COIN}',
               f'#define HUD_DIGIT {OBJ_HUD + HUD_DIGIT}', '#define PAL_HUD 7',
               f'#define OBJ_SPARK {OBJ_HUD + 15}', f'#define OBJ_HOOK {OBJ_HUD + 17}', f'#define OBJ_CHAIN {OBJ_HUD + 18}',
-              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}', f'#define OBJ_RING {OBJ_HUD + 22}', f'#define OBJ_SEED {OBJ_HUD + 23}', f'#define OBJ_RAIN {OBJ_HUD + 24}', f'#define OBJ_SNOW {OBJ_HUD + 25}',
+              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}', f'#define OBJ_RING {OBJ_HUD + 22}', f'#define OBJ_SEED {OBJ_HUD + 23}', f'#define OBJ_RAIN {OBJ_HUD + 24}', f'#define OBJ_SNOW {OBJ_HUD + 25}', f'#define HUD_SLASH {OBJ_HUD + 26}',
               f'#define ENEMY_TYPES {len(ENEMY_TYPES)}',
               '/* ' + ' '.join(f'{i}={t}' for i, t in enumerate(ENEMY_TYPES)) + ' */',
               f'static const u8 enemyHp[{len(ENEMY_TYPES)}] = {{{", ".join(map(str, ENEMY_HP))}}};',
@@ -617,27 +626,31 @@ def convert_bosses(exp):
 
 # ---------- Stage 9: town life ----------
 # Cars, the Pulse bus and pigeons load into the boss area (cell 32 on) on outdoor maps, which never have a boss.
-TOWN_CELLS = {'car': 0, 'bus': 6, 'sit': 9, 'fly': 10}   # car colour c at 2c; bus 3 cells; fly 2 frames
+TOWN_CELLS = {'car': 0, 'bus': 6, 'sit': 9, 'fly': 10, 'tap': 12, 'melon': 13, 'lure': 14, 'trash': 15, 'flag': 16, 'bang': 18}
+TOWN_N = 19   # car colour c at 2c; bus 3 cells; fly 2 frames; flag 2 colours; then challenge tokens and the '!'
 
 
-def convert_town(exp):
-    im = Image.open(os.path.join(exp, 'combat', 'town.png')).convert('RGBA')
+def convert_town(exp, tok_pal={}):
+    im0 = Image.open(os.path.join(exp, 'combat', 'town.png')).convert('RGBA')
+    tok = Image.open(os.path.join(exp, 'combat', 'tokens.png')).convert('RGBA')
+    im = Image.new('RGBA', (16 * TOWN_N, 16))
+    im.paste(im0, (0, 0)); im.paste(tok, (16 * 12, 0))
     pal = TOWN_PAL   # palette 7 (set by convert_combat), so night and weather tint them
     first = obj_tile_of_frame(0, BOSS_FIRST_CELL)
     sheet = [bytes(32)] * 128
-    for c in range(12):
+    for c in range(TOWN_N):
         t = obj_tile_of_frame(0, BOSS_FIRST_CELL + c)
         for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
             idx = []
             for y in range(8):
                 for x in range(8):
                     p_ = im.getpixel((c * 16 + qx * 8 + x, qy * 8 + y))
-                    idx.append(nearest(c15(p_), pal) + 1 if p_[3] > 96 else 0)
+                    idx.append(nearest(c15(p_), tok_pal.get(c, pal)) + 1 if p_[3] > 96 else 0)
             sheet[t - first + qy * 16 + qx] = tile4bpp(idx)
-    used = obj_tile_of_frame(0, BOSS_FIRST_CELL + 11) - first + 18
+    used = obj_tile_of_frame(0, BOSS_FIRST_CELL + TOWN_N - 1) - first + 18
     defs = [f'#define TOWN_{n.upper()} {c}' for n, c in TOWN_CELLS.items()]
-    defs.append('static const u16 townTile[12] = {%s};  /* OBJ tile of each town cell */'
-                % ', '.join(str(256 + obj_tile_of_frame(0, BOSS_FIRST_CELL + c)) for c in range(12)))
+    defs.append('static const u16 townTile[%d] = {%s};  /* OBJ tile of each town cell */'
+                % (TOWN_N, ', '.join(str(256 + obj_tile_of_frame(0, BOSS_FIRST_CELL + c)) for c in range(TOWN_N))))
     return b''.join(sheet[:used]), defs
 
 
@@ -739,6 +752,7 @@ def main():
     report = []
     world = json.load(open(os.path.join(exp, 'world.json')))
     combat = json.load(open(os.path.join(exp, 'combat', 'combat.json')))
+    lore_refs_all = []
     for i, m in enumerate(maps):
         # Tiles the ROM swaps in at runtime, cut from the alternate renders (see export.js):
         # chests closed and open, bushes cut, locked doors / gates / cracked walls open, boss stairs.
@@ -776,7 +790,8 @@ def main():
                 col[y * 32 + x] = cell(ch)
         col = bytes(col)
         chest_texts = [('Treasure', extra['gives'].get(q['item']) or ['You found something!']) for q in chests]
-        wld, npcs, chest_txt = build_world(world[m['id']], chest_texts)
+        wld, npcs, chest_txt, lrefs = build_world(world[m['id']], chest_texts)
+        lore_refs_all += [(i, t, l) for t, l in lrefs]
         # Enemies the ROM knows; bosses are handled by the room's boss type.
         ens = [e for e in combat['enemies'][m['id']] if e[0] in ENEMY_TYPES]
         ene = bytes([len(ens)]) + b''.join(bytes((ENEMY_TYPES.index(t), tx, ty)) for t, tx, ty in ens)
@@ -930,6 +945,31 @@ def main():
             sys_texts.append((f'PART{k}_{n}', 'Bateau Part', [f'You found the bateau {part}! ({n} of 3)',
                               "That's every part! Take them to the historian at Ancarrow's Landing." if n == 3 else
                               "The river historian at Ancarrow's Landing will want it."]))
+    # Neighbourhood challenges (stage 10, web people.js offer/chalWin/chalFail/runQuiz).
+    chal_defs = {c['id']: c for c in boss_json['chal']}
+    chal_who, chal_map = {}, {}
+    for mi, m in enumerate(maps):
+        for n in world[m['id']]['npcs']:
+            if n.get('chal'): chal_who[n['chal']], chal_map[n['chal']] = n['who'], mi
+    for k, cid in enumerate(CHAL_IDS):
+        d = chal_defs[cid]
+        sys_texts.append((f'CH{k}_OFFER', d['name'], [d['intro'], 'Win and you get a Richmond city pin.']))
+        sys_texts.append((f'CH{k}_AGAIN', d['name'], [d['intro'], "You've already earned this pin. Go again for a few coins?"]))
+        sys_texts.append((f'CH{k}_FAIL', d['name'], ["Time's up!", f"Talk to the {chal_who[cid].lower()} to try again."]))
+        sys_texts.append((f'CH{k}_GO', d['name'], ['Go!']))
+    for n in range(1, len(CHAL_IDS) + 1):
+        L = ['You did it!', f'You earned a Richmond city pin and 25 coins. ({n} of {len(CHAL_IDS)} pins)']
+        if n == len(CHAL_IDS): L.append("That's every pin in Richmond! Your kayak paddle turns gold. It hits twice as hard now.")
+        sys_texts.append((f'PIN{n}', 'City Pin', L))
+    sys_texts += [('PINAGAIN', 'City Pin', ['You did it!', 'Ten coins for another win.']),
+                  ('NEEDBUG', '', ["You'd need something that can fly over the water and bring things back."]),
+                  ('NEEDLAMP', '', ["You'll need a lantern for this one."]),
+                  ('QUIZFEW', 'Tour Guide', ['Find at least three stories for your journal first, from markers, statues and people. Then come back!'])]
+    for n in range(3):
+        sys_texts.append((f'QUIZ{n}', 'Tour Guide', [f'{n} out of 3. Brush up on your journal and try again!']))
+    lore = boss_json['lore']
+    for k, l in enumerate(lore):
+        sys_texts.append((f'LORE{k}', 'Tour Guide', ['Which journal story is this from?', '"' + l['quote'] + '"']))
     blob, defs = b'', []
     for k, part in enumerate(['oar', 'pole', 'tiller']):
         gid = [g for key, g in pickup_gid.items() if key.endswith(':' + part)]
@@ -938,6 +978,40 @@ def main():
         defs.append(f'#define TXT_{name} {len(blob)}')
         blob += encode_text(title, pages)
     open(os.path.join(out, 'sys.txt'), 'wb').write(blob)
+    if len(blob) > 0x8000: raise SystemExit(f'sys.txt is {len(blob)} bytes, over one bank')
+    J = lambda a: ', '.join(map(str, a))
+    TYPES = {'collect': 1, 'race': 2, 'defeat': 3, 'light': 4, 'tag': 5, 'quiz': 6}
+    cxy, coff = [], []
+    for cid in CHAL_IDS:
+        d, m = chal_defs[cid], maps[chal_map[cid]]
+        cells = m['lamps'] if d['type'] == 'light' else m['murals'] if d['type'] == 'tag' else m['spots']
+        coff.append(len(cxy) // 2)
+        for x, y in cells[:8]: cxy += [x, y]
+    coff.append(len(cxy) // 2)
+    tokcell = lambda ic: 255 if ic in (None, 'ball') else TOWN_CELLS[ic]
+    lore_index = {l['id']: k for k, l in enumerate(lore)}
+    refs = sorted({(mi, t, lore_index[l]) for mi, t, l in lore_refs_all if l in lore_index})
+    title = lambda t: ascii_text(t) if len(t) <= 27 else ascii_text(t)[:25] + '..'
+    defs += [f'#define CHAL_COUNT {len(CHAL_IDS)}', f'#define CHAL_QUIZ {CHAL_IDS.index("quiz")}', '#define CH_COLLECT 1', '#define CH_RACE 2', '#define CH_DEFEAT 3', '#define CH_LIGHT 4', '#define CH_TAG 5', '#define CH_QUIZ 6',
+             f'/* {" ".join(f"{k + 1}={c}" for k, c in enumerate(CHAL_IDS))} (NPC byte 12) */',
+             f'static const u8 chalType[{len(CHAL_IDS)}] = {{{J(TYPES[chal_defs[c]["type"]] for c in CHAL_IDS)}}};',
+             f'static const u8 chalSecs[{len(CHAL_IDS)}] = {{{J(chal_defs[c]["time"] for c in CHAL_IDS)}}};',
+             f'static const u8 chalFoe[{len(CHAL_IDS)}] = {{{J(ENEMY_TYPES.index(chal_defs[c]["foe"]) if chal_defs[c]["foe"] else 255 for c in CHAL_IDS)}}};',
+             f'static const u8 chalN[{len(CHAL_IDS)}] = {{{J(chal_defs[c]["n"] for c in CHAL_IDS)}}};',
+             f'static const u8 chalNeeds[{len(CHAL_IDS)}] = {{{J(1 if chal_defs[c]["needs"] == "bug" else 2 if chal_defs[c]["type"] == "light" else 0 for c in CHAL_IDS)}}};  /* 1 the Gold-Bug, 2 the lantern */',
+             f'static const u8 chalTok[{len(CHAL_IDS)}] = {{{J(tokcell(chal_defs[c]["ic"]) for c in CHAL_IDS)}}};  /* town cell, 255 a baseball */',
+             f'static const u8 chalMap[{len(CHAL_IDS)}] = {{{J(chal_map[c] for c in CHAL_IDS)}}};',
+             f'static const u8 chalOff[{len(CHAL_IDS) + 1}] = {{{J(coff)}}};',
+             f'static const u8 chalXY[{max(2, len(cxy))}] = {{{J(cxy or [0, 0])}}};  /* spots, lamps or murals: tx, ty */',
+             f'static const u16 chalOfferTxt[{len(CHAL_IDS)}] = {{{J(f"TXT_CH{k}_OFFER" for k in range(len(CHAL_IDS)))}}};',
+             f'static const u16 chalAgainTxt[{len(CHAL_IDS)}] = {{{J(f"TXT_CH{k}_AGAIN" for k in range(len(CHAL_IDS)))}}};',
+             f'static const u16 chalFailTxt[{len(CHAL_IDS)}] = {{{J(f"TXT_CH{k}_FAIL" for k in range(len(CHAL_IDS)))}}};',
+             f'static const u16 chalGoTxt[{len(CHAL_IDS)}] = {{{J(f"TXT_CH{k}_GO" for k in range(len(CHAL_IDS)))}}};',
+             f'static const u16 pinTxt[{len(CHAL_IDS)}] = {{{J(f"TXT_PIN{n}" for n in range(1, len(CHAL_IDS) + 1))}}};',
+             f'#define LORE_COUNT {len(lore)}', f'#define LORE_REFS {len(refs)}',
+             f'static const u8 loreRef[{3 * max(1, len(refs))}] = {{{J([v for r in refs for v in r] or [255, 0, 0])}}};  /* map, text, story */',
+             f'static const u16 loreTxt[{len(lore)}] = {{{J(f"TXT_LORE{k}" for k in range(len(lore)))}}};',
+             'static const char *const loreTitle[%d] = {%s};' % (len(lore), ', '.join('"%s"' % title(l['title']).replace('"', "'") for l in lore))]
     asm += ['.section ".systext" superfree', 'sys_txt:', '.incbin "data/sys.txt"', '.ends', '']
     # The ending (web startRelight and CREDITS): five neighbourhoods, then pages of credits.
     relight = boss_text['relight']
@@ -1014,7 +1088,21 @@ def main():
     asm += ['.section ".items" superfree', 'items_chr:', '.incbin "data/items.chr"', 'items_chrend:',
             'block_pal:', '.incbin "data/block.pal"', '.ends', '']
     hdr += ['extern char items_chr, items_chrend, block_pal;']
-    town_chr, town_defs = convert_town(exp)
+    # A challenge token takes the colours of the person who set the challenge (their sprite palette, k + 1):
+    # palette 7 has no greens or blues for a melon or a lure.
+    boss_json_chal = {c['id']: c['ic'] for c in boss_json['chal']}
+    tok_pal, chal_pal = {}, []
+    for cid in CHAL_IDS:
+        pal_no = 7
+        for mi, m in enumerate(maps):
+            for k, n in enumerate(world[m['id']]['npcs'][:MAX_NPCS]):
+                if n.get('chal') == cid and boss_json_chal[cid] in TOWN_CELLS and boss_json_chal[cid] != 'flag':
+                    im = Image.open(os.path.join(exp, n['file'])).convert('RGBA')
+                    tok_pal[TOWN_CELLS[boss_json_chal[cid]]] = sorted({c15(q) for q in im.getdata() if q[3] > 0})[:15]
+                    pal_no = k + 1
+        chal_pal.append(pal_no)
+    town_chr, town_defs = convert_town(exp, tok_pal)
+    town_defs.append('static const u8 chalPal[%d] = {%s};  /* the token\'s sprite palette */' % (len(chal_pal), ', '.join(map(str, chal_pal))))
     open(os.path.join(out, 'town.chr'), 'wb').write(town_chr)
     asm += ['.section ".town" superfree', 'town_chr:', '.incbin "data/town.chr"', 'town_chrend:', '.ends', '']
     hdr += ['extern char town_chr, town_chrend;'] + town_defs

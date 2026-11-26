@@ -58,7 +58,9 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define OAM_BALLS 94  /* 3 */
 #define OAM_BIKE 97
 #define MAX_EN 6
-#define MAX_PK 6
+#define MAX_PK 10 /* room for a challenge's eight tokens */
+#define PK_TOKEN 15
+#define PK_FLAG 16
 
 /* VRAM (word addresses) */
 #define VRAM_BG1_CHR 0x0000
@@ -99,6 +101,25 @@ extern u8 keys[];
 extern u8 hasHook, hasPowder, hasLantern, hasShield, powder, eqItem, keystones, roomReward, dentMap, hookSt, bossOn;
 extern u8 enemiesExisted;
 extern u8 enCount, enAlive[];
+extern u8 enChal[];
+extern u8 pkKind[];
+/* stage 10: neighbourhood challenges and the history quiz (chal.c) */
+#define ASK_CHAL 1
+#define ASK_QUIZ 2
+extern u8 askKind, askN, askCur, chalOn, goldPaddle;
+extern const char *askOpt[];
+extern u16 pins;
+extern u8 loreRead[];
+void chalOffer(u8 c);
+void askChoose(u8 i);
+void chalProgress(void);
+void chalKill(u8 k);
+u8 chalAt(u8 type, s16 fx, s16 fy);
+void chalUpdate(void);
+void chalDraw(void);
+void chalLoad(void);
+void loreMark(u8 text);
+u8 pinCount(void);
 
 u8 solidAt(s16 x, s16 y);
 void sprHide(u8 slot);

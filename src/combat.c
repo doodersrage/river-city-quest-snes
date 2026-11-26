@@ -16,7 +16,8 @@ u8 enemiesExisted;
 s16 enX[MAX_EN], enY[MAX_EN], enVX[MAX_EN], enVY[MAX_EN], enKX[MAX_EN], enKY[MAX_EN];
 u16 enT[MAX_EN];
 
-u8 pkKind[MAX_PK]; /* 0 none, 1 coin, 2 heart, 3 heart container, 4 powder keg, 5-8 keystones, 9 small key */
+u8 pkKind[MAX_PK];
+u8 enChal[MAX_EN]; /* spawned for a challenge */ /* 0 none, 1 coin, 2 heart, 3 heart container, 4 powder keg, 5-8 keystones, 9 small key */
 u8 pkId[MAX_PK];   /* for pickups placed in a room: their id, else 255 */
 s16 pkX[MAX_PK], pkY[MAX_PK];
 u16 pkLife[MAX_PK];
@@ -86,6 +87,7 @@ void combatLoad(u8 *ene)
     for (k = 0; k < MAX_EN; k++)
     {
         enAlive[k] = 0;
+        enChal[k] = 0;
         if (k < n)
         {
             enType[k] = ene[1 + k * 3];
@@ -237,6 +239,7 @@ void spawnEnemy(u8 type, s16 x, s16 y)
             enStun[k] = 0;
             enFlip[k] = 0;
             enT[k] = 0;
+            enChal[k] = 0;
             enAlive[k] = 1;
             return;
         }
@@ -317,6 +320,11 @@ void collectPickup(u8 k)
 {
     u8 kind = pkKind[k];
     pkKind[k] = 0;
+    if (kind == PK_TOKEN || kind == PK_FLAG)
+    {
+        chalProgress(); /* a challenge token or the finish flag */
+        return;
+    }
     sfx(kind == 1 || kind == 4 || kind == 13 ? SFX_COIN : kind == 2 ? SFX_HEART : SFX_JING);
     if (kind == 1) { if (coins < 999) coins++; }
     else if (kind == 2) { hp += 2; if (hp > hpMax) hp = hpMax; }
@@ -367,6 +375,7 @@ void hitEnemy(u8 k, u8 dmg, s16 kdx, s16 kdy)
         enAlive[k] = 0;
         sfx(SFX_KILL);
         dropAt(enX[k] >> 4, enY[k] >> 4);
+        if (enChal[k]) chalKill(k);
     }
     else
     {
@@ -549,7 +558,7 @@ void combatUpdate(u16 pad, u16 pressed)
                 dx = (enX[k] >> 4) - px;
                 dy = (enY[k] >> 4) - py;
                 d = dist(dx, dy);
-                if (d < 24) hitEnemy(k, 2, dx * 48 / d, dy * 48 / d);
+                if (d < 24) hitEnemy(k, goldPaddle ? 4 : 2, dx * 48 / d, dy * 48 / d);
             }
         if (bossOn && bossNear(px, py)) bossHit(2, 0);
         /* web: every 4th spin frame, cut at 8 points 16px out */
@@ -602,10 +611,10 @@ void combatUpdate(u16 pad, u16 pressed)
                 ex = enX[k] >> 4;
                 ey = enY[k] >> 4;
                 if (ABS(ex - hx) < 11 && ABS(ey - hy) < 11)
-                    hitEnemy(k, 1, dirX[heroDir] * 40, dirY[heroDir] * 40);
+                    hitEnemy(k, goldPaddle ? 2 : 1, dirX[heroDir] * 40, dirY[heroDir] * 40); /* the gold paddle hits twice as hard */
             }
         if (atk == 10) cutAt(hx, hy);
-        if (bossOn && bossNear(hx, hy) && bossHit(1, 0) == 2)
+        if (bossOn && bossNear(hx, hy) && bossHit(goldPaddle ? 2 : 1, 0) == 2)
         {
             /* clank: the paddle bounces off the armour */
             kx = -dirX[heroDir] * 2;
@@ -678,6 +687,11 @@ void combatDraw(void)
     for (k = 0; k < MAX_PK; k++)
     {
         id = (OAM_PICKUPS + k) * 4;
+        if (!pkKind[k])
+        {
+            sprHide((id) >> 2);
+            continue;
+        }
         sx = pkX[k] - camX - 4;
         sy = pkY[k] - camY - 5;
         if (!pkKind[k] || (pkKind[k] < 3 && pkLife[k] < 120 && (frameCount & 4)) || sx < -8 || sx > SCREEN_W || sy < -8 || sy > SCREEN_H)
@@ -688,8 +702,10 @@ void combatDraw(void)
         if (pkKind[k] >= 3)
         {
             tile = pkKind[k] == 3 ? OBJ_I_CONTAINER : pkKind[k] == 4 ? OBJ_I_KEG : pkKind[k] == 9 ? OBJ_I_KEY : pkKind[k] == 10 ? OBJ_I_CARKEY :
-                   pkKind[k] == 11 ? OBJ_I_PIECE : pkKind[k] == 12 ? OBJ_I_BIB : pkKind[k] == 13 ? OBJ_I_BALL : pkKind[k] == 14 ? OBJ_I_OAR : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
-            sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, PAL_ITEM);
+                   pkKind[k] == 11 ? OBJ_I_PIECE : pkKind[k] == 12 ? OBJ_I_BIB : pkKind[k] == 13 ? OBJ_I_BALL : pkKind[k] == 14 ? OBJ_I_OAR :
+                   pkKind[k] == PK_TOKEN ? (chalTok[chalOn - 1] == 255 ? OBJ_I_BALL : townTile[chalTok[chalOn - 1]]) :
+                   pkKind[k] == PK_FLAG ? townTile[TOWN_FLAG + ((frameCount >> 3) & 1)] : OBJ_I_KEYSTONE + (pkKind[k] - 5) * 2;
+            sprPut((id) >> 2, 1, (sx - 4), (sy - 4), 2, 0, tile, pkKind[k] == PK_TOKEN ? chalPal[chalOn - 1] : PAL_ITEM);
             continue;
         }
         tile = pkKind[k] == 1 ? HUD_COIN + ((frameCount >> 3) & 1) : HUD_HEART;

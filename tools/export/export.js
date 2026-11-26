@@ -80,7 +80,7 @@ const dump = vm.runInContext(`(function(){
       s.g=keep;}
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
       grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,
-      solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],lights,lit:!!s.lit,cars:(s.cars||[]).map(c=>({y:c.y,dir:c.dir,kind:c.kind||'car'})),birds:s.birds||[],
+      solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],lights,lit:!!s.lit,cars:(s.cars||[]).map(c=>({y:c.y,dir:c.dir,kind:c.kind||'car'})),birds:s.birds||[],spots:s.spots||[],murals:s.murals||[],lamps:s.lamps||[],
       pickups:(s.items||[]).filter(it=>['skey','carkey','piece','bib','part'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
       blocks:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='#'?[x,y]:null).filter(Boolean)),
       switches:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='^'?[x,y]:null).filter(Boolean)),
@@ -144,11 +144,11 @@ const world = vm.runInContext(`(function(){
         catch(e){r=null;if(DEBUG)console.log(n.who,String(e));}
         const got=Object.keys(st.items).filter(k=>st.items[k]&&!had[k]);
         if(r&&got.length){const pg=pages(r),k=pg.join('|');if(!seen.has(k)){seen.add(k);talks.push(pg);gifts.push([talks.length-1,got[0]]);}continue;}
-        if(!r)continue;const pg=pages(r),k=pg.join('|');if(!seen.has(k)){seen.add(k);talks.push(pg);}}}
+        if(!r)continue;const pg=pages(r).filter(x=>x.length),k=pg.join('|');if(pg.length&&!seen.has(k)){seen.add(k);talks.push(pg);}}}
       if(!talks.length&&n0.lines)for(const l of n0.lines)talks.push([String(l)]);
       if(!talks.length&&n0.talk=='shop')talks.push(['What can I get you?']);
       if(!talks.length&&n0.talk=='grocer')talks.push(['Fresh from the farms!']);
-      if(!talks.length)talks.push(['...']);
+      if(!talks.length&&!n0.chal)talks.push(['...']);   // challenge-givers who only offer their challenge say nothing else
       // Trading quest (melon -> sheet music -> river map -> kayak): talks that change what you carry.
       const quest=[];
       for(const need of [null,'melon','music','rivermap']){
@@ -171,7 +171,7 @@ const world = vm.runInContext(`(function(){
         try{r=TALK[n.talk](n);if(!r)r=SAID;}catch(e){r=null;}
         if(r&&st.f.bateau){const after=pages(TALK[n.talk](n));quest.push({need:'parts',give:'bateau',pages:pages(r),after});}st=keep;}
       let sp;try{sp=n0.spr&&n0.spr.down?n0.spr:npcSpr(n0);}catch(e){sp=npcSpr(Object.assign({hat:['#888','#666','#aaa'],shirt:['#888','#666','#aaa']},n0));}
-      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',wander:!!n0.wander,talks,gifts,quest,refill,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
+      return {tx:n0.tx,ty:n0.ty,who:n0.who||'',wander:!!n0.wander,chal:n0.chal||null,talks,gifts,quest,refill,shop:n0.talk=='shop'?'shop':n0.talk=='grocer'?'market':null,spr:[sp.down.r.c,sp.up.r.c,sp.side.r.c]};
     });
     out[id]={reads,npcs};
   }
@@ -185,7 +185,7 @@ for (const id in world) {
     n.spr.forEach((f, i) => x.drawImage(f, i * 16 + Math.floor((16 - f.width) / 2), 16 - f.height));
     const file = 'npcs/' + safe + '_' + k + '.png';
     fs.writeFileSync(path.join(OUT, file), c.toBuffer('image/png'));
-    return { tx: n.tx, ty: n.ty, who: n.who, wander: n.wander, talks: n.talks, gifts: n.gifts, quest: n.quest, refill: n.refill, shop: n.shop, file };
+    return { tx: n.tx, ty: n.ty, who: n.who, wander: n.wander, chal: n.chal, talks: n.talks, gifts: n.gifts, quest: n.quest, refill: n.refill, shop: n.shop, file };
   }) };
 }
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(worldOut, null, 1));
@@ -298,6 +298,14 @@ const bossArt = vm.runInContext(`(function(){
    {const x=152,y=10;R(x-3,y-2,6,4,'#1a1423');R(x-2,y-1,4,2,'#8a8496');R(x+2,y-4,3,3,'#1a1423');R(x+3,y-3,1,1,'#5f566a');}
    [0,1].forEach(w=>{const x=168+w*16,y=9;R(x-2,y-1,4,3,'#1a1423');R(x-1,y,2,1,'#8a8496');R(x-6,y-(w?3:0),4,2,'#5f566a');R(x+2,y-(w?3:0),4,2,'#5f566a');});
    g=old;out.town=c;}
+  // Challenge tokens (stage 10): tap, melon, lure, trash, the race flag (2 colours), and the "!" over someone with a challenge.
+  {const c=mkCanvas(16*7,16),old=g;g=c.getContext('2d');frame=0;
+   ['tap','melon','lure','trash'].forEach((k,i)=>g.drawImage(IC[k],i*16+2,2));
+   [0,1].forEach(f=>{const x=64+f*16+4,y=15;R(x-1,y-14,2,14,'#1a1423');R(x+1,y-14,10,7,'#1a1423');R(x+1,y-13,9,5,f?'#e83048':'#f2c14e');R(x+1,y-13,4,2,'#ffffff');});
+   R(96+6,1,5,10,'#1a1423');R(96+7,2,3,7,'#f2c14e');R(96+6,11,5,4,'#1a1423');R(96+7,12,3,2,'#f2c14e');
+   g=old;out.tokens=c;}
+  out.chal=Object.entries(CHAL).map(([id,d])=>({id,name:d.name,type:d.type,time:d.time||0,ic:d.ic||null,foe:d.foe||null,n:d.n||0,needs:d.needs||null,intro:d.intro}));
+  out.lore=LORE.map(([id,t,s])=>{const sn=s.split('. ')[0];return {id,title:t,quote:sn.length>95?sn.slice(0,92)+'...':sn+'.'};});
   out.keynames=KEYNAME;
   // heart container pickup (16x16, centre 8,9)
   {const c=mkCanvas(16,16),old=g;g=c.getContext('2d');frame=0;const k={kind:'container',x:8,y:9,life:1e9,t:0};
@@ -313,6 +321,7 @@ const bossArt = vm.runInContext(`(function(){
   fs.writeFileSync(path.join(OUT, 'combat', 'container.png'), bossArt.container.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'block.png'), bossArt.block.toBuffer('image/png'));
   fs.writeFileSync(path.join(OUT, 'combat', 'town.png'), bossArt.town.toBuffer('image/png'));
+  fs.writeFileSync(path.join(OUT, 'combat', 'tokens.png'), bossArt.tokens.toBuffer('image/png'));
   for (const name of ['turtle', 'wraith', 'raven', 'bell', 'arum', 'vampire']) {
     const ts = createCanvas(48 * bossArt[name].length, 48), tx2 = ts.getContext('2d');
     bossArt[name].forEach((c, i) => tx2.drawImage(c, i * 48, 0));
@@ -342,5 +351,5 @@ const bossArt = vm.runInContext(`(function(){
   R2(80 + 3, 3, 2, 2, '#ffffff'); R2(80 + 2, 4, 1, 1, '#e8eeff'); R2(80 + 5, 3, 1, 1, '#e8eeff');
   fs.writeFileSync(path.join(OUT, 'combat', 'small.png'), sm.toBuffer('image/png'));
   const intro = vm.runInContext("(function(){try{return Object.entries(BANNERS||{})}catch(e){return null}})()", sb);
-  fs.writeFileSync(path.join(OUT, 'combat', 'boss.json'), JSON.stringify({ text: bossArt.text, keynames: bossArt.keynames }, null, 1));
+  fs.writeFileSync(path.join(OUT, 'combat', 'boss.json'), JSON.stringify({ text: bossArt.text, keynames: bossArt.keynames, chal: bossArt.chal, lore: bossArt.lore }, null, 1));
 }
