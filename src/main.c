@@ -413,6 +413,7 @@ void cutAt(s16 x, s16 y)
 void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, u8 *opl, u8 *ene, u8 *xtr)
 {
     u8 k, gid;
+    u16 n;
     u8 *rec;
     dmaCopyVram(chr, VRAM_BG1_CHR, chrSize);
     dmaCopyVram(map, VRAM_BG1_MAP, 64 * 64 * 2);
@@ -426,9 +427,8 @@ void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, 
     doors = xtr + 2;
     chests = doors + 1 + doors[0] * 4;
     bushes = chests + 1 + chests[0] * 14;
-    for (k = 0; k < COL_STRIDE * 22 - 1; k++)
-        colRam[k] = col[k];
-    colRam[COL_STRIDE * 22 - 1] = col[COL_STRIDE * 22 - 1];
+    for (n = 0; n < COL_STRIDE * 22; n++)
+        colRam[n] = col[n];
     colGrid = colRam;
     for (k = 0; k < chests[0]; k++)
     {
