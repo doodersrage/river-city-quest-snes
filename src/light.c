@@ -96,6 +96,11 @@ static u8 nightLevel(void)
     return 0;
 }
 
+u8 isNight(void)
+{
+    return nightLevel() >= 3;
+}
+
 /* once a game frame: the clock, how dark it is, and where the light falls */
 void lightFrame(void)
 {
@@ -197,8 +202,26 @@ void lightVBlank(void)
     lightDirty = 0;
     if (!darkLevel)
     {
-        REG_CGADSUB = 0;
         REG_HDMAEN = 0;
+        kind = weatherTint();
+        if (kind == 1)
+        { /* rain: a darker, bluer sky (web rgba(28,36,64,.2)) */
+            REG_CGWSEL = 0x00;
+            REG_CGADSUB = 0x80 | 0x01 | 0x10 | 0x20;
+            REG_COLDATA = 0x20 | 4;
+            REG_COLDATA = 0x40 | 3;
+            REG_COLDATA = 0x80 | 1;
+        }
+        else if (kind == 2)
+        { /* fog and snow: washed out (web rgba(200,208,220,.2)) */
+            REG_CGWSEL = 0x00;
+            REG_CGADSUB = 0x01 | 0x20;
+            REG_COLDATA = 0x20 | 4;
+            REG_COLDATA = 0x40 | 4;
+            REG_COLDATA = 0x80 | 5;
+        }
+        else
+            REG_CGADSUB = 0;
         return;
     }
     kind = mapDark[curMap];

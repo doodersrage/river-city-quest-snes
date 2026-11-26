@@ -18,6 +18,13 @@ extern u8 darkLevel;
 void lightInit(void);
 void lightFrame(void);
 void lightVBlank(void);
+u8 isNight(void);
+
+/* weather (weather.c) */
+extern u8 wx, wxK;
+void weatherInit(void);
+void weatherFrame(void);
+u8 weatherTint(void);
 extern u8 curSong;
 #ifndef RCQ_AUDIO_C
 #define WaitForVBlank() rcqVBlank()

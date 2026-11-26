@@ -315,7 +315,7 @@ const bossArt = vm.runInContext(`(function(){
   bossArt.boom.forEach((c, i) => bx.drawImage(c, i * 32, 0));
   fs.writeFileSync(path.join(OUT, 'combat', 'boom.png'), bm.toBuffer('image/png'));
   // spark shot (2 blinks) and the hook head and chain link, 8x8 each, drawn like the web game
-  const sm = createCanvas(72, 8), q = sm.getContext('2d');
+  const sm = createCanvas(88, 8), q = sm.getContext('2d');
   const R2 = (X, Y, W, H, C) => { q.fillStyle = C; q.fillRect(X, Y, W, H); };
   for (const [i, c] of [[0, '#f8e060'], [1, '#f08020']]) { const X = i * 8 + 4, Y = 4;
     R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
@@ -324,6 +324,9 @@ const bossArt = vm.runInContext(`(function(){
   // orb (the Wraith's) and a reflected shot
   for (const [i, c] of [[4, '#e83048'], [5, '#fff2a8'], [6, '#4a4662'], [7, '#f0c070'], [8, '#84cc68']]) { const X = i * 8 + 4, Y = 4;
     R2(X - 3, Y - 2, 6, 4, '#1a1423'); R2(X - 2, Y - 3, 4, 6, '#1a1423'); R2(X - 2, Y - 2, 4, 4, c); R2(X - 1, Y - 1, 2, 2, '#ffffff'); }
+  // weather (web drawRain, drawSnow): a slanted raindrop and a snowflake
+  R2(72 + 5, 0, 1, 2, '#7ab0f0'); R2(72 + 4, 2, 1, 2, '#7ab0f0'); R2(72 + 3, 4, 1, 2, '#7ab0f0');
+  R2(80 + 3, 3, 2, 2, '#ffffff'); R2(80 + 2, 4, 1, 1, '#e8eeff'); R2(80 + 5, 3, 1, 1, '#e8eeff');
   fs.writeFileSync(path.join(OUT, 'combat', 'small.png'), sm.toBuffer('image/png'));
   const intro = vm.runInContext("(function(){try{return Object.entries(BANNERS||{})}catch(e){return null}})()", sb);
   fs.writeFileSync(path.join(OUT, 'combat', 'boss.json'), JSON.stringify({ text: bossArt.text, keynames: bossArt.keynames }, null, 1));

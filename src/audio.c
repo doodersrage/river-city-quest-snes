@@ -30,7 +30,8 @@ void playSong(u8 song)
 /* the song this place plays: the boss theme while a boss is up */
 void songForMap(void)
 {
-    playSong(bossOn ? SONG_BOSS : mapSong[curMap]);
+    /* web wantSong(): outdoors after dark it's the night theme */
+    playSong(bossOn ? SONG_BOSS : mapDark[curMap] == 0 && isNight() ? SONG_NIGHT : mapSong[curMap]);
 }
 
 void sfx(u8 id)

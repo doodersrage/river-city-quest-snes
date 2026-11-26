@@ -923,6 +923,7 @@ int main(void)
     }
     audioInit();
     lightInit();
+    weatherInit();
     combatInit();
     dungeonInit();
     gearInit();
@@ -1042,6 +1043,7 @@ int main(void)
         drawBike();
         hudDraw();
         lightFrame();
+        weatherFrame();
         WaitForVBlank();
         flushText();
     }

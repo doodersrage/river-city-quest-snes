@@ -474,7 +474,7 @@ def convert_combat(exp):
         sheet[OBJ_HUD - 128 + i] = tile4bpp([ix(p) for r in t for p in r])
     # spark shot x2, hook head, chain link (nearest palette-7 colours)
     sm = Image.open(os.path.join(d, 'small.png')).convert('RGBA')
-    for i in range(9):
+    for i in range(11):
         idx = []
         for y in range(8):
             for x in range(8):
@@ -495,7 +495,7 @@ def convert_combat(exp):
               f'#define HUD_EMPTY {OBJ_HUD + HUD_EMPTY}', f'#define HUD_COIN {OBJ_HUD + HUD_COIN}',
               f'#define HUD_DIGIT {OBJ_HUD + HUD_DIGIT}', '#define PAL_HUD 7',
               f'#define OBJ_SPARK {OBJ_HUD + 15}', f'#define OBJ_HOOK {OBJ_HUD + 17}', f'#define OBJ_CHAIN {OBJ_HUD + 18}',
-              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}', f'#define OBJ_RING {OBJ_HUD + 22}', f'#define OBJ_SEED {OBJ_HUD + 23}',
+              f'#define OBJ_ORB {OBJ_HUD + 19}', f'#define OBJ_REFL {OBJ_HUD + 20}', f'#define OBJ_FEATHER {OBJ_HUD + 21}', f'#define OBJ_RING {OBJ_HUD + 22}', f'#define OBJ_SEED {OBJ_HUD + 23}', f'#define OBJ_RAIN {OBJ_HUD + 24}', f'#define OBJ_SNOW {OBJ_HUD + 25}',
               f'#define ENEMY_TYPES {len(ENEMY_TYPES)}',
               '/* ' + ' '.join(f'{i}={t}' for i, t in enumerate(ENEMY_TYPES)) + ' */',
               f'static const u8 enemyHp[{len(ENEMY_TYPES)}] = {{{", ".join(map(str, ENEMY_HP))}}};',
