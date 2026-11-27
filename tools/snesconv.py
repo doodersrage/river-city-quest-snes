@@ -45,6 +45,26 @@ def nearest(c, pal):
     return min(range(len(pal)), key=lambda i: dist(c, pal[i]))
 
 
+def untile4bpp(b):
+    """32 bytes SNES 4bpp -> 64 palette indices, row-major."""
+    return [sum(((b[y * 2 + (p & 1) + (16 if p >= 2 else 0)] >> (7 - x)) & 1) << p for p in range(4)) for y in range(8) for x in range(8)]
+
+
+def scale2x_idx(rows):
+    """Scale2x on a 2-D list of palette indices."""
+    H, W = len(rows), len(rows[0])
+    at = lambda x, y: rows[min(H - 1, max(0, y))][min(W - 1, max(0, x))]
+    out = [[0] * (W * 2) for _ in range(H * 2)]
+    for y in range(H):
+        for x in range(W):
+            B, D, E, F, Hh = at(x, y - 1), at(x - 1, y), at(x, y), at(x + 1, y), at(x, y + 1)
+            out[2 * y][2 * x] = D if D == B and B != F and D != Hh else E
+            out[2 * y][2 * x + 1] = F if B == F and B != D and F != Hh else E
+            out[2 * y + 1][2 * x] = D if D == Hh and D != B and Hh != F else E
+            out[2 * y + 1][2 * x + 1] = F if Hh == F and D != Hh and B != F else E
+    return out
+
+
 def tile4bpp(idx):
     """idx: 64 palette indices (0-15), row-major -> 32 bytes SNES 4bpp planar."""
     out = bytearray(32)
@@ -506,7 +526,7 @@ MINIS = ['bat', 'hoops', 'tennis', 'derby', 'trail', 'race', 'pin']   # minigame
 MINI_BUILT = ['bat', 'hoops', 'tennis', 'derby', 'trail', 'race']
 RACES = ['derby', 'trail', 'race']   # the scrolling-road games, MINI_DERBY on
 CHAL_IDS = ['flies', 'bus', 'taps', 'lamps', 'melons', 'tenk', 'quiz', 'rats', 'lures', 'ghosts', 'cleanup', 'crabs', 'trolley', 'murals']
-RADII = [15, 32, 38, 44, 46, 48, 54, 68]   # windows, night, dark room, brazier, torch, lamp, night+lantern, dark+lantern
+RADII = [30, 64, 76, 88, 92, 96, 108, 120]   # stage 13d, the web's radii doubled for 32 px cells (the last capped): windows, night, dark room, brazier, torch, lamp, night+lantern, dark+lantern
 
 
 def light_tables(maps):
@@ -1746,6 +1766,18 @@ def main():
     import shutil
     shutil.copy(os.path.join(exp, '..', 'items.chr'), os.path.join(out, 'items.chr'))
     shutil.copy(os.path.join(exp, '..', 'block.pal'), os.path.join(out, 'block.pal'))
+    # stage 13d: the push block at 32 px (Scale2x of its 16x16 item cell, tiles 328/329/344/345), rows of four tiles
+    it = open(os.path.join(out, 'items.chr'), 'rb').read()
+    cell = [[0] * 16 for _ in range(16)]
+    for q, t in enumerate((72, 73, 88, 89)):
+        ix_ = untile4bpp(it[t * 32:t * 32 + 32])
+        for y in range(8):
+            for x in range(8): cell[(q >> 1) * 8 + y][(q & 1) * 8 + x] = ix_[y * 8 + x]
+    big = scale2x_idx(cell)
+    open(os.path.join(out, 'block2.chr'), 'wb').write(b''.join(
+        tile4bpp([big[ty_ * 8 + y][tx_ * 8 + x] for y in range(8) for x in range(8)]) for ty_ in range(4) for tx_ in range(4)))
+    asm += ['.section ".block2" superfree', 'block2_chr:', '.incbin "data/block2.chr"', '.ends', '']
+    hdr += ['extern char block2_chr;']
     asm += ['.section ".items" superfree', 'items_chr:', '.incbin "data/items.chr"', 'items_chrend:',
             'block_pal:', '.incbin "data/block.pal"', '.ends', '']
     hdr += ['extern char items_chr, items_chrend, block_pal;']

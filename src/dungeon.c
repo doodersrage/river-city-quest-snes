@@ -1082,15 +1082,27 @@ void updBlocks(void)
 
 void drawBlocks(void)
 {
-    u8 k;
+    u8 k, i;
+    s16 sx, sy;
     for (k = 0; k < MAX_BLK; k++)
     {
         if (k >= blkN)
         {
-            sprHide(OAM_BLOCKS + k);
+            i = OAM_BLOCK2 + (k << 2);
+            sprHide(i);
+            sprHide(i + 1);
+            sprHide(i + 2);
+            sprHide(i + 3);
             continue;
         }
-        sprPut(OAM_BLOCKS + k, 1, SX(blkX[k]), SY(blkY[k]) - 1, 2, 0, OBJ_I_BLOCK, PAL_BLOCK);
+        /* stage 13d: a 32 px block, four sprites from OAM 100 (weather's slots, which rooms don't use) */
+        sx = SX(blkX[k]);
+        sy = SY(blkY[k]) - 2;
+        i = OAM_BLOCK2 + (k << 2);
+        sprPut(i, 1, sx, sy, 2, 0, OBJ_BLOCK2, PAL_BLOCK);
+        sprPut(i + 1, 1, sx + 16, sy, 2, 0, OBJ_BLOCK2 + 2, PAL_BLOCK);
+        sprPut(i + 2, 1, sx, sy + 16, 2, 0, OBJ_BLOCK2 + 32, PAL_BLOCK);
+        sprPut(i + 3, 1, sx + 16, sy + 16, 2, 0, OBJ_BLOCK2 + 34, PAL_BLOCK);
     }
 }
 
@@ -1533,6 +1545,8 @@ void dungeonLoad(void)
     for (i = 0; i < MAX_SHOT; i++) shotOn[i] = 0;
     for (i = 0; i < MAX_BOMB; i++) bombOn[i] = 0;
     applyRoomState(1);
+    /* the 32 px push block (stage 13d) into OBJ tiles 164-167, 180-183, 196-199, 212-215 */
+    for (i = 0; i < 4; i++) dmaCopyVram((u8 *)&block2_chr + (i << 7), VRAM_OBJ_CHR + (OBJ_BLOCK2 + (i << 4)) * 16, 128);
     bossLoad();
     if (roomBoss == BOSS_FOREMAN)
     {

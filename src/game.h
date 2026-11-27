@@ -59,6 +59,8 @@ void paddleVBlank(void);
 #define OAM_BOOM 82   /* 4 */
 #define OAM_BICON 86  /* 3: item icon and count */
 #define OAM_BUG 89
+#define OAM_BLOCK2 100 /* stage 13d: 4 sprites a block, 100-115 */
+#define OBJ_BLOCK2 164
 #define OAM_BLOCKS 90 /* 4 */
 #define OAM_BALLS 94  /* 3 */
 #define OAM_BIKE 97

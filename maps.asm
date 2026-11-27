@@ -2999,6 +2999,11 @@ enemy_chr:
 enemy_chrend:
 .ends
 
+.section ".block2" superfree
+block2_chr:
+.incbin "data/block2.chr"
+.ends
+
 .section ".items" superfree
 items_chr:
 .incbin "data/items.chr"

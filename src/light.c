@@ -48,14 +48,14 @@ static const u8 *hwFor(u8 r)
 {
     switch (r)
     {
-    case 15: return hw15;
-    case 32: return hw32;
-    case 38: return hw38;
-    case 44: return hw44;
-    case 46: return hw46;
-    case 48: return hw48;
-    case 54: return hw54;
-    default: return hw68;
+    case 30: return hw30;
+    case 64: return hw64;
+    case 76: return hw76;
+    case 88: return hw88;
+    case 92: return hw92;
+    case 96: return hw96;
+    case 108: return hw108;
+    default: return hw120;
     }
 }
 
@@ -87,8 +87,8 @@ void lightInit(void)
         lightTab1[1 + k * 2] = 0;
         lightTab1[2 + k * 2] = 255;
     }
-    lightCircle(hw15, 0, 0, 0, 0);
-    lightCircle(hw15, 1, 0, 0, 0);
+    lightCircle(hw30, 0, 0, 0, 0);
+    lightCircle(hw30, 1, 0, 0, 0);
     srcMap = 255;
 }
 
@@ -119,11 +119,11 @@ void lightFrame(void)
     darkLevel = kind == 1 ? 0 : kind >= 2 ? 4 : nightLevel();
     r1 = r2 = 0;
     hx = SX(px);
-    hy = SY(py - 4);
+    hy = SY(py) - 4;   /* (the middle of the 32 px hero) */
     bx = by = 0;
     if (darkLevel)
     {
-        r1 = kind >= 2 ? (hasLantern ? 68 : 38) : (hasLantern ? 54 : 32);
+        r1 = kind >= 2 ? (hasLantern ? 120 : 76) : (hasLantern ? 108 : 64);   /* (stage 13d: twice the web's, for 32 px cells) */
         /* the nearest light: lit braziers, then the map's torches, lamps and lit windows. The search
            runs a few lights a frame (it's slow C on this CPU) and commits after each full pass. */
         if (srcMap != curMap)
@@ -150,7 +150,7 @@ void lightFrame(void)
                             scanBest = d;
                             scanX = x;
                             scanY = y;
-                            scanR = 44;
+                            scanR = 88;
                         }
                     }
         }
@@ -174,7 +174,7 @@ void lightFrame(void)
                 scanBest = d;
                 scanX = x;
                 scanY = y;
-                scanR = b[2] == 0 ? 46 : b[2] == 1 ? 48 : 15;
+                scanR = b[2] == 0 ? 92 : b[2] == 1 ? 96 : 30;
             }
         }
         if (srcR)
