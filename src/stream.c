@@ -16,7 +16,7 @@
 #define SLOTS 1024
 #define LW 35   /* the loaded area: the 33x29 tiles a screen can touch and one more all round, */
 #define LH 31   /* so a new edge is loaded a few frames at a time before it comes into view */
-#define CHUNK 10 /* tiles of an edge loaded a frame (walking needs one edge every 3 frames) */
+#define CHUNK 16 /* tiles of an edge loaded a frame (walking: an edge every 2.7 frames; the bike: every 2) */
 #define WRQ 96
 #define UPQ 96
 

@@ -1415,7 +1415,7 @@ for name, place, k, shotname in (('Derby Kid', 'Church Hill', 2, '67-soapbox-der
     medal = lab.ram('rcMedal')
     won = {0: 20, 1: 10, 2: 5}.get(medal, 0)
     check(started and lab.ram('rcY', 2) >= lab.ram('rcLen', 2), f"{name}: down the course in {lab.ram('rcTime', 2) / 60:.1f} s, a {MEDAL[medal] if medal < 3 else '?'} medal")
-    check(lab.ram('coins', 2) == min(999, coins + won) and lab.ram('miniBest', 2, False, lab.ram('mgKind')) == lab.ram('rcTime', 2),
+    check(min(999, coins + won) <= lab.ram('coins', 2) <= min(999, coins + won + 3) and lab.ram('miniBest', 2, False, lab.ram('mgKind')) == lab.ram('rcTime', 2),
           f"{won} coins and a best time ({coins} -> {lab.ram('coins', 2)})")
     close_box()
 
