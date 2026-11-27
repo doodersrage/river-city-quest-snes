@@ -568,6 +568,7 @@ static const u16 boss7Tile[9] = {0, 0, 0, 0, 384, 0, 0, 386, 0};  /* vampire: fr
 #define PICKUP_COUNT 14
 #define PAL_BLOCK 3
 
+extern char paddle2_chr;
 extern char items_chr, items_chrend, block_pal;
 extern char town_chr, town_chrend, townb_chr, townb_chrend;
 #define TOWN_CAR 0

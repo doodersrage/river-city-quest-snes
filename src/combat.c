@@ -149,6 +149,20 @@ u8 moveE(u8 k, s16 dx, s16 dy)
     return ok;
 }
 
+/* the 32 px paddle's art on show (stage 13c): the angle, and a pending copy for the VBlank */
+u8 padA = 255, padPend;
+u8 *padSrc;
+
+void paddleVBlank(void)
+{
+    if (!padPend) return;
+    dmaCopyVram(padSrc, VRAM_OBJ_CHR + OBJ_PADDLE2 * 16, 128);
+    dmaCopyVram(padSrc + 128, VRAM_OBJ_CHR + (OBJ_PADDLE2 + 16) * 16, 128);
+    dmaCopyVram(padSrc + 256, VRAM_OBJ_CHR + (OBJ_PADDLE2 + 32) * 16, 128);
+    dmaCopyVram(padSrc + 384, VRAM_OBJ_CHR + (OBJ_PADDLE2 + 48) * 16, 128);
+    padPend = 0;
+}
+
 s16 dist(s16 dx, s16 dy)
 {
     s16 ax = ABS(dx), ay = ABS(dy);
@@ -668,12 +682,27 @@ void combatDraw(void)
     if (charging && charge >= 40 && (frameCount & 4)) show = 0;
     if (show)
     {
-        sx = SX(px) + paddleOx[a];
-        sy = SY(py) + paddleOy[a];
-        sprPut((id) >> 2, 1, sx, sy, 3, 0, paddleTile[a], PAL_HUD);
+        /* stage 13c: 32 px, four sprites (OAM 15, 11, 12, 63); this angle's art streams in at the next VBlank */
+        if (a != padA)
+        {
+            padA = a;
+            padSrc = (u8 *)&paddle2_chr + ((u16)a << 9);
+            padPend = 1;
+        }
+        sx = SX(px) + paddleOx[a] - 8;
+        sy = SY(py) + paddleOy[a] - 8;
+        sprPut(OAM_PADDLE, 1, sx, sy, 3, 0, OBJ_PADDLE2, PAL_HUD);
+        sprPut(OAM_PADDLE2, 1, sx + 16, sy, 3, 0, OBJ_PADDLE2 + 2, PAL_HUD);
+        sprPut(OAM_PADDLE3, 1, sx, sy + 16, 3, 0, OBJ_PADDLE2 + 32, PAL_HUD);
+        sprPut(OAM_PADDLE4, 1, sx + 16, sy + 16, 3, 0, OBJ_PADDLE2 + 34, PAL_HUD);
     }
     else
-        sprHide((id) >> 2);
+    {
+        sprHide(OAM_PADDLE);
+        sprHide(OAM_PADDLE2);
+        sprHide(OAM_PADDLE3);
+        sprHide(OAM_PADDLE4);
+    }
 
     for (k = 0; k < MAX_EN; k++)
     {

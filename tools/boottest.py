@@ -1296,7 +1296,11 @@ for tx, ty in chal_cells(c):
     for (cx, cy), d in (((tx, ty + 1), 'up'), ((tx, ty - 1), 'down'), ((tx - 1, ty), 'right'), ((tx + 1, ty), 'left')):
         if 0 <= cy < 22 and 0 <= cx < 32 and not g[cy][cx]:
             poke16('px', cx * 16 + 8); poke16('py', cy * 16 + 8); lab.run(None, 2)
-            lab.face(d); lab.press('B', 6)
+            got = lab.ram('chalGot')
+            for _ in range(3):   # (a press can land while the hero is still turning)
+                lab.face(d); lab.press('B', 6)
+                if lab.ram('chalGot') != got or not lab.ram('chalOn'): break
+                lab.run(None, 10)
             break
     poke16('chalT', 3000)
     if not lab.ram('chalOn'): break

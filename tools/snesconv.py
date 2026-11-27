@@ -705,6 +705,9 @@ def pack_sprite_palettes(sets, n):
     return [sorted(p) for p in pals], which
 
 
+PADDLE2 = []   # 16 angles x 16 tiles: rows of four (see paddleVBlank)
+
+
 def convert_combat(exp):
     """OBJ tiles 128-255 (enemies, paddle angles, HUD) and sprite palettes 5-7."""
     d = os.path.join(exp, 'combat')
@@ -758,6 +761,12 @@ def convert_combat(exp):
         px_ = [crop.getpixel((x0 + x, y0 + y)) if 0 <= x0 + x < 40 and 0 <= y0 + y < 40 else (0, 0, 0, 0)
                for y in range(16) for x in range(16)]
         put16(obj_tile_of_frame(OBJ_PADDLE, a), [ix(p) for p in px_])
+        # stage 13c: the paddle at 32 px (Scale2x), streamed into tiles 160-163, 176-179, 192-195, 208-211 as it turns
+        one = Image.new('RGBA', (16, 16)); one.putdata(px_)
+        big = scale2x_rgba(one)
+        for ty_ in range(4):
+            for tx_ in range(4):
+                PADDLE2.append(tile4bpp([ix(big.getpixel((tx_ * 8 + x, ty_ * 8 + y))) for y in range(8) for x in range(8)]))
         # stage 13c: the world is drawn twice as big, so the paddle swings twice as far out from the hero's middle
         # (screen (0, -2) from his position), where its hits land
         pad_ox.append(2 * (x0 + 8 - 20) - 8); pad_oy.append(2 * (y0 + 8 - 23) - 2 - 8)
@@ -1729,6 +1738,9 @@ def main():
     open(os.path.join(out, 'combat.pal'), 'wb').write(cpal)
     asm += ['.section ".combat" superfree', 'combat_chr:', '.incbin "data/combat.chr"', 'combat_chrend:',
             'combat_pal:', '.incbin "data/combat.pal"', '.ends', '']
+    open(os.path.join(out, 'paddle2.chr'), 'wb').write(b''.join(PADDLE2))
+    asm += ['.section ".paddle2" superfree', 'paddle2_chr:', '.incbin "data/paddle2.chr"', '.ends', '']
+    hdr += ['extern char paddle2_chr;']
     open(os.path.join(out, 'enemy.chr'), 'wb').write(ENEMY_CHR)
     asm += ['.section ".enemy" superfree', 'enemy_chr:', '.incbin "data/enemy.chr"', 'enemy_chrend:', '.ends', '']
     import shutil

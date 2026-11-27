@@ -2988,6 +2988,11 @@ combat_pal:
 .incbin "data/combat.pal"
 .ends
 
+.section ".paddle2" superfree
+paddle2_chr:
+.incbin "data/paddle2.chr"
+.ends
+
 .section ".enemy" superfree
 enemy_chr:
 .incbin "data/enemy.chr"
