@@ -349,7 +349,7 @@ lab.walk_to_cell(13, 5)
 lab.face('right')
 lab.press('B', 2)
 check(lab.ram('powder') == 7 and lab.ram('bombOn'), 'B sets down a keg')
-lab.walk_to_cell(10, 5)
+lab.walk_to_cell(11, 5)
 for f in range(150):
     lab.run(None,1)
     lab.poke('hp', lab.ram('hpMax'))
