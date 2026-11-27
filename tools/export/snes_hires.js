@@ -32,7 +32,7 @@ function scale2xData(src, w, h) {
 /* ---------- native 32 px ground ---------- */
 /* each draws the cell at (X, Y) on the 32 px canvas in g; h is the cell's hash, nb its neighbours, fr the frame */
 const NATIVE = {};
-const OWNS = 'T';   // native cells that draw their own object (the scale2x'd one in that cell is dropped)
+const OWNS = 'Tr~';   // native cells that draw their own object (the scale2x'd one in that cell is dropped)
 
 function grass32(X, Y, h) {
   R(X, Y, 32, 32, SG[3]);
@@ -241,19 +241,25 @@ function brick32(X, Y, h, r, roofAbove) {
   }
 }
 NATIVE['B'] = (s, X, Y, h, nb, fr, tx, ty) => {
-  if (!(s.roof != 'tin' && s.hs != 'glass') || s.interior) return false;
-  const up = upperStorey(s, tx, ty);
+  if (s.hs == 'glass' || s.interior) return false;
+  const tin = s.roof == 'tin', up = !tin && upperStorey(s, tx, ty);
   if (nb(0, 1) == 'B' && !up) {
+    if (tin) return tin32(X, Y, h, nb);
     roof32(X, Y, h, nb);
     if (upperStorey(s, tx, ty + 1)) { R(X, Y + 24, 32, 4, SRF[4]); R(X, Y + 24, 32, 1, SRF[5]); R(X, Y + 28, 32, 4, SRF[0]); }
     return;
   }
   const pl = s.pal || [BRICK], c = pl[(tx + ((up ? ty + 1 : ty) > 5 ? 3 : 0)) % pl.length];
-  if (c[3] == 'clap') return false;
-  brick32(X, Y, h, ramp(c[0]), up || (nb(0, -1) == 'B' && !upperStorey(s, tx, ty - 1)));
+  const above = up || (nb(0, -1) == 'B' && !(!tin && upperStorey(s, tx, ty - 1)));
+  if (c[3] == 'clap') { clap32(X, Y, h, c); cornice32(X, Y, ramp(c[0]), above); return; }
+  brick32(X, Y, h, ramp(c[0]), above);
 };
 /* in B, fronts are bare brick: their windows and doors count as objects */
-const facadeH = facade, storeyH = storey;
+const facadeH = facade, storeyH = storey, styledH = styledFacade;
+styledFacade = function (s, x, y, h, tx, ty, c) {
+  if (HIRES_GROUND) { if (c[3] == 'clap') { R(x, y, 16, 16, c[0]); for (let j = 1; j < 16; j += 3) { R(x, y + j, 16, 1, c[1]); R(x, y + j + 1, 16, 1, c[2]); } R(x + 15, y, 1, 16, c[1]); } return true; }
+  return styledH(s, x, y, h, tx, ty, c);
+};
 facade = function (s, x, y, h, tx, ty, roofAbove, plain) { return facadeH(s, x, y, h, tx, ty, roofAbove, plain || HIRES_GROUND); };
 storey = function (s, x, y, h, tx, ty) { if (HIRES_GROUND) return facade(s, x, y, h * 7 + 3, tx, ty, true, true); return storeyH(s, x, y, h, tx, ty); };
 
@@ -314,6 +320,14 @@ NATIVE['w'] = (s, X, Y, h, nb, fr, tx, ty) => {
   }
   if (land(nb(1, 0))) for (let i = 0; i < 32; i++) R(X + 30, Y + i, 2, 1, (i + ty * 3) % 7 < 3 ? W[6] : W[5]);
   if (nb(0, -1) == '=' || nb(0, -1) == '-') { R(X, Y, 32, 8, W[1]); R(X, Y + 8, 32, 1, W[2]); }
+  const h0 = HH(tx, ty, s.seed);
+  if (h0 % 13 == 0 && !land(nb(0, -1)) && !land(nb(0, 1)) && !land(nb(-1, 0)) && !land(nb(1, 0))) {   // a lily pad, a notch cut in it
+    const a = X + 7 + (h0 >> 5) % 10, b = Y + 9 + (h0 >> 8) % 10;
+    R(a, b + 2, 14, 7, W[1]); R(a, b, 14, 7, '#3d8a3a'); R(a + 2, b - 2, 10, 11, '#3d8a3a'); R(a + 1, b - 1, 12, 9, '#3d8a3a');
+    R(a + 3, b - 1, 6, 2, '#68b854'); R(a + 2, b + 1, 2, 3, '#68b854'); R(a + 6, b + 1, 2, 4, W[3]); R(a + 7, b + 3, 1, 3, W[3]);
+    R(a + 1, b + 7, 12, 1, '#2a6a2a');
+    if (h0 & 2) { R(a + 9, b - 3, 4, 3, '#f08098'); R(a + 10, b - 4, 2, 1, '#f8b8c8'); R(a + 10, b - 2, 2, 1, '#f8e060'); }
+  }
 };
 /* ---------- boardwalks and bridges: planks with a lit edge, a dark seam, nails; posts where they meet the water ---------- */
 function planks32(X, Y, h, nb, along) {
@@ -339,6 +353,59 @@ function planks32(X, Y, h, nb, along) {
 }
 NATIVE['='] = (s, X, Y, h, nb) => planks32(X, Y, h, nb, true);
 NATIVE['-'] = (s, X, Y, h, nb) => planks32(X, Y, h, nb, false);
+
+
+/* ---------- second pass: clapboard, tin roofs, boulders, rapids ---------- */
+function clap32(X, Y, h, c) {   // lapped boards: each lit along its top, shaded under the lap
+  const r = ramp(c[0]);
+  R(X, Y, 32, 32, r[2]);
+  for (let j = 0; j < 32; j += 5) { R(X, Y + j, 32, 1, r[3]); R(X, Y + j + 3, 32, 1, r[1]); R(X, Y + j + 4, 32, 1, r[0]); }
+  for (let i = 0; i < 3; i++) { const q = HH(h, i, 91); R(X + 3 + q % 24, Y + 1 + ((q >> 5) % 6) * 5, 4, 1, r[4]); }   // sun on a board or two
+  R(X, Y, 2, 32, r[3]); R(X + 30, Y, 2, 32, r[1]);   // corner boards
+}
+function cornice32(X, Y, r, roofAbove) {
+  if (roofAbove) { R(X, Y, 32, 4, r[0]); R(X, Y + 4, 32, 1, r[1]); return; }
+  R(X, Y, 32, 6, '#e8dcc0'); R(X, Y, 32, 1, '#fff8e8'); R(X, Y + 1, 32, 1, '#f4ecd8');
+  for (let i = 1; i < 32; i += 4) R(X + i, Y + 4, 2, 2, '#a08c6c');
+  R(X, Y + 6, 32, 1, '#a08c6c'); R(X, Y + 7, 32, 1, r[0]);
+}
+function tin32(X, Y, h, nb) {   // standing-seam tin: lit seams, a rust patch now and then
+  R(X, Y, 32, 32, '#8a929c');
+  for (let i = 2; i < 32; i += 8) { R(X + i, Y, 2, 32, '#c8d0d8'); R(X + i + 2, Y, 1, 32, '#6a727c'); R(X + i + 4, Y, 3, 32, '#7e8690'); }
+  for (let j = 7; j < 32; j += 8) R(X, Y + j, 32, 1, '#7a828c');
+  if (h % 5 == 0) { const a = X + 4 + h % 18, b = Y + 8 + (h >> 4) % 12; R(a, b, 6, 3, '#a86a4a'); R(a + 1, b + 3, 4, 2, '#8a4a34'); R(a + 1, b, 2, 1, '#c88a5a'); }
+  if (nb(0, -1) != 'B') { R(X, Y, 32, 4, '#c8d0d8'); R(X, Y, 32, 1, '#e8eef4'); R(X, Y + 4, 32, 1, '#4a525c'); }
+  if (nb(-1, 0) != 'B') R(X, Y, 2, 32, '#c8d0d8');
+  if (nb(1, 0) != 'B') R(X + 30, Y, 2, 32, '#4a525c');
+  if (nb(0, 1) != 'B') R(X, Y + 29, 32, 3, '#4a525c');
+}
+function boulder32(X, Y, ox, oy, wid) {   // a rounded stone lit from the top left, a crack, its shadow
+  const rows = wid > 20 ? [10, 16, 20, 22, 24, 24, 24, 24, 24, 23, 22, 20, 17, 12] : [6, 10, 12, 14, 14, 14, 13, 12, 10, 6];
+  const n = rows.length, cx = X + ox, top = Y + oy;
+  R(cx - (rows[n - 1] >> 1) - 2, top + n - 1, rows[n - 1] + 6, 3, SG[1]);
+  rows.forEach((w, i) => { const a = cx - (w >> 1); R(a, top + i, w, 1, SST[3]); R(a, top + i, 1, 1, SST[0]); R(a + w - 1, top + i, 1, 1, SST[0]); });
+  R(cx - (rows[0] >> 1), top - 1, rows[0], 1, SST[0]); R(cx - (rows[n - 1] >> 1), top + n, rows[n - 1], 1, SST[0]);
+  const k = n >> 1;
+  for (let i = k; i < n; i++) { const w = rows[i] - 2, a = cx - (w >> 1); R(a, top + i, w, 1, i > n - 3 ? SST[1] : SST[2]); }
+  R(cx - (rows[2] >> 1) + 2, top + 1, rows[2] >> 1, 2, SST[5]); R(cx - (rows[3] >> 1) + 1, top + 3, 3, 3, SST[4]); R(cx - (rows[1] >> 1) + 3, top, 3, 1, SST[6]);
+  R(cx + 2, top + k - 2, 1, 3, SST[1]); R(cx + 3, top + k + 1, 1, 2, SST[1]); R(cx + 1, top + k - 3, 1, 1, SST[1]);
+}
+NATIVE['r'] = (s, X, Y, h, nb, fr, tx, ty) => {
+  const g0 = propGround(s, tx, ty), f = NATIVE[g0];
+  if (f) f(s, X, Y, h, nb, fr, tx, ty); else return false;
+  boulder32(X, Y, 16, 7, 24);
+};
+NATIVE['~'] = (s, X, Y, h, nb, fr) => {
+  const W = waterOf(s) === WATER.river ? SRIVER : SPOND;
+  R(X, Y, 32, 32, W[4]);
+  for (let i = 0; i < 7; i++) {   // standing waves: a dark trough, a green-white face, a foaming crest
+    const q = HH(h, i, 93), a = X + q % 22, b = Y + 2 + i * 4 + (q >> 5) % 2, w = 8 + (q >> 9) % 8;
+    R(a, b + 2, w, 1, W[2]); R(a + 1, b + 1, w - 2, 1, W[5]); R(a + 2, b, w - 4, 1, W[6]); if (q & 64) R(a + w - 3, b - 1, 2, 1, '#ffffff');
+  }
+  { const q = HH(h, fr, 95); R(X + 10 + q % 10, Y + 10 + (q >> 5) % 10, 4, 1, '#ffffff'); R(X + 11 + q % 10, Y + 11 + (q >> 5) % 10, 2, 1, W[6]); }   // spray, moving
+  for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) { const q = nb(dx, dy); if (q != '~' && q != 'w' && q != '=') R(X + (dx > 0 ? 28 : 0), Y + (dy > 0 ? 28 : 0), dx ? 4 : 32, dy ? 4 : 32, '#ffffff'); }
+  if (h % 4 == 0) { boulder32(X, Y, 16, 10, 14); R(X + 6, Y + 21, 20, 2, '#ffffff'); R(X + 8, Y + 23, 16, 1, W[6]); }
+};
 
 /* ---------- B: bare ground ---------- */
 const drawLandmarks1 = drawLandmarks, drawDecor1 = drawDecor, shadeRect1 = shadeRect, tileH = tile;
@@ -384,7 +451,7 @@ renderMap = function (s, fr) {
   try {
     for (let ty = 0; ty < s.h; ty++) for (let tx = 0; tx < s.w; tx++) {
       let ch = s.g[ty][tx];
-      if ((PROPS.includes(ch) && (ch != '%' || s.ow)) || ch == 'r') ch = propGround(s, tx, ty);
+      if (PROPS.includes(ch) && (ch != '%' || s.ow)) ch = propGround(s, tx, ty);
       const f = NATIVE[ch];
       if (!f) continue;
       const nb = (dx, dy) => { const X = tx + dx, Y = ty + dy; return X < 0 || Y < 0 || X >= s.w || Y >= s.h ? ch : s.g[Y][X]; };

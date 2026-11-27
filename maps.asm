@@ -679,6 +679,12 @@ m18_xtr:
 .incbin "data/m18.xtr"
 .ends
 
+.section ".map18a" superfree
+m18_ani:
+.incbin "data/m18.ani"
+.db 0
+.ends
+
 .section ".map19c" superfree
 m19_chr:
 .incbin "data/m19.chr"
@@ -708,6 +714,12 @@ m19_ene:
 .incbin "data/m19.ene"
 m19_xtr:
 .incbin "data/m19.xtr"
+.ends
+
+.section ".map19a" superfree
+m19_ani:
+.incbin "data/m19.ani"
+.db 0
 .ends
 
 .section ".map20c" superfree
