@@ -14,8 +14,10 @@
 #include "game.h"
 
 #define SLOTS 1024
-#define LW 33
-#define LH 29
+#define LW 35   /* the loaded area: the 33x29 tiles a screen can touch and one more all round, */
+#define LH 31   /* so a new edge is loaded a few frames at a time before it comes into view */
+#define CHUNK 10 /* tiles of an edge loaded a frame (walking needs one edge every 3 frames) */
+#define WRQ 96
 #define UPQ 96
 
 extern u16 sGrid[], sSlotOf[], sRef[], sFree[], gridRow[];
@@ -87,13 +89,26 @@ u16 streamPin(u16 first, u16 count)
 }
 
 /* forced blank: the whole loaded area, from the camera */
+static u16 tgtL, tgtT;   /* where the loaded area should be: one tile up and left of the camera's */
+static u8 opK;           /* the edge being loaded: 0 none, 1 east (sL goes up), 2 west, 3 south, 4 north */
+static u16 opI;          /* how much of it is done */
+
+static void target(void)
+{
+    u16 l = camX >> 2, t = camY >> 2;
+    tgtL = l ? l - 1 : 0;
+    tgtT = t ? t - 1 : 0;
+}
+
 void streamFull(void)
 {
     u16 y;
     sBlank = 1;
     /* (anything still loaded from before is forgotten: refcounts start from the pins) */
-    sL = camX >> 2;
-    sT = camY >> 2;
+    target();
+    sL = tgtL;
+    sT = tgtT;
+    opK = 0;
     for (y = 0; y < LH; y++)
     {
         stLine(sL, sT + y, 1, 0, LW, 1);
@@ -104,37 +119,92 @@ void streamFull(void)
     sLive = 1;   /* (sBlank stays on until the first scrolled frame: the room's chests and doors are set up meanwhile) */
 }
 
-/* each frame: a column and a row at most */
+/* up to n tiles more of the edge being loaded (each: the opposite edge's tile dropped, the new one put);
+   returns how many */
+static u16 opStep(u16 n)
+{
+    u16 len = opK <= 2 ? LH : LW, m = len - opI, room = WRQ - wrN;
+    if (UPQ - upN < room) room = UPQ - upN;
+    if (n > m) n = m;
+    if (n > room) n = room;
+    if (!n) return 0;
+    switch (opK)
+    {
+    case 1:
+        stLine(sL, sT + opI, 0, 1, n, 0);
+        stLine(sL + LW, sT + opI, 0, 1, n, 1);
+        break;
+    case 2:
+        stLine(sL + LW - 1, sT + opI, 0, 1, n, 0);
+        stLine(sL - 1, sT + opI, 0, 1, n, 1);
+        break;
+    case 3:
+        stLine(sL + opI, sT, 1, 0, n, 0);
+        stLine(sL + opI, sT + LH, 1, 0, n, 1);
+        break;
+    default:
+        stLine(sL + opI, sT + LH - 1, 1, 0, n, 0);
+        stLine(sL + opI, sT - 1, 1, 0, n, 1);
+        break;
+    }
+    opI += n;
+    if (opI >= len)
+    {
+        if (opK == 1) sL++;
+        else if (opK == 2) sL--;
+        else if (opK == 3) sT++;
+        else sT--;
+        opK = 0;
+    }
+    return n;
+}
+
+/* is the screen still inside the loaded area (with the edge under way not counted)? */
+static u8 urgent(void)
+{
+    return sL + 1 < tgtL || tgtL + 1 < sL || sT + 1 < tgtT || tgtT + 1 < sT;
+}
+
+/* each frame: CHUNK tiles of edge, more if the screen is about to show something not loaded */
 void streamUpdate(void)
 {
-    u16 nl = camX >> 2, nt = camY >> 2;
+    u16 budget = CHUNK, used;
+    u8 hurry;
     sBlank = 0;
-    if (nl > sL)
+    target();
+    for (;;)
     {
-        stLine(sL, sT, 0, 1, LH, 0);
-        sL++;
-        stLine(sL + LW - 1, sT, 0, 1, LH, 1);
-    }
-    else if (nl < sL)
-    {
-        stLine(sL + LW - 1, sT, 0, 1, LH, 0);
-        sL--;
-        stLine(sL, sT, 0, 1, LH, 1);
-    }
-    if (nt > sT)
-    {
-        stLine(sL, sT, 1, 0, LW, 0);
-        sT++;
-        stLine(sL, sT + LH - 1, 1, 0, LW, 1);
-    }
-    else if (nt < sT)
-    {
-        stLine(sL, sT + LH - 1, 1, 0, LW, 0);
-        sT--;
-        stLine(sL, sT, 1, 0, LW, 1);
+        if (!opK)
+        {
+            if (sL < tgtL) opK = 1;
+            else if (sL > tgtL) opK = 2;
+            else if (sT < tgtT) opK = 3;
+            else if (sT > tgtT) opK = 4;
+            else break;
+            opI = 0;
+        }
+        hurry = urgent();
+        used = opStep(hurry ? 255 : budget);
+        if (!used) break;   /* (the queues are full) */
+        if (!hurry)
+        {
+            if (used >= budget) break;
+            budget -= used;
+        }
     }
     scrX = camX << 1;
     scrY = camY << 1;
+}
+
+/* finish the edge under way (before a cell changes: the loaded area must be one rectangle) */
+static void opFinish(void)
+{
+    while (opK)
+        if (!opStep(255))
+        {
+            if (!sBlank) return;   /* (can't happen: the queues hold more than an edge and a cell) */
+            streamVBlank();
+        }
 }
 
 /* a cell changes (a chest opens, a bush is cut, a door unlocks): its metatile, and its tiles if loaded */
@@ -152,7 +222,11 @@ void streamCell(u8 cx, u8 cy, u16 meta)
 {
     u16 x0 = (u16)cx << 2, y0 = (u16)cy << 2;
     u8 live = sLive;
-    if (live) cellRows(x0, y0, 0);
+    if (live)
+    {
+        opFinish();
+        cellRows(x0, y0, 0);
+    }
     sGrid[cy * sCW + cx] = meta;
     if (live)
     {
