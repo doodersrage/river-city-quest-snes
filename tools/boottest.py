@@ -205,7 +205,10 @@ def clear_room():
 
 lab.walk_to_cell(28, 17)
 lab.run('UP', 20)
-lab.run(None, 70)
+for _ in range(150):   # (until the room is in and faded up)
+    if lab.map == lab.map_named('Foundry Gate') and lab.ram('dentMap') == lab.map: break
+    lab.run(None, 1)
+lab.run(None, 10)
 check(lab.map == lab.map_named('Foundry Gate') and lab.ram('dentMap') == lab.map, 'the Tredegar door leads into the Foundry Gate')
 check(song() == 'forge', f'the ironworks play the forge theme ({song()})')
 check(clear_room() and lab.ram('roomFlags', 1, False, lab.map) & 1, 'the Foundry Gate is cleared')
