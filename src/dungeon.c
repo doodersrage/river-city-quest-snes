@@ -57,9 +57,9 @@ s16 bombX[MAX_BOMB], bombY[MAX_BOMB];
 u8 boomT;
 s16 boomX, boomY;
 /* the 64 px blast (stage 13e): where its 16 cells go (the old blast's, and the paddle area's spare ones) and the
-   sprites that show them (spare slots: the old blast's, the old cars', the bobber's, the hook's last links) */
+   sprites that show them (spare slots: the old blast's, the old cars', the bobber's, two past the hook, the pigeons') */
 static const u16 boomCell[16] = {288, 290, 292, 294, 296, 298, 300, 302, 168, 170, 172, 174, 200, 202, 204, 206};
-static const u8 boomSlot[16] = {82, 83, 84, 85, 112, 113, 114, 115, 116, 117, 98, 99, 78, 79, 76, 77};
+static const u8 boomSlot[16] = {82, 83, 84, 85, 112, 113, 114, 115, 116, 117, 98, 99, 78, 79, 118, 119};
 u8 boomF = 255, boomPend, boomShown;
 u8 *boomSrc;
 
@@ -1063,7 +1063,7 @@ void drawBombs(void)
         {
             boomF = f;
             boomSrc = (u8 *)&boom2_chr + ((u16)f << 11);
-            boomPend = 1;
+            boomPend = 2;   /* (half a frame a VBlank: 2 KB at once runs past the end of VBlank) */
         }
     }
     else boomF = 255;
@@ -1087,14 +1087,15 @@ void boomVBlank(void)
     u8 k;
     u8 *src;
     if (!boomPend) return;
-    src = boomSrc;
-    for (k = 0; k < 16; k++)
+    k = boomPend == 2 ? 0 : 8;
+    src = boomSrc + ((u16)k << 7);
+    for (; k < (boomPend == 2 ? 8 : 16); k++)
     {
         dmaCopyVram(src, VRAM_OBJ_CHR + boomCell[k] * 16, 64);
         dmaCopyVram(src + 64, VRAM_OBJ_CHR + (boomCell[k] + 16) * 16, 64);
         src += 128;
     }
-    boomPend = 0;
+    boomPend--;
 }
 
 /* ---------- push blocks and switches (web tryPush, updBlocks) ---------- */
