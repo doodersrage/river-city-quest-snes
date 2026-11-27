@@ -1116,6 +1116,10 @@ for _ in range(40):
     if abs(p_[0] - home[0]) >= 40 or abs(p_[1] - home[1]) >= 40: moved = None; break
 check(moved is True, f'a townsperson walks about, staying near home ({home} -> {p_})')
 # pigeons take off when you come close
+if lab.ram('birdSt', 1, False, 0) != 0:   # we startled it on the way here: put it back on its perch
+    for nm, hm in (('birdX', 'birdHx'), ('birdY', 'birdHy')):
+        v = lab.ram(hm, 2, False, 0); lab.poke(nm, v & 0xFF, 0); lab.poke(nm, v >> 8, 1)
+    lab.poke('birdSt', 0); lab.run(None, 2)
 bird = (lab.ram('birdX', 2, True, 0) >> 4, lab.ram('birdY', 2, True, 0) >> 4)
 check(lab.ram('birdSt', 1, False, 0) == 0, f'a pigeon sits on Broad Street {bird}')
 walk((bird[0] // 16, bird[1] // 16 - 2))
