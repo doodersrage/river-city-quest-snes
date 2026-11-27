@@ -38,6 +38,13 @@ for (const f of files) {
 
 // The SNES edition's own look (tools/export/snes_style.js): shaded ramps in place of the web game's flat tiles.
 if (process.env.SNES_STYLE !== '0') vm.runInContext(fs.readFileSync(path.join(__dirname, 'snes_style.js'), 'utf8'), sb, { filename: 'snes_style.js' });
+// Stage 13b: 32 px cells, ground drawn natively at that size (tools/export/snes_hires.js). renderMap then returns the
+// finished map, landmarks and decor included.
+const HIRES = process.env.SNES_STYLE !== '0' && process.env.HIRES !== '0';
+vm.runInContext('var SNES_VARIANTS=' + VARIANTS, sb);
+if (HIRES) vm.runInContext(fs.readFileSync(path.join(__dirname, 'snes_hires.js'), 'utf8'), sb, { filename: 'snes_hires.js' });
+vm.runInContext('var ONLY_MAPS=' + JSON.stringify(process.env.ONLY ? process.env.ONLY.split(' ') : null), sb);
+vm.runInContext('var SNES_HIRES=' + (HIRES ? 1 : 0), sb);
 
 // Top-level consts (SC, TS, g...) live in the context's shared script scope.
 // Scenes for the SNES port so far: the outdoor maps plus every single-room area (interiors, caves).
@@ -49,11 +56,12 @@ const dump = vm.runInContext(`(function(){
   st=newState();p=newPlayer();   // a fresh game: chests closed, rubble in place
   const out=[];
   for(const id in SC){
+    if(ONLY_MAPS&&!ONLY_MAPS.includes(id))continue;
     const s=SC[id];
     try{ if(typeof applyDyn==='function') applyDyn(s); }catch(e){}
     s.torches=[];
-    let c; try{ c=renderMap(s,0); const old=g; g=c.getContext('2d');
-      try{drawLandmarks(s,0);}catch(e){} try{drawDecor(s);}catch(e){} g=old; }
+    let c; try{ c=renderMap(s,0); if(!SNES_HIRES){const old=g; g=c.getContext('2d');
+      try{drawLandmarks(s,0);}catch(e){} try{drawDecor(s);}catch(e){} g=old;} }
     catch(e){ out.push({id,err:String(e)}); continue; }
     // Light sources for night and dark rooms (web drawNight/drawLight): wall torches, lit windows, street lamps; pixel centres
     const lights={torches:(s.torches||[]).slice(),wins:Object.values(s.wins||{}).filter(w=>w[2]).map(w=>[w[0]+8,w[1]+9]),
@@ -74,7 +82,7 @@ const dump = vm.runInContext(`(function(){
     const dynCells=[];for(const d of dynAll)for(const [x,y] of d.cells)dynCells.push([x,y,d.open]);
     if((s.chests||[]).length||bushes.length||dynCells.length||s.bossT){
       const keep=s.g.map(r=>r.slice());
-      const paint=()=>{const c=renderMap(s,0),o2=g;g=c.getContext('2d');try{drawLandmarks(s,0);}catch(e){}try{drawDecor(s);}catch(e){}g=o2;return c;};
+      const paint=()=>{const c=renderMap(s,0);if(SNES_HIRES)return c;const o2=g;g=c.getContext('2d');try{drawLandmarks(s,0);}catch(e){}try{drawDecor(s);}catch(e){}g=o2;return c;};
       bushes.forEach(([x,y])=>s.g[y][x]=s.base);dynCells.forEach(([x,y,o])=>s.g[y][x]=o);
       if(s.bossT){s.g[8][7]='E';s.g[8][8]='E';}
       (s.braz||[]).forEach(([x,y])=>s.g[y][x]='J');
@@ -82,7 +90,7 @@ const dump = vm.runInContext(`(function(){
       (s.chests||[]).forEach(q=>s.g[q.ty][q.tx]='o');opened=paint();
       s.g=keep;}
     // Stage 12: the animation frames (water, flames, banners), for the tiles the ROM animates
-    const anim=[1,2,3].map(fr=>{try{const a=renderMap(s,fr),o3=g;g=a.getContext('2d');try{drawLandmarks(s,fr);}catch(e){}try{drawDecor(s);}catch(e){}g=o3;return a;}catch(e){return null;}});
+    const anim=[1,2,3].map(fr=>{try{const a=renderMap(s,fr);if(SNES_HIRES)return a;const o3=g;g=a.getContext('2d');try{drawLandmarks(s,fr);}catch(e){}try{drawDecor(s);}catch(e){}g=o3;return a;}catch(e){return null;}});
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
       grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,anim,
       solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],lights,lit:!!s.lit,cars:(s.cars||[]).map(c=>({y:c.y,dir:c.dir,kind:c.kind||'car'})),birds:s.birds||[],spots:s.spots||[],murals:s.murals||[],lamps:s.lamps||[],
