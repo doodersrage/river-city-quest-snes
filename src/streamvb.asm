@@ -35,10 +35,12 @@ stTH     DSB 2
 stFreeTop DSB 2
 stN      DSB 2           ; (streamReset's byte count)
 gridRow  DSB 64*2        ; byte offset of each row of cells in sGrid
+ringSlot DSB 64*64*2     ; the slot each place in the tilemap ring shows (0: the blank tile), so a drop needs no lookup
+sIdOf    DSB 1024*2      ; the tile (times 2) each slot holds
 .ENDS
 
 .RAMSECTION ".streamdp" BANK 0 SLOT 1
-stDP     DSB 40          ; stLine's working state, on the direct page while it runs (see D_* below)
+stDP     DSB 48          ; stLine's working state, on the direct page while it runs (see D_* below)
 .ENDS
 
 .ENUM 0
@@ -59,6 +61,7 @@ D_TH     DW
 D_FT     DW
 D_UN     DW
 D_WN     DW
+D_RI     DW              ; the tile's place in ringSlot (bytes)
 .ENDE
 
 .ifdef FASTROM
@@ -198,6 +201,44 @@ stLoop:
 stGo:
     dec a
     sta.b D_N
+    ; the tile's place in the ring: ((ty & 63) << 6 | (tx & 63)) * 2
+    lda.b D_TY
+    and.w #63
+    xba
+    lsr a
+    lsr a
+    sta.b D_RI
+    lda.b D_TX
+    and.w #63
+    ora.b D_RI
+    asl a
+    sta.b D_RI
+    lda.b D_PUT
+    bne stPutOne
+    ; ---- drop: one use less of the slot shown there ----
+    tax
+    lda.l ringSlot,x
+    beq stDN
+    sta.b D_SLOT
+    asl a
+    tax
+    lda.l sRef,x
+    dec a
+    sta.l sRef,x
+    bne stDN
+    lda.l sIdOf,x           ; nobody uses the slot: forget its tile, and back on the free stack
+    tax
+    lda.w #0
+    sta.l sSlotOf,x
+    lda.b D_FT
+    asl a
+    tax
+    lda.b D_SLOT
+    sta.l sFree,x
+    inc.b D_FT
+stDN:
+    jmp stNext
+stPutOne:
     lda.b D_TX
     cmp.b D_TW
     bcs stOutFar
@@ -244,13 +285,9 @@ stIn:
     lda.w $0000,y           ; the map word
     sta.b D_W
     and.w #$07FF
-    sta.b D_ID
     asl a
-    tax                     ; X = tile * 2
-    lda.b D_PUT
-    bne stPutOne
-    jmp stDropOne
-stPutOne:
+    sta.b D_ID              ; (tile * 2)
+    tax
     lda.l sSlotOf,x
     bne stHave
     lda.b D_FT
@@ -258,16 +295,21 @@ stPutOne:
     dec a
     sta.b D_FT
     asl a
-    phx
     tax
     lda.l sFree,x           ; sFree[top]
-    plx
+    ldx.b D_ID
     sta.l sSlotOf,x
     sta.b D_SLOT
+    asl a
+    tax
+    lda.b D_ID
+    sta.l sIdOf,x
     jsr stQueueUp
     lda.b D_SLOT
 stHave:
     sta.b D_SLOT
+    ldx.b D_RI
+    sta.l ringSlot,x
     asl a
     tax
     lda.l sRef,x
@@ -285,7 +327,9 @@ stHave:
 stOut:
     lda.b D_PUT
     beq stNext
+    ldx.b D_RI
     lda.w #0
+    sta.l ringSlot,x
 stWrite:
     sta.b D_T
     jsr stQueueWr
@@ -299,27 +343,6 @@ stNext:
     adc.b D_DY
     sta.b D_TY
     jmp stLoop
-stDropOne:
-    lda.l sSlotOf,x
-    beq stNext
-    sta.b D_SLOT
-    txy                     ; Y = tile * 2
-    asl a
-    tax
-    lda.l sRef,x
-    dec a
-    sta.l sRef,x
-    bne stNext
-    tyx
-    lda.w #0
-    sta.l sSlotOf,x         ; nobody uses the slot: back on the free stack
-    lda.b D_FT
-    asl a
-    tax
-    lda.b D_SLOT
-    sta.l sFree,x
-    inc.b D_FT
-    bra stNext
 stEnd:
     lda.b D_FT
     sta.l stFreeTop
@@ -339,16 +362,15 @@ stQueueUp:
     bcs stQUFull
     asl a
     tax
+    lda.b D_ID              ; (tile * 2)
+    and.w #$07FE
+    asl a
+    asl a
+    asl a
+    asl a
+    sta.b D_T2              ; (tile & 1023) * 32
     lda.b D_ID
-    and.w #$03FF
-    asl a
-    asl a
-    asl a
-    asl a
-    asl a
-    sta.b D_T2
-    lda.b D_ID
-    and.w #$0400
+    and.w #$0800
     beq stQU0
     lda.l tsAddr+2
     clc
