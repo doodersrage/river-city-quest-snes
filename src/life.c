@@ -163,6 +163,121 @@ static void lifeTraffic(void)
     s16 ah, cx;
     if (!carAny) return;
     /* cars stop for you when you're in the lane ahead (web: a short horn) */
+    for (k = 0; k < MAX_CARS; k++)
+    {
+        if (!carOn[k]) continue;
+        cx = carX[k] >> 4;
+        ah = carDir[k] > 0 ? px - cx : cx - px;
+        if (ABS(py - carY[k]) < 13 && ah > -(s16)carHalf(k) - 6 && ah < (s16)carHalf(k) + 22)
+        {
+            if (!carStop[k])
+            {
+                carStop[k] = 1;
+                sfx(SFX_HORN);
+            }
+            continue;
+        }
+        carStop[k] = 0;
+        carX[k] += carSp[k] << 1;
+        if (cx > mapRight()) carX[k] = -40 << 4;
+        else if (cx < -40) carX[k] = mapRight() << 4;
+    }
+}
+
+void lifeUpdate(void)
+{
+    u8 k, i, a;
+    s16 nx, ny, dx, dy;
+    /* odd frames: townspeople and pigeons; even frames: traffic (each moves twice as far) */
+    if (!(frameCount & 1))
+    {
+        lifeTraffic();
+        return;
+    }
+    /* townspeople (web: 0.4 px a frame). Timers tick for all; one wanderer takes a step. */
+    if (nWander && !boxState)
+    {
+        for (i = 0; i < nWander; i++)
+        {
+            k = wanderer[i];
+            if (npcT[k]) npcT[k]--;
+            else
+            {
+                npcT[k] = 25 + rnd() % 45;
+                a = rnd() % 6;
+                npcVx[k] = a == 2 ? -1 : a == 3 ? 1 : 0;
+                npcVy[k] = a == 0 ? 1 : a == 1 ? -1 : 0;
+            }
+        }
+        if (++wTurn >= nWander) wTurn = 0;
+        k = wanderer[wTurn];
+        if (npcVx[k] || npcVy[k])
+        {
+            /* with two or three out walking, each gets a turn less often: take a bigger step */
+            nx = npcX[k] + (nWander > 1 ? npcVx[k] << 1 : npcVx[k]);
+            ny = npcY[k] + (nWander > 1 ? npcVy[k] << 1 : npcVy[k]);
+            if (ABS(nx - npcHx[k]) < 40 && ABS(ny - npcHy[k]) < 40 && npcFree(nx, ny))
+            {
+                npcX[k] = nx;
+                npcY[k] = ny;
+                npcDir[k] = npcVx[k] < 0 ? 2 : npcVx[k] > 0 ? 3 : npcVy[k] < 0 ? 1 : 0;
+            }
+            else
+            {
+                npcVx[k] = 0;
+                npcVy[k] = 0;
+            }
+        }
+    }
+    /* pigeons */
+    for (k = 0; k < MAX_BIRDS; k++)
+    {
+        if (birdSt[k] == 255) continue;
+        birdT[k]++;
+        if (birdSt[k] == 0)
+        {
+            dx = px - (birdX[k] >> 4);
+            dy = py - (birdY[k] >> 4);
+            if (ABS(dx) < 30 && ABS(dy) < 30 && ABS(dx) + ABS(dy) < 40)
+            {
+                birdSt[k] = 1;
+                birdT[k] = 0;
+                birdV[k] = 0;
+                birdVx[k] = 16 + (rnd() & 15);
+                if (dx > 0) birdVx[k] = -birdVx[k];
+                birdVy[k] = -26 - (rnd() & 15);
+                sfx(SFX_FLAP);
+            }
+        }
+        else if (birdSt[k] == 1)
+        {
+            birdX[k] += birdVx[k] << 1;
+            birdY[k] += birdVy[k] << 1;
+            if (++birdV[k] == 2) /* web: vy -= .02 a frame */
+            {
+                birdV[k] = 0;
+                birdVy[k]--;
+            }
+            if ((birdY[k] >> 4) < camY - 20 || birdT[k] > 150)
+            {
+                birdSt[k] = 2;
+                birdT[k] = 0;
+            }
+        }
+        else if (birdT[k] > 300 && (ABS(px - (birdHx[k] >> 4)) > 120 || ABS(py - (birdHy[k] >> 4)) > 120))
+        {
+            birdSt[k] = 0;
+            birdX[k] = birdHx[k];
+            birdY[k] = birdHy[k];
+        }
+    }
+}
+
+void lifeDraw(void)
+{
+    u8 k, c, n, i, q, flip, base;
+    s16 sx, sy;
+    if (!lifeAny) return;
     i = 0;
     for (k = 0; k < MAX_CARS; k++)
     {
