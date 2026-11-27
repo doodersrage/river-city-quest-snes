@@ -38,6 +38,7 @@ u8 darkLevel;           /* 0 light .. 4 full dark */
 u8 lightR1, lightR2;    /* radii drawn (0 none) */
 s16 lightX1, lightY1, lightX2, lightY2;
 u8 lightDirty;
+u8 hdmaLight, hdmaText; /* HDMA channels on: the light's (4, 5) and the text window's gradient (2, 3) */
 u8 srcMap, srcR;     /* the light chosen for window 2, in map pixels */
 s16 srcX, srcY, scanX, scanY;
 u16 scanI, scanBest;
@@ -209,7 +210,8 @@ void lightVBlank(void)
     lightDirty = 0;
     if (!darkLevel)
     {
-        REG_HDMAEN = 0;
+        hdmaLight = 0;
+        REG_HDMAEN = hdmaText;
         kind = weatherTint();
         if (kind == 1)
         { /* rain: a darker, bluer sky (web rgba(28,36,64,.2)) */
@@ -262,5 +264,6 @@ void lightVBlank(void)
         REG_COLDATA = 0x40 | (darkLevel * 3);
         REG_COLDATA = 0x80 | darkLevel;
     }
-    REG_HDMAEN = 0x30;
+    hdmaLight = 0x30;
+    REG_HDMAEN = 0x30 | hdmaText;
 }

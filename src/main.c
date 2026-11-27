@@ -100,6 +100,72 @@ u8 boxState, boxTop, boxDirty;
 u8 boxLine, boxCol;
 u8 *txt;
 
+/* Stage 12: the window's gradient. While a window is open, HDMA channels 2 and 3 rewrite the two text fills
+   (CGRAM 1 and 5) every other line: Chrono Trigger blue at the top fading to deep navy at the bottom. */
+#define REG_DMAP(c) (*(vuint8 *)(0x4300 + (c) * 16))
+#define REG_BBAD(c) (*(vuint8 *)(0x4301 + (c) * 16))
+#define REG_A1TL(c) (*(vuint8 *)(0x4302 + (c) * 16))
+#define REG_A1TH(c) (*(vuint8 *)(0x4303 + (c) * 16))
+#define REG_A1B(c) (*(vuint8 *)(0x4304 + (c) * 16))
+extern u8 hdmaLight, hdmaText;
+u8 gradA[200], gradB[200];
+u8 gradTop = 255;
+u16 gradAddrA, gradAddrB;
+
+static u16 gi;
+static void gradPut(u8 n, u16 col)
+{
+    gradA[gi] = n; gradA[gi + 1] = 1; gradA[gi + 2] = 1; gradA[gi + 3] = col & 0xFF; gradA[gi + 4] = col >> 8;
+    gradB[gi] = n; gradB[gi + 1] = 5; gradB[gi + 2] = 5; gradB[gi + 3] = col & 0xFF; gradB[gi + 4] = col >> 8;
+    gi += 5;
+}
+
+/* the table for a window starting at screen line `top` (64 lines tall) */
+void gradBuild(u8 top)
+{
+    u8 i, r, g, b, lines = top;
+    gi = 0;
+    while (lines)
+    {
+        i = lines > 127 ? 127 : lines;
+        gradPut(i, TEXT_FILL_BGR);
+        lines -= i;
+    }
+    for (i = 0; i < 32; i++) /* 5-bit channels: (8, 12, 25) at the top to (2, 3, 9) at the bottom */
+    {
+        r = 8 - (i * 6) / 31;
+        g = 12 - (i * 9) / 31;
+        b = 25 - (i * 16) / 31;
+        gradPut(2, r | (g << 5) | ((u16)b << 10));
+    }
+    gradPut(1, TEXT_FILL_BGR);
+    gradA[gi] = 0;
+    gradB[gi] = 0;
+    gradTop = top;
+    gradAddrA = (u16)gradA;
+    gradAddrB = (u16)gradB;
+}
+
+/* main loop: the table follows the window to the top or bottom of the screen */
+void gradTick(void)
+{
+    if (boxState && gradTop != boxTop * 8) gradBuild(boxTop * 8);
+}
+
+/* from rcqVBlank: the channels on while a window is open, off when it closes */
+void textVBlank(void)
+{
+    u8 want = (boxState && gradTop != 255) ? 0x0C : 0;
+    if (want == hdmaText) return;
+    hdmaText = want;
+    if (want)
+    {
+        REG_DMAP(2) = 0x03; REG_BBAD(2) = 0x21; REG_A1TL(2) = gradAddrA & 0xFF; REG_A1TH(2) = gradAddrA >> 8; REG_A1B(2) = 0x7E;
+        REG_DMAP(3) = 0x03; REG_BBAD(3) = 0x21; REG_A1TL(3) = gradAddrB & 0xFF; REG_A1TH(3) = gradAddrB >> 8; REG_A1B(3) = 0x7E;
+    }
+    REG_HDMAEN = hdmaLight | hdmaText;
+}
+
 void boxPut(u8 row, u8 col, u16 tile)
 {
     boxMap[row * 32 + col] = tile | PRIO;
@@ -1244,6 +1310,7 @@ int main(void)
         frameCount++;
         playTick();
         animTick();
+        gradTick();
         /* new presses since our last look (not padsDown, which only holds a press for one frame:
            when a busy frame runs long, that press would be lost) */
         pad = padsCurrent(0);

@@ -10,25 +10,25 @@ void rcqLoadMap(u8 i)
     switch (i)
     {
     case 0: rcqUpload(&m0_chr, &m0_chrend - &m0_chr, &m0_map, &m0_pal, &m0_col, &m0_wld, &m0_och, &m0_opl, &m0_ene, &m0_xtr); rcqAnim(&m0_ani, 629, 100); break;
-    case 1: rcqUpload(&m1_chr, &m1_chrend - &m1_chr, &m1_map, &m1_pal, &m1_col, &m1_wld, &m1_och, &m1_opl, &m1_ene, &m1_xtr); rcqAnim(&m1_ani, 503, 58); break;
-    case 2: rcqUpload(&m2_chr, &m2_chrend - &m2_chr, &m2_map, &m2_pal, &m2_col, &m2_wld, &m2_och, &m2_opl, &m2_ene, &m2_xtr); rcqAnim(&m2_ani, 463, 47); break;
-    case 3: rcqUpload(&m3_chr, &m3_chrend - &m3_chr, &m3_map, &m3_pal, &m3_col, &m3_wld, &m3_och, &m3_opl, &m3_ene, &m3_xtr); rcqAnim(&m3_ani, 440, 27); break;
-    case 4: rcqUpload(&m4_chr, &m4_chrend - &m4_chr, &m4_map, &m4_pal, &m4_col, &m4_wld, &m4_och, &m4_opl, &m4_ene, &m4_xtr); rcqAnim(&m4_ani, 602, 30); break;
-    case 5: rcqUpload(&m5_chr, &m5_chrend - &m5_chr, &m5_map, &m5_pal, &m5_col, &m5_wld, &m5_och, &m5_opl, &m5_ene, &m5_xtr); rcqAnim(&m5_ani, 527, 42); break;
-    case 6: rcqUpload(&m6_chr, &m6_chrend - &m6_chr, &m6_map, &m6_pal, &m6_col, &m6_wld, &m6_och, &m6_opl, &m6_ene, &m6_xtr); rcqAnim(&m6_ani, 639, 116); break;
-    case 7: rcqUpload(&m7_chr, &m7_chrend - &m7_chr, &m7_map, &m7_pal, &m7_col, &m7_wld, &m7_och, &m7_opl, &m7_ene, &m7_xtr); rcqAnim(&m7_ani, 424, 17); break;
+    case 1: rcqUpload(&m1_chr, &m1_chrend - &m1_chr, &m1_map, &m1_pal, &m1_col, &m1_wld, &m1_och, &m1_opl, &m1_ene, &m1_xtr); rcqAnim(&m1_ani, 497, 58); break;
+    case 2: rcqUpload(&m2_chr, &m2_chrend - &m2_chr, &m2_map, &m2_pal, &m2_col, &m2_wld, &m2_och, &m2_opl, &m2_ene, &m2_xtr); rcqAnim(&m2_ani, 462, 47); break;
+    case 3: rcqUpload(&m3_chr, &m3_chrend - &m3_chr, &m3_map, &m3_pal, &m3_col, &m3_wld, &m3_och, &m3_opl, &m3_ene, &m3_xtr); rcqAnim(&m3_ani, 445, 27); break;
+    case 4: rcqUpload(&m4_chr, &m4_chrend - &m4_chr, &m4_map, &m4_pal, &m4_col, &m4_wld, &m4_och, &m4_opl, &m4_ene, &m4_xtr); rcqAnim(&m4_ani, 605, 30); break;
+    case 5: rcqUpload(&m5_chr, &m5_chrend - &m5_chr, &m5_map, &m5_pal, &m5_col, &m5_wld, &m5_och, &m5_opl, &m5_ene, &m5_xtr); rcqAnim(&m5_ani, 532, 42); break;
+    case 6: rcqUpload(&m6_chr, &m6_chrend - &m6_chr, &m6_map, &m6_pal, &m6_col, &m6_wld, &m6_och, &m6_opl, &m6_ene, &m6_xtr); rcqAnim(&m6_ani, 637, 116); break;
+    case 7: rcqUpload(&m7_chr, &m7_chrend - &m7_chr, &m7_map, &m7_pal, &m7_col, &m7_wld, &m7_och, &m7_opl, &m7_ene, &m7_xtr); rcqAnim(&m7_ani, 425, 17); break;
     case 8: rcqUpload(&m8_chr, &m8_chrend - &m8_chr, &m8_map, &m8_pal, &m8_col, &m8_wld, &m8_och, &m8_opl, &m8_ene, &m8_xtr); rcqAnim(&m8_ani, 560, 13); break;
     case 9: rcqUpload(&m9_chr, &m9_chrend - &m9_chr, &m9_map, &m9_pal, &m9_col, &m9_wld, &m9_och, &m9_opl, &m9_ene, &m9_xtr); rcqAnim(&m9_ani, 550, 80); break;
-    case 10: rcqUpload(&m10_chr, &m10_chrend - &m10_chr, &m10_map, &m10_pal, &m10_col, &m10_wld, &m10_och, &m10_opl, &m10_ene, &m10_xtr); rcqAnim(&m10_ani, 459, 25); break;
+    case 10: rcqUpload(&m10_chr, &m10_chrend - &m10_chr, &m10_map, &m10_pal, &m10_col, &m10_wld, &m10_och, &m10_opl, &m10_ene, &m10_xtr); rcqAnim(&m10_ani, 460, 25); break;
     case 11: rcqUpload(&m11_chr, &m11_chrend - &m11_chr, &m11_map, &m11_pal, &m11_col, &m11_wld, &m11_och, &m11_opl, &m11_ene, &m11_xtr); rcqAnim(&m11_ani, 566, 3); break;
     case 12: rcqUpload(&m12_chr, &m12_chrend - &m12_chr, &m12_map, &m12_pal, &m12_col, &m12_wld, &m12_och, &m12_opl, &m12_ene, &m12_xtr); rcqAnim(&m12_ani, 332, 42); break;
-    case 13: rcqUpload(&m13_chr, &m13_chrend - &m13_chr, &m13_map, &m13_pal, &m13_col, &m13_wld, &m13_och, &m13_opl, &m13_ene, &m13_xtr); rcqAnim(&m13_ani, 436, 24); break;
-    case 14: rcqUpload(&m14_chr, &m14_chrend - &m14_chr, &m14_map, &m14_pal, &m14_col, &m14_wld, &m14_och, &m14_opl, &m14_ene, &m14_xtr); rcqAnim(&m14_ani, 487, 97); break;
+    case 13: rcqUpload(&m13_chr, &m13_chrend - &m13_chr, &m13_map, &m13_pal, &m13_col, &m13_wld, &m13_och, &m13_opl, &m13_ene, &m13_xtr); rcqAnim(&m13_ani, 437, 24); break;
+    case 14: rcqUpload(&m14_chr, &m14_chrend - &m14_chr, &m14_map, &m14_pal, &m14_col, &m14_wld, &m14_och, &m14_opl, &m14_ene, &m14_xtr); rcqAnim(&m14_ani, 482, 97); break;
     case 15: rcqUpload(&m15_chr, &m15_chrend - &m15_chr, &m15_map, &m15_pal, &m15_col, &m15_wld, &m15_och, &m15_opl, &m15_ene, &m15_xtr); rcqAnim(0, 0, 0); break;
-    case 16: rcqUpload(&m16_chr, &m16_chrend - &m16_chr, &m16_map, &m16_pal, &m16_col, &m16_wld, &m16_och, &m16_opl, &m16_ene, &m16_xtr); rcqAnim(&m16_ani, 541, 97); break;
+    case 16: rcqUpload(&m16_chr, &m16_chrend - &m16_chr, &m16_map, &m16_pal, &m16_col, &m16_wld, &m16_och, &m16_opl, &m16_ene, &m16_xtr); rcqAnim(&m16_ani, 542, 97); break;
     case 17: rcqUpload(&m17_chr, &m17_chrend - &m17_chr, &m17_map, &m17_pal, &m17_col, &m17_wld, &m17_och, &m17_opl, &m17_ene, &m17_xtr); rcqAnim(&m17_ani, 445, 31); break;
     case 18: rcqUpload(&m18_chr, &m18_chrend - &m18_chr, &m18_map, &m18_pal, &m18_col, &m18_wld, &m18_och, &m18_opl, &m18_ene, &m18_xtr); rcqAnim(0, 0, 0); break;
-    case 19: rcqUpload(&m19_chr, &m19_chrend - &m19_chr, &m19_map, &m19_pal, &m19_col, &m19_wld, &m19_och, &m19_opl, &m19_ene, &m19_xtr); rcqAnim(&m19_ani, 357, 121); break;
+    case 19: rcqUpload(&m19_chr, &m19_chrend - &m19_chr, &m19_map, &m19_pal, &m19_col, &m19_wld, &m19_och, &m19_opl, &m19_ene, &m19_xtr); rcqAnim(&m19_ani, 373, 121); break;
     case 20: rcqUpload(&m20_chr, &m20_chrend - &m20_chr, &m20_map, &m20_pal, &m20_col, &m20_wld, &m20_och, &m20_opl, &m20_ene, &m20_xtr); rcqAnim(0, 0, 0); break;
     case 21: rcqUpload(&m21_chr, &m21_chrend - &m21_chr, &m21_map, &m21_pal, &m21_col, &m21_wld, &m21_och, &m21_opl, &m21_ene, &m21_xtr); rcqAnim(&m21_ani, 556, 69); break;
     case 22: rcqUpload(&m22_chr, &m22_chrend - &m22_chr, &m22_map, &m22_pal, &m22_col, &m22_wld, &m22_och, &m22_opl, &m22_ene, &m22_xtr); rcqAnim(&m22_ani, 360, 59); break;

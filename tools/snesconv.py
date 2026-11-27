@@ -17,7 +17,12 @@ MAX_PALS, PAL_COLORS, MAX_TILES = 8, 15, 1024
 # colours are fixed in every map: box fill, gold (titles and frame), white (text).
 def hexc(h):
     return (int(h[1:3], 16) >> 3, int(h[3:5], 16) >> 3, int(h[5:7], 16) >> 3)
-TEXT_COLORS = [hexc('#1e2230'), hexc('#f2c14e'), hexc('#f4f1e8')]
+# The text layer (BG3, 2bpp) owns BG palette 0's first seven colours (stage 12): text palette 0 is fill, shadow,
+# white (CGRAM 1-3); text palette 1 is fill, shadow, gold (CGRAM 5-7). CGRAM 4 is free for the map (a spare grey).
+# While a window is open, an HDMA gradient rewrites the two fills line by line.
+TEXT_FILL, TEXT_SHADOW = hexc('#1e2848'), hexc('#0a0c1a')
+TEXT_COLORS = [TEXT_FILL, TEXT_SHADOW, hexc('#f4f1e8'), hexc('#3a3644'), TEXT_FILL, TEXT_SHADOW, hexc('#f2c14e')]
+TEXT_DUP = len(TEXT_COLORS) - len(set(TEXT_COLORS))   # entries palette 0 spends twice
 
 
 def c15(rgb):
@@ -81,7 +86,7 @@ def pack_palettes(tiles, allow_remap):
         best, cost = None, None
         for i, p in enumerate(pals):
             u = len(p | s)
-            if u <= PAL_COLORS and (cost is None or u - len(p) < cost):
+            if u <= PAL_COLORS - (TEXT_DUP if i == 0 else 0) and (cost is None or u - len(p) < cost):
                 best, cost = i, u - len(p)
         if best is None and len(pals) < MAX_PALS and len(s) <= PAL_COLORS:
             pals.append(set(s)); best = len(pals) - 1
@@ -518,33 +523,37 @@ def tile2bpp(idx):
 
 
 def convert_font(path):
-    """BG3 2bpp: tile 0 transparent, 1-96 white glyphs, 97-192 gold glyphs, 193-201 box frame."""
+    """BG3 2bpp (stage 12): tile 0 transparent, 1-96 the glyphs, 97-105 the window frame and the more-arrow.
+    Colours: 1 fill, 2 shadow, 3 ink. A glyph's shadow falls one pixel down and right, which also opens a dark row
+    between lines. Gold text is the same tiles on text palette 1 (FONT_GOLD carries the palette bit)."""
     im = Image.open(path).convert('L'); px = im.load()
     tiles = [bytes(16)]
-    for ink in (3, 2):
-        for i in range(96):
-            gx, gy = (i % 16) * 8, (i // 16) * 8
-            tiles.append(tile2bpp([ink if px[gx + x, gy + y] > 127 else 1 for y in range(8) for x in range(8)]))
+    for i in range(96):
+        gx, gy = (i % 16) * 8, (i // 16) * 8
+        ink = lambda x, y: 0 <= x < 8 and 0 <= y < 8 and px[gx + x, gy + y] > 127
+        tiles.append(tile2bpp([3 if ink(x, y) else 2 if ink(x - 1, y - 1) or ink(x, y - 1) and y == 7 else 1
+                               for y in range(8) for x in range(8)]))
 
     def frame(fn):
         return tile2bpp([fn(x, y) for y in range(8) for x in range(8)])
-    # 1 = fill, 2 = gold border line two pixels in from the edge, 0 = outside the rounded corner
+    # a bevelled frame: a dark outline, two rows of white, a dark inner shadow, then the fill; corners rounded
+    BAND = {0: 2, 1: 3, 2: 3, 3: 2}
     def edge(x, y, top, bot, left, right):
-        if (top and y == 0) or (bot and y == 7) or (left and x == 0) or (right and x == 7): return 0
-        if (top and y == 2) or (bot and y == 5) or (left and x == 2) or (right and x == 5): return 2
-        if (top and y < 2) or (bot and y > 5) or (left and x < 2) or (right and x > 5): return 1
-        return 1
+        d = min([v for v, on in ((y, top), (7 - y, bot), (x, left), (7 - x, right)) if on] + [9])
+        return BAND.get(d, 1)
     def corner(top, left):
         def fn(x, y):
             cx, cy = (x if left else 7 - x), (y if top else 7 - y)
             if cx + cy < 2: return 0
-            if (cy == 2 and cx >= 2) or (cx == 2 and cy >= 2): return 2
-            return 1
+            d = min(cx, cy)
+            if cx + cy == 2: return 2
+            return BAND.get(d, 1) if d < 4 else 1
         return fn
+    more = lambda x, y: 3 if (2 <= y <= 5 and abs(x - 3.5) <= (5 - y)) else 2 if (3 <= y <= 6 and abs(x - 4.5) <= (6 - y)) else 1
     tiles += [frame(corner(True, True)), frame(lambda x, y: edge(x, y, 1, 0, 0, 0)), frame(corner(True, False)),
               frame(lambda x, y: edge(x, y, 0, 0, 1, 0)), frame(lambda x, y: edge(x, y, 0, 0, 0, 1)),
               frame(corner(False, True)), frame(lambda x, y: edge(x, y, 0, 1, 0, 0)), frame(corner(False, False)),
-              tile2bpp([3 if (y >= 2 and y <= 5 and abs(x - 3.5) <= (5 - y)) else 1 for y in range(8) for x in range(8)])]
+              frame(more)]
     return b''.join(tiles)
 
 
@@ -1586,10 +1595,10 @@ def main():
     hdr += ['', 'extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;', '',
             f'#define WLD_GRID {WLD_GRID}', f'#define WLD_NNPC {WLD_NNPC}', f'#define WLD_NPCS {WLD_NPCS}',
             f'#define WLD_TOFS {WLD_TOFS}', f'#define MAX_NPCS {MAX_NPCS}', f'#define NPC_REC {NPC_REC}', f'#define BOX_COLS {BOX_COLS}',
-            '#define FONT_WHITE 1  /* tile for char c is FONT_WHITE + c - 32 */', '#define FONT_GOLD 97',
-            '#define FRAME_TL 193', '#define FRAME_T 194', '#define FRAME_TR 195', '#define FRAME_L 196',
-            '#define FRAME_R 197', '#define FRAME_BL 198', '#define FRAME_B 199', '#define FRAME_BR 200',
-            '#define FRAME_MORE 201', '']
+            '#define FONT_WHITE 1  /* tile for char c is FONT_WHITE + c - 32 */', '#define FONT_GOLD (1 + 0x400)  /* the same glyphs on text palette 1 */',
+            '#define FRAME_TL 97', '#define FRAME_T 98', '#define FRAME_TR 99', '#define FRAME_L 100',
+            '#define FRAME_R 101', '#define FRAME_BL 102', '#define FRAME_B 103', '#define FRAME_BR 104',
+            '#define FRAME_MORE 105', '#define TEXT_FILL_BGR %d  /* the fills\' resting colour, for the window gradient */' % int.from_bytes(bgr555(TEXT_FILL), 'little'), '']
     for k in 'NSEW':
         hdr.append(f'static const u8 nb{k}[MAP_COUNT] = {{{", ".join(map(str, nb[k]))}}};')
     hdr += ['', f'#define MAP_START {pos[(1, 1)]}  /* The Fan */', '', '#endif', '']

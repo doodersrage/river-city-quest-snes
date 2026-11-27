@@ -8,41 +8,41 @@
 extern char m0_chr, m0_chrend, m0_map, m0_pal, m0_col, m0_wld, m0_och, m0_opl, m0_ene, m0_xtr;  /* Richmond Raceway */
 extern char m0_ani;  /* 100 animated tiles from tile 629 */
 extern char m1_chr, m1_chrend, m1_map, m1_pal, m1_col, m1_wld, m1_och, m1_opl, m1_ene, m1_xtr;  /* Bryan Park */
-extern char m1_ani;  /* 58 animated tiles from tile 503 */
+extern char m1_ani;  /* 58 animated tiles from tile 497 */
 extern char m2_chr, m2_chrend, m2_map, m2_pal, m2_col, m2_wld, m2_och, m2_opl, m2_ene, m2_xtr;  /* Lewis Ginter Botanical Garden */
-extern char m2_ani;  /* 47 animated tiles from tile 463 */
+extern char m2_ani;  /* 47 animated tiles from tile 462 */
 extern char m3_chr, m3_chrend, m3_map, m3_pal, m3_col, m3_wld, m3_och, m3_opl, m3_ene, m3_xtr;  /* VCU & Court End */
-extern char m3_ani;  /* 27 animated tiles from tile 440 */
+extern char m3_ani;  /* 27 animated tiles from tile 445 */
 extern char m4_chr, m4_chrend, m4_map, m4_pal, m4_col, m4_wld, m4_och, m4_opl, m4_ene, m4_xtr;  /* Arthur Ashe Boulevard */
-extern char m4_ani;  /* 30 animated tiles from tile 602 */
+extern char m4_ani;  /* 30 animated tiles from tile 605 */
 extern char m5_chr, m5_chrend, m5_map, m5_pal, m5_col, m5_wld, m5_och, m5_opl, m5_ene, m5_xtr;  /* Scott's Addition */
-extern char m5_ani;  /* 42 animated tiles from tile 527 */
+extern char m5_ani;  /* 42 animated tiles from tile 532 */
 extern char m6_chr, m6_chrend, m6_map, m6_pal, m6_col, m6_wld, m6_och, m6_opl, m6_ene, m6_xtr;  /* Broad Street */
-extern char m6_ani;  /* 116 animated tiles from tile 639 */
+extern char m6_ani;  /* 116 animated tiles from tile 637 */
 extern char m7_chr, m7_chrend, m7_map, m7_pal, m7_col, m7_wld, m7_och, m7_opl, m7_ene, m7_xtr;  /* Jackson Ward */
-extern char m7_ani;  /* 17 animated tiles from tile 424 */
+extern char m7_ani;  /* 17 animated tiles from tile 425 */
 extern char m8_chr, m8_chrend, m8_map, m8_pal, m8_col, m8_wld, m8_och, m8_opl, m8_ene, m8_xtr;  /* Church Hill */
 extern char m8_ani;  /* 13 animated tiles from tile 560 */
 extern char m9_chr, m9_chrend, m9_map, m9_pal, m9_col, m9_wld, m9_och, m9_opl, m9_ene, m9_xtr;  /* Chimborazo */
 extern char m9_ani;  /* 80 animated tiles from tile 550 */
 extern char m10_chr, m10_chrend, m10_map, m10_pal, m10_col, m10_wld, m10_och, m10_opl, m10_ene, m10_xtr;  /* Carytown */
-extern char m10_ani;  /* 25 animated tiles from tile 459 */
+extern char m10_ani;  /* 25 animated tiles from tile 460 */
 extern char m11_chr, m11_chrend, m11_map, m11_pal, m11_col, m11_wld, m11_och, m11_opl, m11_ene, m11_xtr;  /* The Fan */
 extern char m11_ani;  /* 3 animated tiles from tile 566 */
 extern char m12_chr, m12_chrend, m12_map, m12_pal, m12_col, m12_wld, m12_och, m12_opl, m12_ene, m12_xtr;  /* Capitol Square */
 extern char m12_ani;  /* 42 animated tiles from tile 332 */
 extern char m13_chr, m13_chrend, m13_map, m13_pal, m13_col, m13_wld, m13_och, m13_opl, m13_ene, m13_xtr;  /* Shockoe Bottom */
-extern char m13_ani;  /* 24 animated tiles from tile 436 */
+extern char m13_ani;  /* 24 animated tiles from tile 437 */
 extern char m14_chr, m14_chrend, m14_map, m14_pal, m14_col, m14_wld, m14_och, m14_opl, m14_ene, m14_xtr;  /* Canal Walk & Brown's Island */
-extern char m14_ani;  /* 97 animated tiles from tile 487 */
+extern char m14_ani;  /* 97 animated tiles from tile 482 */
 extern char m15_chr, m15_chrend, m15_map, m15_pal, m15_col, m15_wld, m15_och, m15_opl, m15_ene, m15_xtr;  /* Texas Beach & Agecroft */
 extern char m16_chr, m16_chrend, m16_map, m16_pal, m16_col, m16_wld, m16_och, m16_opl, m16_ene, m16_xtr;  /* Byrd Park & Maymont */
-extern char m16_ani;  /* 97 animated tiles from tile 541 */
+extern char m16_ani;  /* 97 animated tiles from tile 542 */
 extern char m17_chr, m17_chrend, m17_map, m17_pal, m17_col, m17_wld, m17_och, m17_opl, m17_ene, m17_xtr;  /* Hollywood Cemetery */
 extern char m17_ani;  /* 31 animated tiles from tile 445 */
 extern char m18_chr, m18_chrend, m18_map, m18_pal, m18_col, m18_wld, m18_och, m18_opl, m18_ene, m18_xtr;  /* Belle Isle */
 extern char m19_chr, m19_chrend, m19_map, m19_pal, m19_col, m19_wld, m19_och, m19_opl, m19_ene, m19_xtr;  /* Rocketts Landing */
-extern char m19_ani;  /* 121 animated tiles from tile 357 */
+extern char m19_ani;  /* 121 animated tiles from tile 373 */
 extern char m20_chr, m20_chrend, m20_map, m20_pal, m20_col, m20_wld, m20_och, m20_opl, m20_ene, m20_xtr;  /* Pony Pasture */
 extern char m21_chr, m21_chrend, m21_map, m21_pal, m21_col, m21_wld, m21_och, m21_opl, m21_ene, m21_xtr;  /* Forest Hill Park */
 extern char m21_ani;  /* 69 animated tiles from tile 556 */
@@ -657,16 +657,17 @@ extern char hero_chr, hero_chrend, hero_pal, hero_palend, font_chr, font_chrend;
 #define NPC_REC 15
 #define BOX_COLS 28
 #define FONT_WHITE 1  /* tile for char c is FONT_WHITE + c - 32 */
-#define FONT_GOLD 97
-#define FRAME_TL 193
-#define FRAME_T 194
-#define FRAME_TR 195
-#define FRAME_L 196
-#define FRAME_R 197
-#define FRAME_BL 198
-#define FRAME_B 199
-#define FRAME_BR 200
-#define FRAME_MORE 201
+#define FONT_GOLD (1 + 0x400)  /* the same glyphs on text palette 1 */
+#define FRAME_TL 97
+#define FRAME_T 98
+#define FRAME_TR 99
+#define FRAME_L 100
+#define FRAME_R 101
+#define FRAME_BL 102
+#define FRAME_B 103
+#define FRAME_BR 104
+#define FRAME_MORE 105
+#define TEXT_FILL_BGR 9379  /* the fills' resting colour, for the window gradient */
 
 static const u8 nbN[MAP_COUNT] = {255, 255, 255, 255, 0, 1, 2, 3, 255, 255, 5, 6, 7, 8, 9, 255, 10, 11, 12, 13, 16, 17, 18, 19, 255, 255, 255, 255, 255, 255, 255, 255, 31, 32, 255, 255, 35, 36, 255, 255, 255, 255, 255, 255, 255, 44, 255, 46, 47, 255, 255, 50, 255, 52, 255, 54, 255, 56, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 69, 70, 255, 255, 73, 255, 75, 255, 255};
 static const u8 nbS[MAP_COUNT] = {4, 5, 6, 7, 255, 10, 11, 12, 13, 14, 16, 17, 18, 19, 255, 255, 20, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 32, 33, 255, 255, 36, 37, 255, 255, 255, 255, 255, 255, 255, 45, 255, 47, 48, 255, 255, 51, 255, 53, 255, 55, 255, 57, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 70, 71, 255, 255, 74, 255, 76, 255, 255, 255};
@@ -676,9 +677,9 @@ static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11,
 #define MAP_START 11  /* The Fan */
 
 extern char mini0_chr, mini0_chrend, mini0_map, mini0_pal;  /* bat: 97 tiles, 8 palettes */
-extern char mini1_chr, mini1_chrend, mini1_map, mini1_pal;  /* hoops: 99 tiles, 8 palettes */
+extern char mini1_chr, mini1_chrend, mini1_map, mini1_pal;  /* hoops: 98 tiles, 8 palettes */
 extern char mini2_chr, mini2_chrend, mini2_map, mini2_pal;  /* tennis: 24 tiles, 1 palettes */
-extern char mini6_chr, mini6_chrend, mini6_map, mini6_pal;  /* pin: 129 tiles, 8 palettes */
+extern char mini6_chr, mini6_chrend, mini6_map, mini6_pal;  /* pin: 128 tiles, 8 palettes */
 extern char mini10_chr, mini10_chrend, mini10_map, mini10_pal;  /* title: 487 tiles, 8 palettes */
 extern char mini11_chr, mini11_chrend, mini11_map, mini11_pal;  /* name: 386 tiles, 8 palettes */
 extern char race0_chr, race0_chrend, race0_map, race0_pal, race0_och, race0_ochend, race0_opl;  /* derby: 18 tiles */
@@ -702,7 +703,7 @@ static const s8 pinUY[18] = {28, 21, 14, 7, 0, -7, -14, -21, -28, 28, 21, 14, 7,
 static const u8 arcadeAt[2] = {65, 0};  /* map, text */
 extern char album_chr, album_chrend, album_map, album_pal;
 #define PHOTO_COUNT 30
-static const u16 albumBlank[24] = {554, 33240, 33240, 33240, 33240, 16938, 555, 2, 5121, 5121, 2, 16939, 555, 2, 5121, 5121, 2, 16939, 33322, 472, 472, 472, 472, 49706};  /* the placeholder, 6 x 4 tilemap words */
+static const u16 albumBlank[24] = {554, 555, 555, 555, 555, 16938, 556, 557, 558, 559, 557, 16940, 556, 557, 560, 16944, 557, 16940, 33322, 33323, 33323, 33323, 33323, 49706};  /* the placeholder, 6 x 4 tilemap words */
 static const char *const photoCap1[30] = {"The Diamond, home of the Flying", "The old Broad Street department", "", "", "", "", "", "", "The old Capitol Square bell", "", "", "", "", "The granite pyramid in", "", "The power plant ruins on Belle", "", "", "", "The Science Museum in old Broad", "The Virginia Museum of History", "", "The tennis courts on Arthur", "", "Agecroft Hall, shipped from", "The Siegel Center, home of the", "", "", "", ""};
 static const char *const photoCap2[30] = {"Squirrels", "stores", "A bus shelter on Broad Street", "The Hippodrome on Second Street", "St. John's Church on Church Hill", "The Virginia Museum of Fine Arts", "The Byrd Theatre in Carytown", "The Virginia State Capitol", "tower", "Main Street Station", "The 17th Street Market", "The Carillon in Byrd Park", "Maymont House", "Hollywood Cemetery", "President Monroe's tomb", "Isle", "A steamboat at Rocketts Landing", "Forest Hill's Stone House", "An old Forest Hill trolley", "Street Station", "& Culture", "The Sauer's vanilla sign", "Ashe Boulevard", "Richmond Raceway", "England", "Rams", "The John Marshall House", "Sally Bell's Kitchen", "The Leigh Street Armory", "The stage on Brown's Island"};
 static const char *const photoWrap[30] = {"The Diamond, home of the\nFlying Squirrels", "The old Broad Street\ndepartment stores", "A bus shelter on Broad\nStreet", "The Hippodrome on Second\nStreet", "St. John's Church on Church\nHill", "The Virginia Museum of Fine\nArts", "The Byrd Theatre in Carytown", "The Virginia State Capitol", "The old Capitol Square bell\ntower", "Main Street Station", "The 17th Street Market", "The Carillon in Byrd Park", "Maymont House", "The granite pyramid in\nHollywood Cemetery", "President Monroe's tomb", "The power plant ruins on\nBelle Isle", "A steamboat at Rocketts\nLanding", "Forest Hill's Stone House", "An old Forest Hill trolley", "The Science Museum in old\nBroad Street Station", "The Virginia Museum of\nHistory & Culture", "The Sauer's vanilla sign", "The tennis courts on Arthur\nAshe Boulevard", "Richmond Raceway", "Agecroft Hall, shipped from\nEngland", "The Siegel Center, home of\nthe Rams", "The John Marshall House", "Sally Bell's Kitchen", "The Leigh Street Armory", "The stage on Brown's Island"};  /* for the text box: 28 a line */

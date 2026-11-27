@@ -270,6 +270,7 @@ void heroFrame(u8 f);
 void heroVBlank(void);
 void npcVBlank(void);
 void animVBlank(void);
+void textVBlank(void);
 void animStop(void);
 void rcqAnim(u8 *frames, u16 first, u16 count);
 void drawHero(void);

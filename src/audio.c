@@ -49,6 +49,7 @@ void rcqVBlank(void)
     npcVBlank();   /* and of one townsperson */
     animVBlank();  /* and some of the animated tiles */
     lightVBlank();
+    textVBlank();  /* the window's gradient on or off */
     if (miniOn) miniVBlank(); /* its score line, while still in VBlank */
     spcProcess();
 }
