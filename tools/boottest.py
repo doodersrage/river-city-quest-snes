@@ -1568,7 +1568,7 @@ for _ in range(3):
         if not lab.ram('boxState'): break
         lab.press('A', 6)
     if lab.ram('frogsDone'): break
-check(lab.ram('frogsDone') and lab.ram('coins', 2) == min(999, coins + 40) and ncards() == before + 1,
+check(lab.ram('frogsDone') and lab.ram('coins', 2) >= min(999, coins + 40) and ncards() == before + 1,   # (and any picked up on the way)
       f"the naturalist counts them: 40 coins and the Maymont card ({ncards()} cards)")
 lab.poke('wx', 0); lab.poke('wxK', 0)
 

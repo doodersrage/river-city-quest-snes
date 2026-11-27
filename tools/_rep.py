@@ -1296,8 +1296,277 @@ for tx, ty in chal_cells(c):
     for (cx, cy), d in (((tx, ty + 1), 'up'), ((tx, ty - 1), 'down'), ((tx - 1, ty), 'right'), ((tx + 1, ty), 'left')):
         if 0 <= cy < 22 and 0 <= cx < 32 and not g[cy][cx]:
             poke16('px', cx * 16 + 8); poke16('py', cy * 16 + 8); lab.run(None, 2)
-            lab.face(d); lab.press('B', 6)
-            print('lamp', tx, ty, (cx, cy), d, lab.ram('chalGot'), lab.pos, lab.ram('hp'), lab.ram('boxState'))
+            got = lab.ram('chalGot')
+            for _ in range(3):   # (a press can land while the hero is still turning)
+                lab.face(d); lab.press('B', 6)
+                if lab.ram('chalGot') != got or not lab.ram('chalOn'): break
+                lab.run(None, 10)
             break
     poke16('chalT', 3000)
     if not lab.ram('chalOn'): break
+lab.run(None, 40); lab.screenshot(f'{out}/60-gas-lamps.png')
+check(lab.ram('pins', 2) & (1 << c), f"every lamp lit: a pin ({lab.ram('chalGot')} of {lab.ram('chalNeed')})")
+close_box()
+# The history quiz in Capitol Square: three stories from your journal
+travel(lab, N('Capitol Square'), close_box)
+lab.run(None, 4)
+n_read = sum(bin(lab.ram('loreRead', 1, False, i)).count('1') for i in range(9))
+check(n_read >= 1, f'markers read along the way go in the journal ({n_read} so far)')
+accept(1)
+check(lab.ram('boxState') and lab.ram('askKind') == 0, 'the Tour Guide wants three stories first')
+close_box()
+for i in range(9): lab.poke('loreRead', 0xFF, i)   # (as if you'd read every marker in town)
+accept(1)
+allbut = ((1 << len(CH)) - 1) & ~(1 << CH.index('quiz'))   # every other pin, to see the gold paddle
+lab.poke('pins', allbut & 0xFF, 0); lab.poke('pins', allbut >> 8, 1)
+for q in range(3):
+    for _ in range(40):
+        if lab.ram('boxState') == 6: break
+        lab.press('A', 6)
+    if lab.ram('boxState') != 6: break
+    if q == 0: lab.screenshot(f'{out}/61-quiz.png')
+    for _ in range(3):
+        if lab.ram('askCur') >= lab.ram('quizAns'): break
+        lab.press('DOWN', 4)
+    lab.press('A', 10)
+lab.run(None, 20)
+lab.screenshot(f'{out}/62-gold-paddle.png')
+check(lab.ram('pins', 2) == (1 << len(CH)) - 1 and lab.ram('goldPaddle'), 'three right answers: the last pin, and the paddle turns gold')
+close_box()
+
+# Stage 10, part 2: minigames.
+def play_mini(k, step, limit=4000):
+    """Accept person k's minigame and run step() each frame until it's over; True if it started."""
+    if not accept(k, 3): return False
+    for _ in range(30):
+        if lab.ram('mgKind') and lab.ram('miniOn'): break
+        lab.run(None, 1)
+    if not lab.ram('miniOn'): return False
+    for f in range(limit):
+        if not lab.ram('miniOn'): break
+        step(f)
+    lab.run(None, 70)   # (back to the street: a map load)
+    return True
+# Batting practice: the Ballplayer, now that his pin is won. Swing on time.
+travel(lab, N("Scott's Addition"), close_box)
+coins = lab.ram('coins', 2)
+shot = set()
+def bat(f):
+    if lab.ram('mgBallOn') and not lab.ram('mgRes') and lab.ram('mgAge') + 1 == lab.ram('mgArr'):
+        lab.press('A', 1)
+        if 'swing' not in shot: lab.run(None, 6); lab.screenshot(f'{out}/63-batting.png'); shot.add('swing')
+    else: lab.run(None, 1)
+check(play_mini(1, bat) and lab.ram('mgKind') == 1, 'the Ballplayer pitches: batting practice')
+check(lab.ram('mgHits') == 10 and lab.ram('mgHr') == 10, f"swing on time: {lab.ram('mgHits')} hits, {lab.ram('mgHr')} home runs")
+check(lab.map == N("Scott's Addition") and lab.ram('boxState') and lab.ram('coins', 2) == min(999, coins + 70) and lab.ram('miniBest', 2, False, 1) == 20,
+      f"back on the street, 70 coins richer ({coins} -> {lab.ram('coins', 2)})")
+lab.screenshot(f'{out}/64-batting-result.png')
+close_box()
+# Tennis at the Ashe Center: follow the ball, swing as it arrives; then let three go by.
+travel(lab, N('Arthur Ashe Boulevard'), close_box)
+coins = lab.ram('coins', 2)
+def tennis(f):
+    if lab.ram('mgRet') >= 5 or not lab.ram('mgBallOn') or lab.ram('mgBallUp'):
+        lab.run(None, 1); return
+    bx, by, x = lab.ram('mgBx', 2, True) >> 6, lab.ram('mgBy', 2, True) >> 6, lab.ram('mgHx', 2, True) >> 4
+    if abs(by - 148) < 6 and abs(bx - x) < 14:
+        lab.press('A', 1)
+        if 'tennis' not in shot: lab.run(None, 4); lab.screenshot(f'{out}/65-tennis.png'); shot.add('tennis')
+    elif bx > x + 4: lab.run('RIGHT', 1)
+    elif bx < x - 4: lab.run('LEFT', 1)
+    else: lab.run(None, 1)
+check(play_mini(2, tennis), 'the Tennis Coach starts the ball machine')
+check(lab.ram('mgRet') == 5 and lab.ram('mgMiss') == 3, f"five returns, then three misses ({lab.ram('mgRet')}, {lab.ram('mgMiss')})")
+check(lab.ram('coins', 2) == min(999, coins + 5), f"five coins ({coins} -> {lab.ram('coins', 2)})")
+close_box()
+# Rams free throws in the Siegel Center: shoot when the needle is in the middle.
+travel(lab, N('VCU & Court End'), close_box)
+walk((7, 7)); lab.run('UP', 30); lab.run(None, 60); close_box()
+check(lab.map == N('The Siegel Center'), f'into the Siegel Center (map {lab.map})')
+coins = lab.ram('coins', 2)
+def hoops(f):
+    i = (lab.ram('mgPh', 2) >> 8) & 63
+    if not lab.ram('mgBallOn') and i in (0, 32):
+        lab.press('A', 1)
+        if 'hoops' not in shot: lab.run(None, 20); lab.screenshot(f'{out}/66-free-throw.png'); shot.add('hoops')
+    else: lab.run(None, 1)
+check(play_mini(0, hoops), 'the Rams Coach hands you the ball')
+check(lab.ram('mgMade') >= 8, f"{lab.ram('mgMade')} of 10 from the line")
+check(lab.ram('coins', 2) == min(999, coins + 2 * lab.ram('mgMade')), f"two coins a basket ({coins} -> {lab.ram('coins', 2)})")
+close_box()
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()   # back out to VCU
+
+# The scrolling-road races: steer around what's ahead.
+def racer(f):
+    if f % 2:
+        lab.run(None, 1); return
+    y, x, n = lab.ram('rcY', 2), lab.ram('rcX', 2, True) >> 4, lab.ram('rcN')
+    target = 128
+    for i in range(n):
+        sy = lab.ram('obsY', 2, False, i) - y
+        if 100 < sy < 220 and not lab.ram('obsHit', 1, False, i):
+            ox = lab.ram('obsX', 1, False, i)
+            target = ox + 34 if ox < 128 else ox - 34
+            break
+    lab.run('RIGHT' if target > x + 2 else 'LEFT' if target < x - 2 else None, 2)
+MEDAL = ['gold', 'silver', 'bronze']
+for name, place, k, shotname in (('Derby Kid', 'Church Hill', 2, '67-soapbox-derby'), ('Trail Cyclist', 'Rocketts Landing', 2, '68-capital-trail'),
+                                 ('Race Official', 'Richmond Raceway', 0, '69-raceway')):
+    travel(lab, N(place), close_box)
+    coins = lab.ram('coins', 2)
+    shot.discard('race')
+    def step(f):
+        if f == 240: lab.screenshot(f'{out}/{shotname}.png')
+        racer(f)
+    started = play_mini(k, step, 6000)
+    medal = lab.ram('rcMedal')
+    won = {0: 20, 1: 10, 2: 5}.get(medal, 0)
+    check(started and lab.ram('rcY', 2) >= lab.ram('rcLen', 2), f"{name}: down the course in {lab.ram('rcTime', 2) / 60:.1f} s, a {MEDAL[medal] if medal < 3 else '?'} medal")
+    check(min(999, coins + won) <= lab.ram('coins', 2) <= min(999, coins + won + 3) and lab.ram('miniBest', 2, False, lab.ram('mgKind')) == lab.ram('rcTime', 2),
+          f"{won} coins and a best time ({coins} -> {lab.ram('coins', 2)})")
+    close_box()
+
+# Stone House pinball: one coin a game. Flip when the ball comes down to a flipper.
+travel(lab, N('Forest Hill Park'), close_box)
+walk((7, 6)); lab.run('UP', 30); lab.run(None, 60); close_box()
+check(lab.map == N('Stone House Arcade'), f'into the Stone House Arcade (map {lab.map})')
+coins = lab.ram('coins', 2)
+walk((2, 3)); lab.face('up'); lab.press('A', 20)
+for _ in range(30):
+    if lab.ram('boxState') in (0, 6): break
+    lab.press('A', 6)
+check(lab.ram('boxState') == 6 and lab.ram('askKind') == 3, 'a pinball machine: one coin a game')
+lab.press('A', 10)
+for _ in range(30):
+    if lab.ram('miniOn') and lab.ram('mgKind') == 7: break
+    lab.run(None, 1)
+check(lab.ram('miniOn') and lab.ram('coins', 2) == coins - 1, f"in goes the coin ({coins} -> {lab.ram('coins', 2)})")
+flips = 0
+for f in range(8000):
+    if not lab.ram('miniOn'): break
+    if f == 400: lab.screenshot(f'{out}/70-pinball.png')
+    x, y, vy = lab.ram('pbX', 2, True) >> 6, lab.ram('pbY', 2, True) >> 6, lab.ram('pbVY', 2, True)
+    if lab.ram('pbOn') and 160 < y < 184 and vy > 0 and 80 < x < 176:
+        lab.run('B' if x < 128 else 'A', 6); flips += 1
+    else: lab.run(None, 1)
+score = lab.ram('pbScore', 2)
+lab.run(None, 60)
+check(not lab.ram('miniOn') and lab.ram('pbBalls') == 0 and score > 0, f'three balls: {score} points, {flips} flips')
+check(lab.ram('coins', 2) == coins - 1 + score // 500 and lab.ram('boxState'), f"the machine pays a coin per 500 ({lab.ram('coins', 2)} coins)")
+close_box()
+
+# Stage 10, part 3: landmark cards, fishing, frogs.
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()   # out of the arcade
+def ncards(): return bin(lab.ram('cards', 2)).count('1')
+check(ncards() == 5, f'five landmark cards from the five bosses ({ncards()})')
+travel(lab, N('Carytown'), close_box)
+walk((6, 17)); lab.run('UP', 30); lab.run(None, 40); close_box()
+lab.poke('coins', 200, 0); lab.poke('coins', 0, 1)
+walk((8, 5)); lab.face('up'); lab.press('A', 10)
+for idx in (0, 5, 6):   # the Camera, the Fishing Rod, a Landmark Card Pack
+    while lab.ram('shopCur') < idx: lab.press('DOWN', 3)
+    while lab.ram('shopCur') > idx: lab.press('UP', 3)
+    lab.press('A', 60); lab.press('A', 10)
+lab.press('B', 10); close_box()
+check(lab.ram('hasRod') and ncards() == 6 and lab.ram('hasCamera'), f'Carytown Goods sells a Camera, a Fishing Rod and landmark card packs ({ncards()} cards)')
+walk((7, 8)); lab.run('DOWN', 30); lab.run(None, 60); close_box()
+# the camera: a photo of the Byrd Theatre for the album
+menu_pick(12)
+at = carr('photoAt')
+mine = [(at[i + 2] * 2, at[i + 3] * 2) for i in range(0, len(at), 4) if at[i] == lab.map]
+g = lab.solid_grid()
+tx, ty = mine[0]
+spot = min(((x, y) for y in range(22) for x in range(32) if not g[y][x]), key=lambda c: abs(c[0] * 16 + 8 - tx) + abs(c[1] * 16 + 8 - ty))
+walk(spot); lab.press('B', 20)
+lab.screenshot(f'{out}/75-camera.png')
+check(lab.ram('photoGot', 1, False, 0) | lab.ram('photoGot', 1, False, 1) | lab.ram('photoGot', 1, False, 2) | lab.ram('photoGot', 1, False, 3),
+      f'B with the camera by a landmark: a photo for the album (near {spot})')
+close_box()
+for _ in range(6):                       # (a message may still be closing: try until the menu is up)
+    lab.press('START', 10)
+    if lab.ram('boxState') == 5: break
+    close_box(); lab.run(None, 10)
+items = [lab.ram('menuList', 1, False, i) for i in range(lab.ram('menuN'))]
+for _ in range(14):
+    if lab.ram('menuCur') >= len(items) - 1: break
+    lab.press('DOWN', 4)
+lab.press('A', 60)
+lab.screenshot(f'{out}/76-photo-album.png')
+check(lab.ram('miniOn') and items[-1] == 98, 'START, then Photo Album: every landmark, the ones you have taken in colour')
+lab.press('B', 60); close_box()
+check(not lab.ram('miniOn') and lab.map == N('Carytown'), 'B closes the album')
+# the cards in the START menu
+lab.press('START', 10)
+items = [lab.ram('menuList', 1, False, i) for i in range(lab.ram('menuN'))]
+for _ in range(14):
+    if lab.ram('menuCur') >= items.index(99): break
+    lab.press('DOWN', 4)
+lab.press('A', 6)
+check(lab.ram('boxState') == 8, 'START, then Landmark Cards: the collection')
+for _ in range(12):
+    if lab.ram('cards', 2) & (1 << lab.ram('cardCur')): break
+    lab.press('DOWN', 4)
+lab.press('A', 30)
+lab.screenshot(f'{out}/71-landmark-card.png')
+check(lab.ram('boxState') not in (0, 8), 'A reads the card')
+close_box(); lab.press('B', 6); close_box()
+# Fishing in Byrd Park: find the water's edge, cast, wait for the bite, then reel without snapping the line
+travel(lab, N('Byrd Park & Maymont'), close_box)
+menu_pick(11)
+g = lab.solid_grid()
+wram = None
+def cell(x, y):
+    return lab.ram('colRam', 1, False, y * 32 + x)
+spots = [(x, y, d) for y in range(1, 21) for x in range(1, 31) for d, (dx, dy) in (('up', (0, -1)), ('down', (0, 1)), ('left', (-1, 0)), ('right', (1, 0)))
+         if not g[y][x] and cell(x + dx, y + dy) == 12]
+px0, py0 = lab.pos
+spots.sort(key=lambda q: abs(q[0] * 16 + 8 - px0) + abs(q[1] * 16 + 8 - py0))
+caught = 0
+for x, y, d in spots[:6]:
+    try: walk((x, y))
+    except RuntimeError: continue
+    lab.face(d)
+    for _ in range(3):   # a few casts: clear the bait-stealers
+        close_box()
+        lab.press('B', 4)
+        if lab.ram('boxState') != 7: break
+        for f in range(900):
+            ph = lab.ram('fishPh')
+            if lab.ram('boxState') != 7: break
+            if ph == 1: lab.press('A', 1)
+            elif ph == 2 and lab.ram('fishTen', 2) < 60 * 256: lab.press('A', 2)
+            else: lab.run(None, 1)
+            if f == 300: lab.screenshot(f'{out}/72-fishing.png')
+        caught = sum(lab.ram('fishN', 1, False, k) for k in range(5))
+        if caught: break
+    if caught: break
+lab.screenshot(f'{out}/73-a-catch.png')
+check(caught >= 1, f"cast into the lake and reel one in ({[lab.ram('fishN', 1, False, k) for k in range(5)]})")
+close_box()
+# Frogs: out near the water when it rains
+lab.poke('wx', 1); lab.poke('wxK', 255); lab.poke('wxNext', 255)
+got = 0
+frog_map = lab.map
+for t in range(60):
+    lab.run(None, 30)
+    lab.poke('hp', lab.ram('hpMax'))     # (out in the rain at night, the bot doesn't fight back while it hunts frogs)
+    for k in range(10):
+        if lab.ram('pkKind', 1, False, k) == 17:
+            back = lab.pos
+            poke16('px', lab.ram('pkX', 2, True, k)); poke16('py', lab.ram('pkY', 2, True, k)); lab.run(None, 6)
+            poke16('px', back[0]); poke16('py', back[1]); lab.run(None, 2)
+            if lab.ram('boxState'):
+                if lab.ram('frogs') == 1: lab.screenshot(f'{out}/74-a-frog.png')
+                close_box()
+    if lab.ram('frogs') >= 5: break
+check(lab.ram('frogs') >= 5, f"frogs come out in the rain: {lab.ram('frogs')} caught")
+if lab.map != frog_map: travel(lab, frog_map, close_box)
+coins, before = lab.ram('coins', 2), ncards()
+for _ in range(3):
+    talk_to(2)
+    for _ in range(20):
+        if not lab.ram('boxState'): break
+        lab.press('A', 6)
+    if lab.ram('frogsDone'): break
+print('done', lab.ram('frogsDone'), lab.ram('coins',2), coins, ncards(), before, lab.ram('frogs'), lab.map, lab.pos, lab.ram('npcX',2,True,2), lab.ram('npcY',2,True,2))
+lab.screenshot('/tmp/nat.png')
