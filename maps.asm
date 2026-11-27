@@ -2924,12 +2924,26 @@ shops_bin:
 .incbin "data/shops.bin"
 .ends
 
+.section ".bossbg1" superfree
+bossbg1_chr:
+.incbin "data/bossbg1.chr"
+bossbg1_map:
+.incbin "data/bossbg1.map"
+.ends
+
 .section ".boss1" superfree
 boss1_chr:
 .incbin "data/boss1.chr"
 boss1_chrend:
 boss1_pal:
 .incbin "data/boss1.pal"
+.ends
+
+.section ".bossbg2" superfree
+bossbg2_chr:
+.incbin "data/bossbg2.chr"
+bossbg2_map:
+.incbin "data/bossbg2.map"
 .ends
 
 .section ".boss2" superfree
@@ -2940,12 +2954,26 @@ boss2_pal:
 .incbin "data/boss2.pal"
 .ends
 
+.section ".bossbg3" superfree
+bossbg3_chr:
+.incbin "data/bossbg3.chr"
+bossbg3_map:
+.incbin "data/bossbg3.map"
+.ends
+
 .section ".boss3" superfree
 boss3_chr:
 .incbin "data/boss3.chr"
 boss3_chrend:
 boss3_pal:
 .incbin "data/boss3.pal"
+.ends
+
+.section ".bossbg4" superfree
+bossbg4_chr:
+.incbin "data/bossbg4.chr"
+bossbg4_map:
+.incbin "data/bossbg4.map"
 .ends
 
 .section ".boss4" superfree
@@ -2956,6 +2984,13 @@ boss4_pal:
 .incbin "data/boss4.pal"
 .ends
 
+.section ".bossbg5" superfree
+bossbg5_chr:
+.incbin "data/bossbg5.chr"
+bossbg5_map:
+.incbin "data/bossbg5.map"
+.ends
+
 .section ".boss5" superfree
 boss5_chr:
 .incbin "data/boss5.chr"
@@ -2964,12 +2999,26 @@ boss5_pal:
 .incbin "data/boss5.pal"
 .ends
 
+.section ".bossbg6" superfree
+bossbg6_chr:
+.incbin "data/bossbg6.chr"
+bossbg6_map:
+.incbin "data/bossbg6.map"
+.ends
+
 .section ".boss6" superfree
 boss6_chr:
 .incbin "data/boss6.chr"
 boss6_chrend:
 boss6_pal:
 .incbin "data/boss6.pal"
+.ends
+
+.section ".bossbg7" superfree
+bossbg7_chr:
+.incbin "data/bossbg7.chr"
+bossbg7_map:
+.incbin "data/bossbg7.map"
 .ends
 
 .section ".boss7" superfree

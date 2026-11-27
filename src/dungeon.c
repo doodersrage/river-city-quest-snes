@@ -819,49 +819,144 @@ void updBoss(void)
         hurtHeroBy(bx, by, bossState == B_CHARGE || bossState == B_DROP || bossType == BOSS_VAMPIRE ? 2 : 1);
 }
 
+/* ---------- stage 13e: the boss at 96x96 on BG2 ----------
+   Its 48x48 frames through Scale2x would need more sprites and sprite memory than are spare, so, as later SNES games
+   do with big bosses, it's a background: BG2 (4bpp, palette 7, priority high so it stands on the floor, under the
+   hero and the sprites). Its distinct tiles take slots from the map's tile cache when the room loads; its 12x12
+   tilemap sits at the top left of BG2's 32x32 map (VRAM 0x5C00) and BG2's scroll puts it where the boss is. A frame,
+   a turn or the screen's edge rewrites the tilemap (the edge: columns and rows that would wrap round the 256 px
+   map onto the far side of the screen are left out); moving just scrolls. */
+#define VRAM_BG2_MAP 0x5C00
+extern u16 sFree[], stFreeTop;
+extern u8 videoMode;
+u16 bossSlot[200];
+u16 bgBuf[144];          /* the tilemap words, 12 rows of 12 */
+u8 *bgMapData;           /* the boss's frames: 144 tile numbers each (0 empty) */
+u8 bgOn, bgPend, bgVis, bgF, bgFlip;
+u16 bgColMask, bgRowMask;
+s16 bgSx, bgSy;
+static const u16 bgZero[32];
+
+/* from rcqAnim, after the tile cache is set up for the room (forced blank) */
+void bossBgLoad(void)
+{
+    u8 *chr;
+    u8 *pal;
+    u16 n, i, s;
+    bgOn = 0;
+    bgVis = 0;
+    if (!roomBoss)
+    {
+        bgSetDisable(1);
+        return;
+    }
+    if (roomBoss == 1) { chr = (u8 *)&bossbg1_chr; bgMapData = (u8 *)&bossbg1_map; n = BOSSBG1_N; pal = (u8 *)&boss1_pal; }
+    else if (roomBoss == 2) { chr = (u8 *)&bossbg2_chr; bgMapData = (u8 *)&bossbg2_map; n = BOSSBG2_N; pal = (u8 *)&boss2_pal; }
+    else if (roomBoss == 3) { chr = (u8 *)&bossbg3_chr; bgMapData = (u8 *)&bossbg3_map; n = BOSSBG3_N; pal = (u8 *)&boss3_pal; }
+    else if (roomBoss == 4) { chr = (u8 *)&bossbg4_chr; bgMapData = (u8 *)&bossbg4_map; n = BOSSBG4_N; pal = (u8 *)&boss4_pal; }
+    else if (roomBoss == 5) { chr = (u8 *)&bossbg5_chr; bgMapData = (u8 *)&bossbg5_map; n = BOSSBG5_N; pal = (u8 *)&boss5_pal; }
+    else if (roomBoss == 6) { chr = (u8 *)&bossbg6_chr; bgMapData = (u8 *)&bossbg6_map; n = BOSSBG6_N; pal = (u8 *)&boss6_pal; }
+    else { chr = (u8 *)&bossbg7_chr; bgMapData = (u8 *)&bossbg7_map; n = BOSSBG7_N; pal = (u8 *)&boss7_pal; }
+    for (i = 0; i < n; i++)
+    {
+        if (!stFreeTop) break;
+        s = sFree[--stFreeTop];   /* (off the free stack for good: the stream never sees it) */
+        bossSlot[i] = s;
+        dmaCopyVram(chr + (i << 5), VRAM_BG1_CHR + (s << 4), 32);
+    }
+    for (; i < n; i++) bossSlot[i] = 0;
+    dmaCopyCGram(pal, 7 * 16, 16 * 2);
+    bgSetGfxPtr(1, VRAM_BG1_CHR);
+    bgSetMapPtr(1, VRAM_BG2_MAP, SC_32x32);
+    for (i = 0; i < 32; i++) dmaCopyVram((u8 *)bgZero, VRAM_BG2_MAP + (i << 5), 64);
+    bgF = 255;
+    bgOn = 1;
+}
+
+/* in VBlank: the tilemap if it changed, the scroll, and whether BG2 shows */
+void bossBgVBlank(void)
+{
+    u8 r;
+    u8 *src;
+    u16 dst;
+    if (!bgOn) return;
+    if (bgPend)
+    {
+        src = (u8 *)bgBuf;
+        dst = VRAM_BG2_MAP;
+        for (r = 0; r < 12; r++)
+        {
+            dmaCopyVram(src, dst, 24);
+            src += 24;
+            dst += 32;
+        }
+        bgPend = 0;
+    }
+    REG_BG2HOFS = (u8)(-bgSx);
+    REG_BG2HOFS = 0;
+    REG_BG2VOFS = (u8)(-bgSy);
+    REG_BG2VOFS = 0;
+    REG_TM = bgVis ? (videoMode | 2) : (videoMode & ~2);
+}
+
+static void bossBgDraw(u8 f, u8 vis, u8 flip, s16 sx, s16 sy)
+{
+    u16 cm = 0, rm = 0, w;
+    u8 r, c, t;
+    u8 *m;
+    bgVis = vis;
+    if (!vis) return;
+    for (c = 0; c < 12; c++)
+        if (sx + (s16)(c << 3) >= 0 && sx + (s16)(c << 3) + 8 <= 256) cm |= 1 << c;
+    for (r = 0; r < 12; r++)
+        if (sy + (s16)(r << 3) >= -32 && sy + (s16)(r << 3) <= 248) rm |= 1 << r;
+    bgSx = sx;
+    bgSy = sy;
+    if (f == bgF && flip == bgFlip && cm == bgColMask && rm == bgRowMask) return;
+    if (bgPend) return;   /* (the last change hasn't gone over yet: next frame) */
+    bgF = f;
+    bgFlip = flip;
+    bgColMask = cm;
+    bgRowMask = rm;
+    m = bgMapData + f * 144;
+    for (r = 0; r < 12; r++)
+        for (c = 0; c < 12; c++)
+        {
+            t = m[r * 12 + (flip ? 11 - c : c)];
+            w = 0;
+            if (t && (cm & (1 << c)) && (rm & (1 << r))) w = bossSlot[t - 1] | (7 << 10) | 0x2000 | (flip ? 0x4000 : 0);
+            bgBuf[r * 12 + c] = w;
+        }
+    bgPend = 1;
+}
+
 void drawBoss(void)
 {
-    u8 k, f, col;
-    u16 id, t;
-    s16 sx, sy, sh;
-    for (k = 0; k < 9; k++)
-    {
-        id = (OAM_BOSS + k) * 4;
-        /* the Wraith is see-through until its orb hits it: drawn every other frame */
-        if (!bossOn || (bossFlash & 2) || (bossType == BOSS_WRAITH && !bossVis && (frameCount & 1)) ||
-            (bossType == BOSS_VAMPIRE && (vampGone || vampSwarm || ((bossT % 170 < 15 || bossT % 170 > 115) && (frameCount & 1)))))
-        {
-            sprHide((id) >> 2);
-            continue;
-        }
-        if (bossType == BOSS_WRAITH)
-            f = (bossVis ? 0 : 2) + ((frameCount >> 3) & 1);
-        else if (bossType == BOSS_RAVEN)
-            f = (frameCount >> 3) & 1;
-        else if (bossType == BOSS_BELL)
-            f = bossState == B_STUN ? 1 : 0;
-        else if (bossType == BOSS_ARUM)
-            f = bossState == B_STUN ? 2 : (frameCount >> 5) & 1;
-        else if (bossType == BOSS_VAMPIRE)
-            f = 0;
-        else if (bossType == BOSS_TURTLE)
-            f = bossState == B_STUN ? 2 + ((frameCount >> 2) & 1) : (frameCount >> (bossState == B_CHARGE ? 1 : 3)) & 1;
-        else
-            f = bossState == B_STUN ? 3 : bossState == B_WIND ? 2 : (bossT >> 3) & 1;
-        t = bossTiles[f * 9 + k];
-        sh = bossState == B_WIND ? ((frameCount >> 1) & 1) * 2 - 1 : 0;
-        /* the turtle's and the Raven's frames face right: mirror the 3x3 grid to face left */
-        col = k % 3;
-        if ((bossType == BOSS_TURTLE || bossType == BOSS_RAVEN || bossType == BOSS_VAMPIRE) && bossFlip) col = 2 - col;
-        sx = SX(bossX >> 4) - 24 + col * 16 + sh;
-        sy = SY(bossY >> 4) - 40 + (k / 3) * 16 - (bossType == BOSS_BELL ? bossZ : 0);
-        if (!t || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
-        {
-            sprHide((id) >> 2);
-            continue;
-        }
-        sprPut((id) >> 2, 1, sx, sy, 2, (bossType == BOSS_TURTLE || bossType == BOSS_RAVEN || bossType == BOSS_VAMPIRE) && bossFlip, t, PAL_BOSS);
-    }
+    u8 k, f, vis, flip;
+    s16 sh;
+    for (k = 0; k < 9; k++) sprHide(OAM_BOSS + k);   /* (the sprite boss of before stage 13e) */
+    if (!bgOn) return;
+    /* the Wraith is see-through until its orb hits it: drawn every other frame */
+    vis = !(!bossOn || (bossFlash & 2) || (bossType == BOSS_WRAITH && !bossVis && (frameCount & 1)) ||
+            (bossType == BOSS_VAMPIRE && (vampGone || vampSwarm || ((bossT % 170 < 15 || bossT % 170 > 115) && (frameCount & 1)))));
+    if (bossType == BOSS_WRAITH)
+        f = (bossVis ? 0 : 2) + ((frameCount >> 3) & 1);
+    else if (bossType == BOSS_RAVEN)
+        f = (frameCount >> 3) & 1;
+    else if (bossType == BOSS_BELL)
+        f = bossState == B_STUN ? 1 : 0;
+    else if (bossType == BOSS_ARUM)
+        f = bossState == B_STUN ? 2 : (frameCount >> 5) & 1;
+    else if (bossType == BOSS_VAMPIRE)
+        f = 0;
+    else if (bossType == BOSS_TURTLE)
+        f = bossState == B_STUN ? 2 + ((frameCount >> 2) & 1) : (frameCount >> (bossState == B_CHARGE ? 1 : 3)) & 1;
+    else
+        f = bossState == B_STUN ? 3 : bossState == B_WIND ? 2 : (bossT >> 3) & 1;
+    sh = bossState == B_WIND ? ((frameCount >> 1) & 1) * 4 - 2 : 0;
+    /* the turtle's, the Raven's and the Vampire's frames face right: mirrored to face left */
+    flip = (bossType == BOSS_TURTLE || bossType == BOSS_RAVEN || bossType == BOSS_VAMPIRE) && bossFlip;
+    bossBgDraw(f, vis, flip, SX(bossX >> 4) - 48 + sh, SY(bossY >> 4) - 80 - (bossType == BOSS_BELL ? bossZ << 1 : 0));
 }
 
 /* ---------- blasting powder (web useItem 'powder' and explode) ---------- */

@@ -818,6 +818,7 @@ void rcqAnim(u8 *frames, u16 first, u16 count)
 {
     animData = frames;
     animFirst = streamPin(first, count); /* stage 13: the animated tiles' own VRAM slots, at the top */
+    bossBgLoad();                        /* stage 13e: a boss's tiles take cache slots too */
     animCount = count;
     animDone = count; /* frame 0 came with the map */
     animFrame = animTimer = animPend = 0;

@@ -47,7 +47,8 @@ void rcqVBlank(void)
     WaitForVBlank();
     if (sLive) streamVBlank(); /* the map's new edge and its scroll first */
     heroVBlank();
-    paddleVBlank();  /* a new frame of the hero, if he changed */
+    paddleVBlank();
+    bossBgVBlank();  /* a new frame of the hero, if he changed */
     npcVBlank();   /* and of one townsperson */
     animVBlank();  /* and some of the animated tiles */
     lightVBlank();

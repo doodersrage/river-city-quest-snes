@@ -971,6 +971,33 @@ def convert_bosses(exp):
     return blobs, pals, defs
 
 
+def convert_boss_bg(exp):
+    """Stage 13e: each boss at 96x96 (Scale2x of its 48x48 frames), drawn on BG2. Per boss: its distinct 8x8 tiles
+    (loaded into the map's tile cache when the room loads) and, per frame, 144 bytes (12x12 tiles, row by row): 0 for
+    empty, else the tile's number from 1. Colours are the boss's sprite palette, loaded as BG palette 7."""
+    d = os.path.join(exp, 'combat')
+    out = []
+    for name in BOSSES:
+        im = Image.open(os.path.join(d, f'{name}.png')).convert('RGBA')
+        nframes = im.width // 48
+        pal = sorted({c15(p) for p in im.getdata() if p[3]})
+        big = scale2x_rgba(im)
+        seen, chr_, mp = {}, [], bytearray()
+        for f in range(nframes):
+            for ty in range(12):
+                for tx in range(12):
+                    idx = tuple(pal.index(c15(p)) + 1 if p[3] else 0
+                                for p in (big.getpixel((f * 96 + tx * 8 + x, ty * 8 + y)) for y in range(8) for x in range(8)))
+                    if not any(idx): mp.append(0); continue
+                    if idx not in seen:
+                        seen[idx] = len(chr_) + 1
+                        chr_.append(tile4bpp(list(idx)))
+                    mp.append(seen[idx])
+        if len(chr_) > 200: raise SystemExit(f'{name}: {len(chr_)} BG tiles')
+        out.append((b''.join(chr_), bytes(mp), len(chr_)))
+    return out
+
+
 # ---------- Stage 9: town life ----------
 # Cars, the Pulse bus and pigeons load into the boss area (cell 32 on) on outdoor maps, which never have a boss.
 TOWN_CELLS = {'car': 0, 'bus': 6, 'sit': 9, 'fly': 10, 'tap': 12, 'melon': 13, 'lure': 14, 'trash': 15, 'flag': 16, 'bang': 18, 'camera': 19}
@@ -1393,6 +1420,8 @@ def main():
         # Stage 13: the map at double size as metatiles; each swap is a cell's other metatile (8 bytes kept per
         # swap in the records below, so their layout stays: the metatile number, then six zeros)
         mfile = os.path.join(exp, m['file'])
+        global MAX_PALS
+        MAX_PALS = 7 if m.get('bossT') in BOSSES else 8   # (stage 13e: a boss room leaves palette 7 to its boss on BG2)
         mp = convert_map2x(mfile, m['w'], m['h'], swaps,
                            alt=os.path.join(exp, m['altFile']) if swaps else None,
                            opened=os.path.join(exp, m['openFile']) if swaps else None,
@@ -1742,7 +1771,15 @@ def main():
             '#define CELL_OPEN 0', '#define CELL_SOLID 1', '#define CELL_DOOR 2', '#define CELL_EXIT 3', '#define CELL_COUNTER 4', '#define CELL_BUSH 5', '#define CELL_POST 6', '#define CELL_LOW 7', '#define CELL_LOCK 8', '#define CELL_BRAZIER 9', '#define CELL_RIVER 10', '#define CELL_SPROUT 11', '#define CELL_WATER 12',
             '#define DOOR_OPEN 0', '#define DOOR_KEYSTONES 1', '#define DOOR_CARKEY 2', '#define DOOR_LATER 3', '']
     bblobs, bpals, bdefs = convert_bosses(exp)
+    BOSS_BG = convert_boss_bg(exp)
     for i, (bb, bp) in enumerate(zip(bblobs, bpals)):
+        bgc, bgm, bgn = BOSS_BG[i]
+        open(os.path.join(out, f'bossbg{i + 1}.chr'), 'wb').write(bgc)
+        open(os.path.join(out, f'bossbg{i + 1}.map'), 'wb').write(bgm)
+        asm += [f'.section ".bossbg{i + 1}" superfree', f'bossbg{i + 1}_chr:', f'.incbin "data/bossbg{i + 1}.chr"',
+                f'bossbg{i + 1}_map:', f'.incbin "data/bossbg{i + 1}.map"', '.ends', '']
+        hdr.append(f'extern char bossbg{i + 1}_chr, bossbg{i + 1}_map;')
+        hdr.append(f'#define BOSSBG{i + 1}_N {bgn}')
         open(os.path.join(out, f'boss{i + 1}.chr'), 'wb').write(bb)
         open(os.path.join(out, f'boss{i + 1}.pal'), 'wb').write(bp)
         asm += [f'.section ".boss{i + 1}" superfree', f'boss{i + 1}_chr:', f'.incbin "data/boss{i + 1}.chr"', f'boss{i + 1}_chrend:',

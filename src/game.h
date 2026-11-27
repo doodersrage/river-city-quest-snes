@@ -49,6 +49,8 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 #define OAM_PADDLE4 63
 #define OBJ_PADDLE2 160 /* its art, streamed: tiles 160-163, 176-179, 192-195, 208-211 */
 void paddleVBlank(void);
+void bossBgLoad(void);
+void bossBgVBlank(void);
 #define OAM_NPCS 16   /* MAX_NPCS */
 #define OAM_ENEMIES 20
 #define OAM_PICKUPS 26

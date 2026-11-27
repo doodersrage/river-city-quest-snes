@@ -531,12 +531,26 @@ extern char shops_bin;
 #define DOOR_CARKEY 2
 #define DOOR_LATER 3
 
+extern char bossbg1_chr, bossbg1_map;
+#define BOSSBG1_N 114
 extern char boss1_chr, boss1_chrend, boss1_pal;
+extern char bossbg2_chr, bossbg2_map;
+#define BOSSBG2_N 111
 extern char boss2_chr, boss2_chrend, boss2_pal;
+extern char bossbg3_chr, bossbg3_map;
+#define BOSSBG3_N 77
 extern char boss3_chr, boss3_chrend, boss3_pal;
+extern char bossbg4_chr, bossbg4_map;
+#define BOSSBG4_N 35
 extern char boss4_chr, boss4_chrend, boss4_pal;
+extern char bossbg5_chr, bossbg5_map;
+#define BOSSBG5_N 28
 extern char boss5_chr, boss5_chrend, boss5_pal;
+extern char bossbg6_chr, bossbg6_map;
+#define BOSSBG6_N 89
 extern char boss6_chr, boss6_chrend, boss6_pal;
+extern char bossbg7_chr, bossbg7_map;
+#define BOSSBG7_N 27
 extern char boss7_chr, boss7_chrend, boss7_pal;
 static const u16 boss1Tile[36] = {0, 384, 386, 388, 390, 392, 394, 396, 398, 0, 384, 386, 388, 390, 392, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452, 454, 456, 458, 460, 388, 462, 392, 394, 480, 398};  /* foreman: frame*9 + cell, 0 = empty */
 static const u16 boss2Tile[36] = {0, 0, 0, 384, 386, 388, 390, 392, 394, 0, 0, 0, 396, 398, 416, 418, 420, 394, 0, 0, 0, 422, 424, 426, 428, 430, 448, 0, 0, 0, 450, 452, 454, 456, 458, 460};  /* turtle: frame*9 + cell, 0 = empty */
