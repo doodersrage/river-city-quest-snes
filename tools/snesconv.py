@@ -619,7 +619,7 @@ def convert_combat(exp):
 
     # Palette 7: paddle, hearts, coins, digits.
     pd = Image.open(os.path.join(d, 'paddles.png')).convert('RGBA')
-    hud = Image.open(os.path.join(d, 'hud.png')).convert('RGBA')
+    hud = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'art', 'hud8.png')).convert('RGBA')   # stage 12: tools/art/hud.py
     p7 = sorted({c15(p) for im in (pd, hud) for p in im.getdata() if p[3]} | {(0, 0, 0), (31, 31, 31)})
     if len(p7) > 15: raise SystemExit(f'palette 7 has {len(p7)} colours')
     ix = lambda p: p7.index(c15(p)) + 1 if p[3] else 0
@@ -642,12 +642,10 @@ def convert_combat(exp):
 
     # 8x8 HUD tiles: heart, half heart, empty heart, coin x2, digits 0-9.
     def hud8(ox):
-        cols = [c for c in range(9) if c != 4]   # 9px hearts -> 8px by dropping the middle column
-        return [[hud.getpixel((ox + c, y)) for c in cols] for y in range(8)]
-    full, empty = hud8(0), hud8(9)
-    half = [r[:4] + e[4:] for r, e in zip(full, empty)]
-    coin0 = [[hud.getpixel((18 + x, y)) for x in range(8)] for y in range(8)]
-    coin1 = [[hud.getpixel((27 + x, y)) for x in range(8)] for y in range(8)]
+        return [[hud.getpixel((ox + x, y)) for x in range(8)] for y in range(8)]
+    full, empty = hud8(0), hud8(8)
+    half = [r[:3] + [r[3] if y < 6 else e[3]] + e[4:] for y, (r, e) in enumerate(zip(full, empty))]   # the left half lit
+    coin0, coin1 = hud8(16), hud8(24)
     hud_tiles = [full, half, empty, coin0, coin1]
     font = Image.open(os.path.join(exp, 'font.png')).convert('L')
     white, black = (255, 255, 255, 255), (0, 0, 0, 255)
