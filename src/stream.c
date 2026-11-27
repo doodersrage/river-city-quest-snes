@@ -16,104 +16,35 @@
 #define SLOTS 1024
 #define LW 33
 #define LH 29
-#define UPQ 72
-#define WRQ 72
+#define UPQ 96
 
-extern u16 sGrid[], sSlotOf[], sRef[], sFree[];
-extern u16 upAddr[], upDst[], wrAddr[], wrVal[], tsAddr[];
+extern u16 sGrid[], sSlotOf[], sRef[], sFree[], gridRow[];
+extern u16 upAddr[], upDst[], tsAddr[];
 extern u8 upBank[], tsBank[];
-extern u16 upN, wrN, scrX, scrY;
+extern u16 upN, wrN, scrX, scrY, stFreeTop, stTW, stTH;
 void streamSetTs(u8 k, u8 *chunk);
+void streamSetMeta(u8 *meta);
 void streamVBlank(void);
+/* (src/streamvb.asm) n tiles from (tx, ty) stepping (dx, dy): put 1 loads them, 0 drops them */
+void stLine(u16 tx, u16 ty, u16 dx, u16 dy, u16 n, u8 put);
 
-u8 *sMeta;
-u16 sTW, sTH;   /* map size in tiles */
-u8 sCW;         /* and its width in cells */
+u8 sCW;         /* the map's width in cells */
 u16 sL, sT;     /* the loaded area's top-left tile */
 u8 sLive;       /* the ring holds the loaded area (off between maps and in the minigames) */
-u16 sFreeTop;
-u8 sBlank;      /* forced blank: a full queue is written out at once */
-
-static void flushNow(void)
-{
-    streamVBlank();
-}
-
-static u16 tileWord(u16 tx, u16 ty)
-{
-    u16 m = sGrid[(ty >> 2) * sCW + (tx >> 2)];
-    u8 *p = sMeta + (m << 5) + (((ty & 3) << 2) + (tx & 3)) * 2;
-    return p[0] | (p[1] << 8);
-}
+u8 sBlank;      /* forced blank */
 
 static void queueUp(u16 id, u16 slot)
 {
     u16 n = upN;
     if (n >= UPQ)
     {
-        if (!sBlank) return; /* (can't happen: a frame loads a column and a row at most) */
-        flushNow();
+        streamVBlank();
         n = 0;
     }
     upAddr[n] = tsAddr[id >> 10] + ((id & 1023) << 5);
     upBank[n] = tsBank[id >> 10];
     upDst[n] = VRAM_BG1_CHR + (slot << 4);
     upN = n + 1;
-}
-
-static void queueWr(u16 addr, u16 v)
-{
-    u16 n = wrN;
-    if (n >= WRQ)
-    {
-        if (!sBlank) return;
-        flushNow();
-        n = 0;
-    }
-    wrAddr[n] = addr;
-    wrVal[n] = v;
-    wrN = n + 1;
-}
-
-/* a map word -> the tilemap word, caching its tile */
-static u16 slotFor(u16 w)
-{
-    u16 id = w & 0x7FF, s = sSlotOf[id];
-    if (!s)
-    {
-        if (!sFreeTop) return 0;
-        s = sFree[--sFreeTop];
-        sSlotOf[id] = s;
-        queueUp(id, s);
-    }
-    sRef[s]++;
-    return s | ((w >> 1) & 0x1C00) | (w & 0xC000);
-}
-
-static void slotDrop(u16 w)
-{
-    u16 id = w & 0x7FF, s = sSlotOf[id];
-    if (!s) return;
-    if (--sRef[s] == 0)
-    {
-        sSlotOf[id] = 0;
-        sFree[sFreeTop++] = s;
-    }
-}
-
-static u16 ringAddr(u16 tx, u16 ty)
-{
-    return VRAM_BG1_MAP + ((ty & 32) << 6) + ((tx & 32) << 5) + ((ty & 31) << 5) + (tx & 31);
-}
-
-static void putTile(u16 tx, u16 ty)
-{
-    queueWr(ringAddr(tx, ty), (tx < sTW && ty < sTH) ? slotFor(tileWord(tx, ty)) : 0);
-}
-
-static void dropTile(u16 tx, u16 ty)
-{
-    if (tx < sTW && ty < sTH) slotDrop(tileWord(tx, ty));
 }
 
 /* ---- from the map loader ---- */
@@ -125,15 +56,16 @@ void streamInit(u8 *ts0, u8 *ts1, u8 *meta, u8 *grid, u8 w, u8 h)
     sLive = 0;
     streamSetTs(0, ts0);
     streamSetTs(1, ts1);
-    sMeta = meta;
+    streamSetMeta(meta);
     sCW = w;
-    sTW = (u16)w << 2;
-    sTH = (u16)h << 2;
+    stTW = (u16)w << 2;
+    stTH = (u16)h << 2;
     for (i = 0; i < n; i++) sGrid[i] = grid[i * 2] | (grid[i * 2 + 1] << 8);
+    for (i = 0; i < 64; i++) gridRow[i] = i * (u16)w * 2;
     for (i = 0; i < 2048; i++) sSlotOf[i] = 0;
     for (i = 0; i < SLOTS; i++) sRef[i] = 0;
     upN = wrN = 0;
-    sFreeTop = 0;
+    stFreeTop = 0;
 }
 
 /* the animated tiles (ids first.. first+count-1) live in the top slots for good; the rest are the cache.
@@ -149,22 +81,24 @@ u16 streamPin(u16 first, u16 count)
         sRef[s0 + i] = 0x4000;
         queueUp(first + i, s0 + i);
     }
-    sFreeTop = 0;
-    for (i = s0 - 1; i > 0; i--) sFree[sFreeTop++] = i;   /* slot 0 stays blank */
+    for (i = 0; i + 1 < s0; i++) sFree[i] = s0 - 1 - i;
+    stFreeTop = s0 - 1;   /* slot 0 stays blank */
     return s0;
 }
 
 /* forced blank: the whole loaded area, from the camera */
 void streamFull(void)
 {
-    u16 x, y;
+    u16 y;
     sBlank = 1;
     /* (anything still loaded from before is forgotten: refcounts start from the pins) */
     sL = camX >> 2;
     sT = camY >> 2;
     for (y = 0; y < LH; y++)
-        for (x = 0; x < LW; x++) putTile(sL + x, sT + y);
-    flushNow();
+    {
+        stLine(sL, sT + y, 1, 0, LW, 1);
+        streamVBlank();   /* (a row at a time: the queues hold 96) */
+    }
     scrX = camX << 1;
     scrY = camY << 1;
     sLive = 1;   /* (sBlank stays on until the first scrolled frame: the room's chests and doors are set up meanwhile) */
@@ -173,58 +107,58 @@ void streamFull(void)
 /* each frame: a column and a row at most */
 void streamUpdate(void)
 {
-    u16 i, nl = camX >> 2, nt = camY >> 2;
+    u16 nl = camX >> 2, nt = camY >> 2;
     sBlank = 0;
     if (nl > sL)
     {
-        for (i = 0; i < LH; i++) dropTile(sL, sT + i);
+        stLine(sL, sT, 0, 1, LH, 0);
         sL++;
-        for (i = 0; i < LH; i++) putTile(sL + LW - 1, sT + i);
+        stLine(sL + LW - 1, sT, 0, 1, LH, 1);
     }
     else if (nl < sL)
     {
-        for (i = 0; i < LH; i++) dropTile(sL + LW - 1, sT + i);
+        stLine(sL + LW - 1, sT, 0, 1, LH, 0);
         sL--;
-        for (i = 0; i < LH; i++) putTile(sL, sT + i);
+        stLine(sL, sT, 0, 1, LH, 1);
     }
     if (nt > sT)
     {
-        for (i = 0; i < LW; i++) dropTile(sL + i, sT);
+        stLine(sL, sT, 1, 0, LW, 0);
         sT++;
-        for (i = 0; i < LW; i++) putTile(sL + i, sT + LH - 1);
+        stLine(sL, sT + LH - 1, 1, 0, LW, 1);
     }
     else if (nt < sT)
     {
-        for (i = 0; i < LW; i++) dropTile(sL + i, sT + LH - 1);
+        stLine(sL, sT + LH - 1, 1, 0, LW, 0);
         sT--;
-        for (i = 0; i < LW; i++) putTile(sL + i, sT);
+        stLine(sL, sT, 1, 0, LW, 1);
     }
     scrX = camX << 1;
     scrY = camY << 1;
 }
 
 /* a cell changes (a chest opens, a bush is cut, a door unlocks): its metatile, and its tiles if loaded */
+static void cellRows(u16 x0, u16 y0, u8 put)
+{
+    u16 a = x0, b = x0 + 4, y;
+    if (a < sL) a = sL;
+    if (b > sL + LW) b = sL + LW;
+    if (a >= b) return;
+    for (y = y0; y < y0 + 4; y++)
+        if (y >= sT && y < sT + LH) stLine(a, y, 1, 0, b - a, put);
+}
+
 void streamCell(u8 cx, u8 cy, u16 meta)
 {
-    u16 tx, ty, x0 = (u16)cx << 2, y0 = (u16)cy << 2;
-    u8 i, j, live = sLive;
-    if (live)
-        for (j = 0; j < 4; j++)
-            for (i = 0; i < 4; i++)
-            {
-                tx = x0 + i;
-                ty = y0 + j;
-                if (tx >= sL && tx < sL + LW && ty >= sT && ty < sT + LH) dropTile(tx, ty);
-            }
+    u16 x0 = (u16)cx << 2, y0 = (u16)cy << 2;
+    u8 live = sLive;
+    if (live) cellRows(x0, y0, 0);
     sGrid[cy * sCW + cx] = meta;
     if (live)
-        for (j = 0; j < 4; j++)
-            for (i = 0; i < 4; i++)
-            {
-                tx = x0 + i;
-                ty = y0 + j;
-                if (tx >= sL && tx < sL + LW && ty >= sT && ty < sT + LH) putTile(tx, ty);
-            }
+    {
+        cellRows(x0, y0, 1);
+        if (sBlank) streamVBlank();
+    }
 }
 
 /* the minigames, album and title use BG1 their own way */

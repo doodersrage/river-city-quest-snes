@@ -8,8 +8,8 @@
 
 .include "hdr.asm"
 
-.define UPQ 72      ; tiles a VBlank (a column and a row of new tiles at worst: 29 + 33)
-.define WRQ 72      ; tilemap words a VBlank
+.define UPQ 96      ; tiles a VBlank (a column and a row of new tiles at worst: 29 + 33, and a changed cell)
+.define WRQ 96      ; tilemap words a VBlank
 
 .BASE $00
 .RAMSECTION ".streamram" BANK $7F SLOT 3
@@ -28,6 +28,24 @@ tsAddr   DSB 4           ; the tile set's two 32 KB chunks: address in bank
 tsBank   DSB 2           ; and bank
 scrX     DSB 2           ; BG1 scroll to set in the next VBlank
 scrY     DSB 2
+; stLine's state (kept here, all reached with long addressing while DB holds the metatiles' bank)
+stTX     DSB 2
+stTY     DSB 2
+stDX     DSB 2
+stDY     DSB 2
+stN      DSB 2
+stPut    DSB 2
+stW      DSB 2
+stID     DSB 2
+stSlot   DSB 2
+stTmp    DSB 2
+stTmp2   DSB 2
+stMetaAddr DSB 2         ; the metatile table: address in its bank
+stMetaBank DSB 2         ; and the bank
+stTW     DSB 2           ; the map's size in tiles
+stTH     DSB 2
+stFreeTop DSB 2
+gridRow  DSB 64*2        ; byte offset of each row of cells in sGrid
 .ENDS
 
 .ifdef FASTROM
@@ -37,6 +55,300 @@ scrY     DSB 2
 .endif
 
 .SECTION ".stream_text" SUPERFREE
+
+;---------------------------------------------------------------------------------
+; void streamSetMeta(u8 *meta)  -- where the metatile table is
+streamSetMeta:
+    php
+    rep #$20
+    lda 5,s
+    sta.l stMetaAddr
+    lda 7,s
+    and.w #$00FF
+    sta.l stMetaBank
+    plp
+    rtl
+
+;---------------------------------------------------------------------------------
+; void stLine(u16 tx, u16 ty, u16 dx, u16 dy, u16 n, u8 put)
+; n tiles from (tx, ty), stepping (dx, dy): put = 1 loads each (caches its tile, queues its tilemap word), 0 drops
+; it (one use less of its slot; a slot nobody uses goes back on the free stack). Tiles outside the map load as 0.
+stLine:
+    php
+    phb
+    rep #$30
+    lda 6,s
+    sta.l stTX
+    lda 8,s
+    sta.l stTY
+    lda 10,s
+    sta.l stDX
+    lda 12,s
+    sta.l stDY
+    lda 14,s
+    sta.l stN
+    lda 16,s
+    and.w #$00FF
+    sta.l stPut
+    sep #$20
+    lda.l stMetaBank
+    pha
+    plb                     ; DB = the metatiles' bank
+    rep #$20
+stLoop:
+    lda.l stN
+    bne stGo
+    jmp stEnd
+stGo:
+    dec a
+    sta.l stN
+    lda.l stTX
+    cmp.l stTW
+    bcc stInX
+    jmp stOut
+stInX:
+    lda.l stTY
+    cmp.l stTH
+    bcc stIn
+    jmp stOut
+stIn:
+    ; the cell's metatile: sGrid[gridRow[ty >> 2] + (tx >> 2) * 2]
+    lda.l stTY
+    lsr a
+    lsr a
+    asl a
+    tax
+    lda.l gridRow,x
+    sta.l stTmp
+    lda.l stTX
+    lsr a
+    lsr a
+    asl a
+    clc
+    adc.l stTmp
+    tax
+    lda.l sGrid,x
+    asl a
+    asl a
+    asl a
+    asl a
+    asl a
+    sta.l stTmp             ; metatile * 32
+    lda.l stTY
+    and.w #3
+    asl a
+    asl a
+    sta.l stTmp2
+    lda.l stTX
+    and.w #3
+    clc
+    adc.l stTmp2
+    asl a
+    clc
+    adc.l stTmp
+    clc
+    adc.l stMetaAddr
+    tay
+    lda.w $0000,y           ; the map word
+    sta.l stW
+    and.w #$07FF
+    sta.l stID
+    asl a
+    tax                     ; X = tile * 2
+    lda.l stPut
+    bne stPutOne
+    jmp stDropOne
+stPutOne:
+    lda.l sSlotOf,x
+    bne stHave
+    lda.l stFreeTop
+    bne stAlloc
+    jmp stOut               ; (no slot left: draw the blank tile)
+stAlloc:
+    dec a
+    sta.l stFreeTop
+    phx
+    asl a
+    tax
+    lda.l sFree,x
+    plx
+    sta.l sSlotOf,x
+    sta.l stSlot
+    jsr stQueueUp
+    lda.l stSlot
+stHave:
+    sta.l stSlot
+    asl a
+    tax
+    lda.l sRef,x
+    inc a
+    sta.l sRef,x
+    lda.l stW
+    lsr a
+    and.w #$1C00
+    ora.l stSlot
+    sta.l stTmp
+    lda.l stW
+    and.w #$C000
+    ora.l stTmp
+    bra stWrite
+stOut:
+    lda.l stPut
+    beq stNext
+    lda.w #0
+stWrite:
+    sta.l stTmp
+    jsr stQueueWr
+stNext:
+    lda.l stTX
+    clc
+    adc.l stDX
+    sta.l stTX
+    lda.l stTY
+    clc
+    adc.l stDY
+    sta.l stTY
+    jmp stLoop
+stDropOne:
+    lda.l sSlotOf,x
+    beq stNext
+    sta.l stSlot
+    phx
+    asl a
+    tax
+    lda.l sRef,x
+    dec a
+    sta.l sRef,x
+    bne stKeep
+    plx
+    lda.w #0
+    sta.l sSlotOf,x
+    lda.l stFreeTop
+    asl a
+    tax
+    lda.l stSlot
+    sta.l sFree,x
+    lda.l stFreeTop
+    inc a
+    sta.l stFreeTop
+    bra stNext
+stKeep:
+    plx
+    bra stNext
+stEnd:
+    plb
+    plp
+    rtl
+
+; queue the upload of tile stID into slot stSlot
+stQueueUp:
+    lda.l upN
+    cmp.w #UPQ
+    bcs stQUFull
+    asl a
+    tax
+    lda.l stID
+    and.w #$03FF
+    asl a
+    asl a
+    asl a
+    asl a
+    asl a
+    sta.l stTmp2
+    lda.l stID
+    and.w #$0400
+    beq stQU0
+    lda.l tsAddr+2
+    clc
+    adc.l stTmp2
+    sta.l upAddr,x
+    phx
+    txa
+    lsr a
+    tax
+    sep #$20
+    lda.l tsBank+1
+    sta.l upBank,x
+    rep #$20
+    plx
+    bra stQUDst
+stQU0:
+    lda.l tsAddr
+    clc
+    adc.l stTmp2
+    sta.l upAddr,x
+    phx
+    txa
+    lsr a
+    tax
+    sep #$20
+    lda.l tsBank
+    sta.l upBank,x
+    rep #$20
+    plx
+stQUDst:
+    lda.l stSlot
+    asl a
+    asl a
+    asl a
+    asl a
+    sta.l upDst,x
+    lda.l upN
+    inc a
+    sta.l upN
+stQUFull:
+    rts
+
+; queue the tilemap word stTmp for tile (stTX, stTY): its place in the 64x64 ring at $4000
+stQueueWr:
+    lda.l wrN
+    cmp.w #WRQ
+    bcs stQWFull
+    asl a
+    tax
+    lda.l stTY
+    and.w #32
+    asl a
+    asl a
+    asl a
+    asl a
+    asl a
+    asl a
+    sta.l stTmp2
+    lda.l stTX
+    and.w #32
+    asl a
+    asl a
+    asl a
+    asl a
+    asl a
+    clc
+    adc.l stTmp2
+    sta.l stTmp2
+    lda.l stTY
+    and.w #31
+    asl a
+    asl a
+    asl a
+    asl a
+    asl a
+    clc
+    adc.l stTmp2
+    sta.l stTmp2
+    lda.l stTX
+    and.w #31
+    clc
+    adc.l stTmp2
+    clc
+    adc.w #$4000
+    sta.l wrAddr,x
+    lda.l stTmp
+    sta.l wrVal,x
+    lda.l wrN
+    inc a
+    sta.l wrN
+stQWFull:
+    rts
 
 ;---------------------------------------------------------------------------------
 ; void streamSetTs(u8 k, u8 *chunk)  -- where chunk k (0 or 1) of the tile set is
