@@ -184,26 +184,49 @@ def cluster_palettes(tiles, iters=10):
     return out_pals, res
 
 
-def convert_bg(path, extra=(), flip_dedup=True):
+ANIM_MAX = 160     # animated tiles a map may have (four frames each; the ROM copies 32 a VBlank)
+LAST_ANIM = None   # (first tile, count, four frames of tile data) for the last convert_bg call
+
+
+def convert_bg(path, extra=(), flip_dedup=True, frames=()):
     """Tiles, 64x64 tilemap and palettes for one map. Tile 0 is left blank (colour 0, so the
     backdrop shows) for the area outside rooms smaller than the screen. `extra` is a list of
     8x8 tiles (64 15-bit colours each) to add with the same palettes, e.g. opened chests;
     their tilemap entries are returned in the same order."""
+    global LAST_ANIM
+    LAST_ANIM = None
     src = Image.open(path).convert('RGB')
+    # Stage 12: the animation frames (water, flames) go through the same colour reduction, stacked under the map
+    fims = [Image.open(f).convert('RGB') for f in frames if os.path.exists(f)]
+    if len(fims) != 3 or any(f.size != src.size for f in fims): fims = []
+    W0, H0 = src.size
+    if fims:
+        stack = Image.new('RGB', (W0, H0 * 4))
+        for k, f in enumerate([src] + fims): stack.paste(f, (0, H0 * k))
+        src = stack
+    def split(im):
+        if not fims: return tiles_of(im)
+        parts = [tiles_of(im.crop((0, H0 * k, W0, H0 * (k + 1)))) for k in range(4)]
+        return [p[0] for p in parts], parts[0][1], parts[0][2]
+    def joined(fr):   # for choosing palettes: an animated tile needs the colours of all its frames
+        if not fims: return fr
+        return [f0 if f0 == f1 == f2 == f3 else f0 + f1 + f2 + f3 for f0, f1, f2, f3 in zip(*fr)]
     result = None
-    for n in (128,):
-        im = src if n == 128 and len({c15(c) for _, c in src.getcolors(1 << 24)}) <= 120 else reduce_colors(src, n)
-        tiles, tw, th = tiles_of(im)
-        r = pack_palettes(tiles, allow_remap=False)
-        if r:
-            result = (tiles, tw, th, r); break
+    im = src if len({c15(c) for _, c in src.getcolors(1 << 24)}) <= 120 else None
+    if im:
+        fr, tw, th = split(im)
+        r = pack_palettes(joined(fr), allow_remap=False)
+        if r: result = (fr, tw, th, r)
     if not result:
         # too many colour combinations to pack exactly (the stage 12 shaded art, on most maps): cluster instead,
         # from the art's own colours (64 at most, so the k-means stays quick)
         im = src if len({c15(c) for _, c in src.getcolors(1 << 24)}) <= 64 else reduce_colors(src, 64)
-        tiles, tw, th = tiles_of(im)
-        result = (tiles, tw, th, cluster_palettes(tiles))
-    tiles, tw, th, (pals, assign) = result
+        fr, tw, th = split(im)
+        result = (fr, tw, th, cluster_palettes(joined(fr)))
+    fr, tw, th, (pals, assign) = result
+    tiles = fr[0] if fims else fr
+    animated = [i for i in range(len(tiles)) if fims and not (fr[0][i] == fr[1][i] == fr[2][i] == fr[3][i])]
+    if len(animated) > 4 * ANIM_MAX: animated = []   # (a map that changes everywhere: keep it still)
 
     chr_data, lookup = [bytes(32)], {}
 
@@ -225,14 +248,31 @@ def convert_bg(path, extra=(), flip_dedup=True):
         n, hf, vf = add(idx)
         return n | (pi << 10) | (hf << 14) | (vf << 15)
 
+    def ix(t, pal):
+        return [pal.index(c) + 1 if c in pal else nearest(c, pal) + 1 for c in t]
+    anim_set = set(animated)
     entries = []
-    for t, pi in zip(tiles, assign):
-        pal = pals[pi]
-        entries.append(entry([pal.index(c) + 1 if c in pal else nearest(c, pal) + 1 for c in t], pi))
+    for i, (t, pi) in enumerate(zip(tiles, assign)):
+        entries.append(None if i in anim_set else entry(ix(t, pals[pi]), pi))
     extra_entries = []
     for t in extra:
         pi = min(range(len(pals)), key=lambda i: sum(min(dist(c, q) for q in pals[i]) for c in t))
         extra_entries.append(entry([nearest(c, pals[pi]) + 1 for c in t], pi))
+    # animated tiles last, one slot per different four-frame tile, so the ROM can rewrite them as one block
+    if animated:
+        first, slots, frames_data = len(chr_data), {}, [[], [], [], []]
+        for i in animated:
+            pal = pals[assign[i]]
+            key = (assign[i],) + tuple(tuple(ix(fr[k][i], pal)) for k in range(4))
+            if key not in slots:
+                if len(slots) >= ANIM_MAX:   # out of slots: this one stays still (frame 0)
+                    entries[i] = entry(list(key[1]), assign[i]); continue
+                slots[key] = len(chr_data)
+                chr_data.append(tile4bpp(list(key[1])))
+                for k in range(4): frames_data[k].append(tile4bpp(list(key[1 + k])))
+            entries[i] = slots[key] | (assign[i] << 10)
+        if slots:
+            LAST_ANIM = (first, len(slots), b''.join(b''.join(f) for f in frames_data))
     if len(chr_data) > MAX_TILES:
         raise SystemExit(f'{path}: {len(chr_data)} tiles, over the {MAX_TILES} limit')
 
@@ -1123,6 +1163,7 @@ def main():
     area_id = {a: i + 1 for i, a in enumerate(dungeon_areas)}   # 0 = not a dungeon
     link_flag = {}
     pickup_gid = {}
+    map_anim = {}   # stage 12: map -> (first animated tile, count, frames)
     items_list = GIFT_ITEMS
 
     asm = ['.include "hdr.asm"', '']
@@ -1160,7 +1201,9 @@ def main():
                         extra_tiles.append([c15(imgs[key].getpixel((x0 + x, y0 + y))) for y in range(8) for x in range(8)])
         def words(k):
             return b''.join(bytes((e & 0xFF, e >> 8)) for e in open_entries[k * 4:k * 4 + 4])
-        chr_, tm, pal, nt, npal, open_entries = convert_bg(os.path.join(exp, m['file']), extra_tiles)
+        mfile = os.path.join(exp, m['file'])
+        chr_, tm, pal, nt, npal, open_entries = convert_bg(mfile, extra_tiles, frames=[mfile[:-4] + f'.f{k}.png' for k in (1, 2, 3)])
+        anim = LAST_ANIM
         def cell(ch):
             return CELL_BRAZIER if ch in 'jJ' else CELL_BUSH if ch == 'b' else CELL_COUNTER if ch == 'V' else CELL_POST if ch == '+' else \
                 CELL_LOCK if ch == 'L' else CELL_SPROUT if ch == 'z' else CELL_RIVER if ch == '~' else CELL_WATER if ch == 'w' and ch in solid else CELL_LOW if ch == '_' and ch in solid else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
@@ -1260,6 +1303,11 @@ def main():
                 f'm{i}_ene:', f'.incbin "data/m{i}.ene"',
                 f'm{i}_xtr:', f'.incbin "data/m{i}.xtr"', '.ends', '']
         hdr.append(f'extern char m{i}_chr, m{i}_chrend, m{i}_map, m{i}_pal, m{i}_col, m{i}_wld, m{i}_och, m{i}_opl, m{i}_ene, m{i}_xtr;  /* {m["name"]} */')
+        if anim:
+            open(os.path.join(out, f'm{i}.ani'), 'wb').write(anim[2])
+            asm += [f'.section ".map{i}a" superfree', f'm{i}_ani:', f'.incbin "data/m{i}.ani"', '.db 0', '.ends', '']
+            hdr.append(f'extern char m{i}_ani;  /* {anim[1]} animated tiles from tile {anim[0]} */')
+        map_anim[i] = anim
         ax, ay = m['ax'], m['ay']
         for k, (dx, dy) in zip('NSEW', ((0, -1), (0, 1), (1, 0), (-1, 0))):
             if m['ow']: nb[k].append(pos.get((ax + dx, ay + dy), 255))
@@ -1548,10 +1596,13 @@ def main():
 
     # One loader per map so the C side never needs a table of far pointers.
     loader = ['/* Generated by tools/snesconv.py. Do not edit. */', '#include <snes.h>', '#include "maps.h"', '',
-              'extern void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl, u8 *ene, u8 *xtr);', '',
+              'extern void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl, u8 *ene, u8 *xtr);',
+              'extern void rcqAnim(u8 *frames, u16 first, u16 count);', '',
               'void rcqLoadMap(u8 i)', '{', '    switch (i)', '    {']
     for i in range(len(maps)):
-        loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_chrend - &m{i}_chr, &m{i}_map, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl, &m{i}_ene, &m{i}_xtr); break;')
+        a = map_anim.get(i)
+        an = f'rcqAnim(&m{i}_ani, {a[0]}, {a[1]});' if a else 'rcqAnim(0, 0, 0);'
+        loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_chrend - &m{i}_chr, &m{i}_map, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl, &m{i}_ene, &m{i}_xtr); {an} break;')
     loader += ['    }', '}', '']
     loader += convert_minis(exp, out, asm, hdr, maps)
 

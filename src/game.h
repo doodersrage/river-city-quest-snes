@@ -269,6 +269,9 @@ void rcqNmi(void);
 void heroFrame(u8 f);
 void heroVBlank(void);
 void npcVBlank(void);
+void animVBlank(void);
+void animStop(void);
+void rcqAnim(u8 *frames, u16 first, u16 count);
 void drawHero(void);
 void sprPair(u8 top, u8 bot, s16 x, s16 y, u16 tile, u8 attr); /* src/sprpair.asm: a 16x32 character */
 void runEnding(void);

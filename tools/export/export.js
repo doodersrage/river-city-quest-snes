@@ -81,8 +81,10 @@ const dump = vm.runInContext(`(function(){
       (s.chests||[]).forEach(q=>s.g[q.ty][q.tx]='c');closed=paint();
       (s.chests||[]).forEach(q=>s.g[q.ty][q.tx]='o');opened=paint();
       s.g=keep;}
+    // Stage 12: the animation frames (water, flames, banners), for the tiles the ROM animates
+    const anim=[1,2,3].map(fr=>{try{const a=renderMap(s,fr),o3=g;g=a.getContext('2d');try{drawLandmarks(s,fr);}catch(e){}try{drawDecor(s);}catch(e){}g=o3;return a;}catch(e){return null;}});
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
-      grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,
+      grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,anim,
       solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],lights,lit:!!s.lit,cars:(s.cars||[]).map(c=>({y:c.y,dir:c.dir,kind:c.kind||'car'})),birds:s.birds||[],spots:s.spots||[],murals:s.murals||[],lamps:s.lamps||[],
       pickups:(s.items||[]).filter(it=>['skey','carkey','piece','bib','part'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
       blocks:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='#'?[x,y]:null).filter(Boolean)),
@@ -101,6 +103,7 @@ for (const m of dump) {
   fs.writeFileSync(path.join(OUT, 'maps', safe + '.png'), m.canvas.toBuffer('image/png'));
   if (m.opened) fs.writeFileSync(path.join(OUT, 'maps', safe + '.open.png'), m.opened.toBuffer('image/png'));
   if (m.closed) fs.writeFileSync(path.join(OUT, 'maps', safe + '.alt.png'), m.closed.toBuffer('image/png'));
+  (m.anim || []).forEach((a, i) => { if (a) fs.writeFileSync(path.join(OUT, 'maps', safe + '.f' + (i + 1) + '.png'), a.toBuffer('image/png')); });
   const { canvas, opened, closed, ...meta } = m;
   index.push({ ...meta, file: 'maps/' + safe + '.png', openFile: opened ? 'maps/' + safe + '.open.png' : null,
     altFile: closed ? 'maps/' + safe + '.alt.png' : null });

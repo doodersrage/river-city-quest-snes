@@ -796,6 +796,7 @@ void runAlbum(void)
     u16 pad, pressed, lastPad = 0xFFFF, i;
     u8 k, r, c, n;
     char title[24], *d;
+    animStop();
     mgKind = 0;
     topDirty = msgDirty = topReady = msgReady = 0;
     top[0] = msg[0] = 0;
@@ -1097,6 +1098,7 @@ void runMini(u8 k)
 /* BG1 tiles, the top-left screen of its map and its palettes, in forced blank */
 void rcqMiniUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal)
 {
+    animStop();
     dmaCopyVram(chr, VRAM_BG1_CHR, chrSize);
     dmaCopyVram(map, VRAM_BG1_MAP, 2048);
     dmaCopyCGram(pal, 0, 8 * 16 * 2);
@@ -1105,6 +1107,7 @@ void rcqMiniUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal)
 /* a race course: BG1 tiles, its whole 64x64 map (it loops as it scrolls), palettes, and its sprites at tile 64 */
 void rcqRaceUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *och, u16 ochSize, u8 *opl)
 {
+    animStop();
     dmaCopyVram(chr, VRAM_BG1_CHR, chrSize);
     dmaCopyVram(map, VRAM_BG1_MAP, 64 * 64 * 2);
     dmaCopyCGram(pal, 0, 8 * 16 * 2);

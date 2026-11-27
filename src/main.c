@@ -763,6 +763,59 @@ void heroFrame(u8 f)
     heroPend = 1;
 }
 
+/* Stage 12: animated tiles (water, flames). The converter puts a map's animated tiles last in its tile set and
+   their four frames in ROM; every ANIM_RATE frames the next frame is copied over them, 32 tiles a VBlank. */
+#define ANIM_RATE 10
+#define ANIM_CHUNK 32
+u8 *animData;
+u16 animFirst, animCount, animDone;
+u8 animFrame, animTimer, animPend;
+u8 *animSrc;
+u16 animDst, animLen;
+
+void rcqAnim(u8 *frames, u16 first, u16 count)
+{
+    animData = frames;
+    animFirst = first;
+    animCount = count;
+    animDone = count; /* frame 0 came with the map */
+    animFrame = animTimer = animPend = 0;
+}
+
+/* off while the background holds something else (minigames, the album, the title) */
+void animStop(void)
+{
+    animCount = 0;
+    animPend = 0;
+}
+
+void animTick(void)
+{
+    u16 n;
+    if (!animCount || animPend) return;
+    if (animDone >= animCount)
+    {
+        if (++animTimer < ANIM_RATE) return;
+        animTimer = 0;
+        animFrame = (animFrame + 1) & 3;
+        animDone = 0;
+    }
+    n = animCount - animDone;
+    if (n > ANIM_CHUNK) n = ANIM_CHUNK;
+    animSrc = animData + ((u16)animFrame * animCount + animDone) * 32;
+    animDst = VRAM_BG1_CHR + (animFirst + animDone) * 16;
+    animLen = n * 32;
+    animDone += n;
+    animPend = 1;
+}
+
+void animVBlank(void)
+{
+    if (!animPend) return;
+    dmaCopyVram(animSrc, animDst, animLen);
+    animPend = 0;
+}
+
 /* from rcqVBlank (only scalars and pointers here: the data bank is not ours) */
 void heroVBlank(void)
 {
@@ -1190,6 +1243,7 @@ int main(void)
     {
         frameCount++;
         playTick();
+        animTick();
         /* new presses since our last look (not padsDown, which only holds a press for one frame:
            when a busy frame runs long, that press would be lost) */
         pad = padsCurrent(0);
