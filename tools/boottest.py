@@ -87,8 +87,10 @@ while lab.ram('boxState'):
 check(lab.ram('hpMax') == 6 and 0 < lab.ram('hp') <= 6, f"three hearts in the HUD ({lab.ram('hp')}/6 health after the walk)")
 alive = [k for k in range(lab.ram('enCount')) if lab.enemy(k)['alive']]
 check(len(alive) > 0, f'enemies are out in the Fan ({len(alive)})')
-target = min(alive, key=lambda k: abs(lab.enemy(k)['x'] - lab.pos[0]) + abs(lab.enemy(k)['y'] - lab.pos[1]))
-used = lab.fight(target)
+used = None
+for target in sorted(alive, key=lambda k: abs(lab.enemy(k)['x'] - lab.pos[0]) + abs(lab.enemy(k)['y'] - lab.pos[1])):
+    used = lab.fight(target)     # (one that dodges somewhere we can't reach: try the next)
+    if used is not None: break
 check(used is not None, f'the paddle beats a {["rat","squirrel","goose","scooter","crab","bat","ghost"][lab.enemy(target)["type"]]} ({used} frames)')
 lab.screenshot(f'{out}/4-fight.png')
 for _ in range(4):                     # a rat bumping you cancels the charge: try again
