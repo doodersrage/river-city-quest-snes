@@ -1080,10 +1080,14 @@ void updBlocks(void)
         }
 }
 
+u8 blkShown;   /* blocks were drawn (their slots are weather's outdoors: leave them alone when there are none) */
+
 void drawBlocks(void)
 {
     u8 k, i;
     s16 sx, sy;
+    if (!blkN && !blkShown) return;
+    blkShown = blkN;
     for (k = 0; k < MAX_BLK; k++)
     {
         if (k >= blkN)
