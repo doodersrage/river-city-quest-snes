@@ -601,11 +601,11 @@ static const u8 nbW[MAP_COUNT] = {255, 0, 1, 2, 255, 4, 5, 6, 7, 8, 255, 10, 11,
 #define MAP_START 11  /* The Fan */
 
 extern char mini0_chr, mini0_chrend, mini0_map, mini0_pal;  /* bat: 97 tiles, 8 palettes */
-extern char mini1_chr, mini1_chrend, mini1_map, mini1_pal;  /* hoops: 91 tiles, 8 palettes */
+extern char mini1_chr, mini1_chrend, mini1_map, mini1_pal;  /* hoops: 99 tiles, 8 palettes */
 extern char mini2_chr, mini2_chrend, mini2_map, mini2_pal;  /* tennis: 24 tiles, 1 palettes */
-extern char mini6_chr, mini6_chrend, mini6_map, mini6_pal;  /* pin: 129 tiles, 3 palettes */
-extern char mini10_chr, mini10_chrend, mini10_map, mini10_pal;  /* title: 477 tiles, 7 palettes */
-extern char mini11_chr, mini11_chrend, mini11_map, mini11_pal;  /* name: 402 tiles, 7 palettes */
+extern char mini6_chr, mini6_chrend, mini6_map, mini6_pal;  /* pin: 129 tiles, 8 palettes */
+extern char mini10_chr, mini10_chrend, mini10_map, mini10_pal;  /* title: 487 tiles, 8 palettes */
+extern char mini11_chr, mini11_chrend, mini11_map, mini11_pal;  /* name: 386 tiles, 8 palettes */
 extern char race0_chr, race0_chrend, race0_map, race0_pal, race0_och, race0_ochend, race0_opl;  /* derby: 18 tiles */
 extern char race1_chr, race1_chrend, race1_map, race1_pal, race1_och, race1_ochend, race1_opl;  /* trail: 18 tiles */
 extern char race2_chr, race2_chrend, race2_map, race2_pal, race2_och, race2_ochend, race2_opl;  /* race: 34 tiles */
@@ -627,7 +627,7 @@ static const s8 pinUY[18] = {28, 21, 14, 7, 0, -7, -14, -21, -28, 28, 21, 14, 7,
 static const u8 arcadeAt[2] = {65, 0};  /* map, text */
 extern char album_chr, album_chrend, album_map, album_pal;
 #define PHOTO_COUNT 30
-static const u16 albumBlank[24] = {536, 537, 537, 537, 537, 16920, 538, 539, 540, 541, 539, 16922, 538, 539, 542, 16926, 539, 16922, 33304, 33305, 33305, 33305, 33305, 49688};  /* the placeholder, 6 x 4 tilemap words */
+static const u16 albumBlank[24] = {554, 33240, 33240, 33240, 33240, 16938, 555, 2, 5121, 5121, 2, 16939, 555, 2, 5121, 5121, 2, 16939, 33322, 472, 472, 472, 472, 49706};  /* the placeholder, 6 x 4 tilemap words */
 static const char *const photoCap1[30] = {"The Diamond, home of the Flying", "The old Broad Street department", "", "", "", "", "", "", "The old Capitol Square bell", "", "", "", "", "The granite pyramid in", "", "The power plant ruins on Belle", "", "", "", "The Science Museum in old Broad", "The Virginia Museum of History", "", "The tennis courts on Arthur", "", "Agecroft Hall, shipped from", "The Siegel Center, home of the", "", "", "", ""};
 static const char *const photoCap2[30] = {"Squirrels", "stores", "A bus shelter on Broad Street", "The Hippodrome on Second Street", "St. John's Church on Church Hill", "The Virginia Museum of Fine Arts", "The Byrd Theatre in Carytown", "The Virginia State Capitol", "tower", "Main Street Station", "The 17th Street Market", "The Carillon in Byrd Park", "Maymont House", "Hollywood Cemetery", "President Monroe's tomb", "Isle", "A steamboat at Rocketts Landing", "Forest Hill's Stone House", "An old Forest Hill trolley", "Street Station", "& Culture", "The Sauer's vanilla sign", "Ashe Boulevard", "Richmond Raceway", "England", "Rams", "The John Marshall House", "Sally Bell's Kitchen", "The Leigh Street Armory", "The stage on Brown's Island"};
 static const char *const photoWrap[30] = {"The Diamond, home of the\nFlying Squirrels", "The old Broad Street\ndepartment stores", "A bus shelter on Broad\nStreet", "The Hippodrome on Second\nStreet", "St. John's Church on Church\nHill", "The Virginia Museum of Fine\nArts", "The Byrd Theatre in Carytown", "The Virginia State Capitol", "The old Capitol Square bell\ntower", "Main Street Station", "The 17th Street Market", "The Carillon in Byrd Park", "Maymont House", "The granite pyramid in\nHollywood Cemetery", "President Monroe's tomb", "The power plant ruins on\nBelle Isle", "A steamboat at Rocketts\nLanding", "Forest Hill's Stone House", "An old Forest Hill trolley", "The Science Museum in old\nBroad Street Station", "The Virginia Museum of\nHistory & Culture", "The Sauer's vanilla sign", "The tennis courts on Arthur\nAshe Boulevard", "Richmond Raceway", "Agecroft Hall, shipped from\nEngland", "The Siegel Center, home of\nthe Rams", "The John Marshall House", "Sally Bell's Kitchen", "The Leigh Street Armory", "The stage on Brown's Island"};  /* for the text box: 28 a line */

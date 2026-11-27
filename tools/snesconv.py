@@ -104,6 +104,86 @@ def pack_palettes(tiles, allow_remap):
     return out, [assign[s] for s in sets]
 
 
+def cluster_palettes(tiles, iters=10):
+    """Stage 12: tiles into MAX_PALS palettes of PAL_COLORS colours by clustering, as SNES graphics tools do.
+    Each palette's colours are fitted (weighted k-means, snapped to colours the art really uses) to the tiles that use
+    it, every tile moves to the palette that reproduces it best, and round again. Shaded art has too many colour
+    combinations to pack exactly; this spreads the loss thin instead of forcing whole tiles into a wrong palette.
+    Palette 0 keeps the text layer's three colours. Returns (palettes, assignment) like pack_palettes."""
+    import numpy as np
+    W = np.array([3.0, 4.0, 2.0])
+    # unique tiles by their colour histogram: (colours, counts)
+    sig = {}
+    for t in tiles:
+        cs = {}
+        for c in t: cs[c] = cs.get(c, 0) + 1
+        k = tuple(sorted(cs.items()))
+        sig.setdefault(k, 0); sig[k] += 1
+    uniq = list(sig.items())
+    U = [(np.array([c for c, _ in k], float), np.array([n for _, n in k], float) * mult) for k, mult in uniq]
+    allc = sorted({c for t in tiles for c in t})
+    A = np.array(allc, float)
+    text = np.array(TEXT_COLORS, float)
+
+    def tile_err(cols, cnt, pal):
+        d = (((cols[:, None, :] - pal[None, :, :]) ** 2) * W).sum(2).min(1)
+        return float((d * cnt).sum())
+
+    # start: group tiles by their average colour (k-means on the averages, k = MAX_PALS)
+    avg = np.array([(c * n[:, None]).sum(0) / n.sum() for c, n in U])
+    wt = np.array([n.sum() for _, n in U])
+    cent = avg[np.argsort(-wt)[:MAX_PALS]].copy()
+    for _ in range(8):
+        lab = (((avg[:, None, :] - cent[None, :, :]) ** 2) * W).sum(2).argmin(1)
+        for j in range(len(cent)):
+            m = lab == j
+            if m.any(): cent[j] = (avg[m] * wt[m, None]).sum(0) / wt[m].sum()
+    assign = list(lab)
+    pals = None
+    for it in range(iters):
+        pals = []
+        for j in range(MAX_PALS):
+            fixed = text if j == 0 else np.zeros((0, 3))
+            room = PAL_COLORS - len(fixed)
+            hist = {}
+            for (c, n), a in zip(U, assign):
+                if a != j: continue
+                for ci, ni in zip(map(tuple, c), n): hist[ci] = hist.get(ci, 0) + ni
+            if not hist:
+                pals.append(np.vstack([fixed, A[:1]]) if len(fixed) else A[:1]); continue
+            C = np.array(list(hist.keys()), float); N = np.array(list(hist.values()), float)
+            if len(C) <= room:
+                P = C
+            else:
+                P = C[np.argsort(-N)[:room]].copy()     # weighted k-means from the most used colours
+                for _ in range(6):
+                    l2 = (((C[:, None, :] - P[None, :, :]) ** 2) * W).sum(2).argmin(1)
+                    for q in range(room):
+                        m = l2 == q
+                        if m.any(): P[q] = (C[m] * N[m, None]).sum(0) / N[m].sum()
+                # snap each centre to the nearest colour the art uses (keeps ramps exact, no muddy in-betweens)
+                P = np.array([C[(((C - p) ** 2) * W).sum(1).argmin()] for p in P])
+                P = np.unique(P, axis=0)
+            pals.append(np.vstack([fixed, P]) if len(fixed) else P)
+        new = [min(range(MAX_PALS), key=lambda j: tile_err(c, n, pals[j])) for c, n in U]
+        if new == assign and it: break
+        assign = new
+    # back to the per-tile lists this module uses
+    key_of = {k: i for i, (k, _) in enumerate(uniq)}
+    out_pals = []
+    for j, P in enumerate(pals):
+        cols = [tuple(int(v) for v in row) for row in P]
+        if j == 0: cols = TEXT_COLORS + sorted(set(cols) - set(TEXT_COLORS))
+        else: cols = sorted(set(cols))
+        out_pals.append(cols)
+    res = []
+    for t in tiles:
+        cs = {}
+        for c in t: cs[c] = cs.get(c, 0) + 1
+        res.append(assign[key_of[tuple(sorted(cs.items()))]])
+    return out_pals, res
+
+
 def convert_bg(path, extra=(), flip_dedup=True):
     """Tiles, 64x64 tilemap and palettes for one map. Tile 0 is left blank (colour 0, so the
     backdrop shows) for the area outside rooms smaller than the screen. `extra` is a list of
@@ -111,16 +191,18 @@ def convert_bg(path, extra=(), flip_dedup=True):
     their tilemap entries are returned in the same order."""
     src = Image.open(path).convert('RGB')
     result = None
-    for n in (128, 112, 96, 84, 72, 64, 56, 48):
+    for n in (128,):
         im = src if n == 128 and len({c15(c) for _, c in src.getcolors(1 << 24)}) <= 120 else reduce_colors(src, n)
         tiles, tw, th = tiles_of(im)
         r = pack_palettes(tiles, allow_remap=False)
         if r:
             result = (tiles, tw, th, r); break
     if not result:
-        im = reduce_colors(src, 48)
+        # too many colour combinations to pack exactly (the stage 12 shaded art, on most maps): cluster instead,
+        # from the art's own colours (64 at most, so the k-means stays quick)
+        im = src if len({c15(c) for _, c in src.getcolors(1 << 24)}) <= 64 else reduce_colors(src, 64)
         tiles, tw, th = tiles_of(im)
-        result = (tiles, tw, th, pack_palettes(tiles, allow_remap=True))
+        result = (tiles, tw, th, cluster_palettes(tiles))
     tiles, tw, th, (pals, assign) = result
 
     chr_data, lookup = [bytes(32)], {}
