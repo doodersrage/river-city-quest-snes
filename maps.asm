@@ -210,12 +210,6 @@ m5_xtr:
 .incbin "data/m5.xtr"
 .ends
 
-.section ".map5a" superfree
-m5_ani:
-.incbin "data/m5.ani"
-.db 0
-.ends
-
 .section ".map6c" superfree
 m6_chr:
 .incbin "data/m6.chr"
