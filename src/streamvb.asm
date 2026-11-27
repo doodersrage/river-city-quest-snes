@@ -57,6 +57,73 @@ gridRow  DSB 64*2        ; byte offset of each row of cells in sGrid
 .SECTION ".stream_text" SUPERFREE
 
 ;---------------------------------------------------------------------------------
+; void streamReset(u8 *grid, u16 cells, u16 s0)
+; A new map: copy its grid into sGrid, forget every cached tile (sSlotOf, sRef) and fill the free stack with
+; slots s0-1 .. 1 (slot 0 is the blank tile, s0.. the pinned animated tiles). In C this took a dozen frames.
+streamReset:
+    php
+    phb
+    rep #$30
+    lda 6,s
+    tax                     ; X = the grid's address
+    lda 10,s
+    asl a
+    sta.l stN               ; bytes to copy
+    sep #$20
+    lda 8,s
+    pha
+    plb                     ; DB = the grid's bank
+    rep #$20
+    ldy.w #0
+srGrid:
+    tya
+    cmp.l stN
+    bcs srClear
+    lda.w $0000,x
+    phx
+    tyx
+    sta.l sGrid,x
+    plx
+    inx
+    inx
+    iny
+    iny
+    bra srGrid
+srClear:
+    lda.w #0
+    ldx.w #0
+srSlot:
+    sta.l sSlotOf,x
+    inx
+    inx
+    cpx.w #2048*2
+    bne srSlot
+    ldx.w #0
+srRef:
+    sta.l sRef,x
+    inx
+    inx
+    cpx.w #1024*2
+    bne srRef
+    ; the free stack: sFree[i] = s0 - 1 - i
+    lda 12,s
+    dec a
+    sta.l stFreeTop
+    ldx.w #0
+srFree:
+    cmp.w #0
+    beq srDone
+    sta.l sFree,x
+    inx
+    inx
+    dec a
+    bra srFree
+srDone:
+    plb
+    plp
+    rtl
+
+;---------------------------------------------------------------------------------
 ; void streamSetMeta(u8 *meta)  -- where the metatile table is
 streamSetMeta:
     php

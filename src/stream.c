@@ -27,6 +27,9 @@ void streamSetMeta(u8 *meta);
 void streamVBlank(void);
 /* (src/streamvb.asm) n tiles from (tx, ty) stepping (dx, dy): put 1 loads them, 0 drops them */
 void stLine(u16 tx, u16 ty, u16 dx, u16 dy, u16 n, u8 put);
+void streamReset(u8 *grid, u16 cells, u16 s0);
+u8 *sGridSrc;
+u16 sCells;
 
 u8 sCW;         /* the map's width in cells */
 u16 sL, sT;     /* the loaded area's top-left tile */
@@ -52,7 +55,7 @@ static void queueUp(u16 id, u16 slot)
 /* a new map: its tile set (two 32 KB chunks), metatiles and grid; w, h in 16 px cells */
 void streamInit(u8 *ts0, u8 *ts1, u8 *meta, u8 *grid, u8 w, u8 h)
 {
-    u16 i, n = (u16)w * h;
+    u16 i, r;
     sLive = 0;
     streamSetTs(0, ts0);
     streamSetTs(1, ts1);
@@ -60,12 +63,10 @@ void streamInit(u8 *ts0, u8 *ts1, u8 *meta, u8 *grid, u8 w, u8 h)
     sCW = w;
     stTW = (u16)w << 2;
     stTH = (u16)h << 2;
-    for (i = 0; i < n; i++) sGrid[i] = grid[i * 2] | (grid[i * 2 + 1] << 8);
-    for (i = 0; i < 64; i++) gridRow[i] = i * (u16)w * 2;
-    for (i = 0; i < 2048; i++) sSlotOf[i] = 0;
-    for (i = 0; i < SLOTS; i++) sRef[i] = 0;
+    sGridSrc = grid;
+    sCells = (u16)w * h;
+    for (i = 0, r = 0; i < 64; i++, r += (u16)w * 2) gridRow[i] = r;
     upN = wrN = 0;
-    stFreeTop = 0;
 }
 
 /* the animated tiles (ids first.. first+count-1) live in the top slots for good; the rest are the cache.
@@ -74,6 +75,7 @@ u16 streamPin(u16 first, u16 count)
 {
     u16 i, s0 = SLOTS - count;
     sBlank = 1;
+    streamReset(sGridSrc, sCells, s0);   /* (the grid, an empty cache and the free stack) */
     queueUp(0, 0);   /* slot 0: the blank tile (tile 0 of every map), for outside the map */
     for (i = 0; i < count; i++)
     {
@@ -81,8 +83,6 @@ u16 streamPin(u16 first, u16 count)
         sRef[s0 + i] = 0x4000;
         queueUp(first + i, s0 + i);
     }
-    for (i = 0; i + 1 < s0; i++) sFree[i] = s0 - 1 - i;
-    stFreeTop = s0 - 1;   /* slot 0 stays blank */
     return s0;
 }
 
