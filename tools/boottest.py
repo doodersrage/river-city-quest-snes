@@ -1107,7 +1107,13 @@ check(any(lab.ram('oamShown', 1, False, 40 + i) == 2 for i in range(20)), 'the b
 # step into the car's lane just ahead of it: it stops for you and waits
 cx, cy = lab.ram('carX', 2, True, 1) >> 4, lab.ram('carY', 2, True, 1)
 lab.poke('inv', 255)
-poke16('px', max(24, min(488, cx - 24))); poke16('py', cy)
+d = -1 if lab.ram('carDir', 1, False, 1) >= 128 else 1
+if not 40 < cx + d * 24 < 470:   # (too near the edge to get ahead of it: wait till it's further along)
+    for _ in range(400):
+        lab.run(None, 1); cx = lab.ram('carX', 2, True, 1) >> 4
+        if 60 < cx < 450: break
+    cy = lab.ram('carY', 2, True, 1)
+poke16('px', cx + d * 24); poke16('py', cy)
 lab.run(None, 30)
 xs = lab.ram('carX', 2, True, 1); lab.run(None, 60)
 check(lab.ram('carStop', 1, False, 1) == 1 and lab.ram('carX', 2, True, 1) == xs, 'a car stops for you')
