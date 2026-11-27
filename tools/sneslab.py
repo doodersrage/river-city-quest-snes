@@ -185,8 +185,9 @@ class Lab:
         for _ in range(4):   # a one-frame tap can fall in a long frame: check it took
             self.run(DIRS[d], 1)
             self.steer_to(x, y, 20)
+            self.run(None, 3)      # let the step back finish before the turn (else the tap can land in its frame)
             self.run(DIRS[d], 1)
-            self.run(None, 1)
+            self.run(None, 2)
             if want is None or self.ram('heroDir') == want:
                 break
 
