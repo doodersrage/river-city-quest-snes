@@ -1119,7 +1119,7 @@ check(moved is True, f'a townsperson walks about, staying near home ({home} -> {
 if lab.ram('birdSt', 1, False, 0) != 0:   # we startled it on the way here: put it back on its perch
     for nm, hm in (('birdX', 'birdHx'), ('birdY', 'birdHy')):
         v = lab.ram(hm, 2, False, 0); lab.poke(nm, v & 0xFF, 0); lab.poke(nm, v >> 8, 1)
-    lab.poke('birdSt', 0); lab.run(None, 2)
+    lab.poke('birdSt', 0)
 bird = (lab.ram('birdX', 2, True, 0) >> 4, lab.ram('birdY', 2, True, 0) >> 4)
 check(lab.ram('birdSt', 1, False, 0) == 0, f'a pigeon sits on Broad Street {bird}')
 walk((bird[0] // 16, bird[1] // 16 - 2))
@@ -1461,7 +1461,10 @@ lab.screenshot(f'{out}/75-camera.png')
 check(lab.ram('photoGot', 1, False, 0) | lab.ram('photoGot', 1, False, 1) | lab.ram('photoGot', 1, False, 2) | lab.ram('photoGot', 1, False, 3),
       f'B with the camera by a landmark: a photo for the album (near {spot})')
 close_box()
-lab.press('START', 10)
+for _ in range(6):                       # (a message may still be closing: try until the menu is up)
+    lab.press('START', 10)
+    if lab.ram('boxState') == 5: break
+    close_box(); lab.run(None, 10)
 items = [lab.ram('menuList', 1, False, i) for i in range(lab.ram('menuN'))]
 for _ in range(14):
     if lab.ram('menuCur') >= len(items) - 1: break

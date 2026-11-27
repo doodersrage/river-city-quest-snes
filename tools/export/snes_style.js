@@ -312,3 +312,69 @@ tile = function (s, ch, tx, ty, fr, plain) {
 };
 
 shadeTile = function () {};   // the web game's translucent shadows: drawn above in ramp colours instead
+
+/* ---------- water, boardwalks and boulders ---------- */
+const SRIVER = ['#1c3430', '#284640', '#345a50', '#447060', '#5e8a78', '#8eb4a0', '#d8eedc'];   // the James, green-grey
+const SPOND = ['#14323e', '#1a4656', '#22596a', '#2e6e80', '#46909e', '#86c4cc', '#dcf4f4'];    // ponds and lakes, teal
+const SPLANK = ['#3a2214', '#5c3a20', '#7e5430', '#a07040', '#c49058'];
+for (const rp of [SRIVER, SPOND, SPLANK]) rp.forEach((c, i) => SHADE.set(c.toLowerCase(), rp[Math.max(0, i - 2)]));
+const tileW = tile;
+tile = function (s, ch, tx, ty, fr, plain) {
+  const x = tx * TS, y = ty * TS; let h = HH(tx, ty, s.seed);
+  const nb = (dx, dy) => { const X = tx + dx, Y = ty + dy; return X < 0 || Y < 0 || X >= s.w || Y >= s.h ? ch : s.g[Y][X]; };
+  if (ch == 'w') {
+    const W = waterOf(s) === WATER.river ? SRIVER : SPOND;
+    { const hv = HH(h % 2, 5, 5); h = hv; }   // two patterns, not four: shorelines already make many water tiles
+    const land = q => q != 'w' && q != '=' && q != '-';
+    R(x, y, 16, 16, W[3]);
+    for (let i = 0; i < 4; i++) {          // slow dark swells
+      const q = HH(h, i, 11), a = x + q % 12, b = y + 1 + (q >> 4) % 14;
+      R(a, b, 4 + (q >> 8) % 4, 1, W[2]); R(a + 1, b + 1, 2 + (q >> 9) % 3, 1, W[2]);
+    }
+    for (let i = 0; i < 3; i++) {          // wave crests: a lit arc with a darker trough under it
+      const q = HH(h, i, 12), a = x + (q % 16 + fr * 2 * (i & 1 ? 1 : -1) + 32) % 12, b = y + 2 + i * 5 + (q >> 4) % 3;
+      R(a, b + 1, 5, 1, W[2]); R(a + 1, b, 3, 1, W[4]); R(a + 1, b, 1, 1, W[5]);
+    }
+    if (h % 3 == 0) { const a = x + 2 + (h >> 4) % 11, b = y + 2 + (h >> 7) % 11; R(a, b, 1, 1, W[6]); }
+    if (W === SPOND && h % 13 == 0 && !land(nb(0, -1)) && !land(nb(0, 1)) && !land(nb(-1, 0)) && !land(nb(1, 0))) {   // a lily pad
+      const a = x + 3 + (h >> 5) % 6, b = y + 4 + (h >> 8) % 6;
+      R(a, b + 1, 7, 4, W[1]); R(a, b, 7, 4, SG[3]); R(a + 1, b - 1, 5, 6, SG[3]); R(a + 1, b - 1, 3, 1, SG[5]); R(a, b + 3, 7, 1, SG[2]);
+      R(a + 3, b, 1, 2, W[3]); if (h % 2) { R(a + 5, b - 1, 2, 2, '#f890a8'); R(a + 5, b - 1, 1, 1, '#ffd8e0'); }
+    }
+    // the banks: shadow where the land is above or to the left (light from the top left), foam where it meets the shore
+    if (land(nb(0, -1))) { R(x, y, 16, 3, W[1]); R(x, y + 3, 16, 1, W[2]); for (let i = 0; i < 16; i++) if ((i + tx * 3) % 5 < 2) R(x + i, y + 3, 1, 1, W[5]); }
+    if (land(nb(-1, 0))) { R(x, y, 2, 16, W[1]); R(x + 2, y, 1, 16, W[2]); }
+    if (land(nb(0, 1))) { for (let i = 0; i < 16; i++) R(x + i, y + 15, 1, 1, (i + tx) % 4 < 2 ? W[6] : W[5]); R(x, y + 14, 16, 1, W[4]); }
+    if (land(nb(1, 0))) for (let i = 0; i < 16; i++) R(x + 15, y + i, 1, 1, (i + ty) % 4 < 2 ? W[6] : W[5]);
+    if (nb(0, -1) == '=' || nb(0, -1) == '-') { R(x, y, 16, 4, W[1]); R(x, y + 4, 16, 1, W[2]); }   // under a boardwalk
+    return;
+  }
+  if (ch == '=' || ch == '-') {   // boardwalks and bridges: planks lit along their top edge, nails, posts at the water
+    const P = SPLANK, along = ch == '=';
+    R(x, y, 16, 16, P[3]);
+    for (let i = 0; i < 16; i += 4) {
+      if (along) { R(x, y + i, 16, 1, P[4]); R(x, y + i + 3, 16, 1, P[1]); R(x, y + i + 2, 16, 1, P[2]); R(x + 2 + HH(h, i, 1) % 11, y + i + 1, 1, 1, P[1]); }
+      else { R(x + i, y, 1, 16, P[4]); R(x + i + 3, y, 1, 16, P[1]); R(x + i + 2, y, 1, 16, P[2]); R(x + i + 1, y + 2 + HH(h, i, 1) % 11, 1, 1, P[1]); }
+    }
+    if (along) {
+      if (nb(-1, 0) == 'w') { R(x, y, 3, 16, P[0]); R(x + 1, y, 1, 16, P[2]); R(x, y + 6, 3, 2, P[1]); }
+      if (nb(1, 0) == 'w') { R(x + 13, y, 3, 16, P[0]); R(x + 14, y, 1, 16, P[2]); R(x + 13, y + 6, 3, 2, P[1]); }
+    } else {
+      if (nb(0, -1) == 'w') { R(x, y, 16, 3, P[0]); R(x, y + 1, 16, 1, P[2]); }
+      if (nb(0, 1) == 'w') { R(x, y + 13, 16, 3, P[0]); R(x, y + 14, 16, 1, P[2]); }
+    }
+    return;
+  }
+  if (ch == 'r') {   // a boulder: a rounded stone in five greys, lit on top, its shadow on the ground
+    const gb = '.,psnF'.includes(s.base) ? s.base : '.';
+    ground(s, gb, x, y, h);
+    R(x + 2, y + 13, 13, 2, SG[1]); R(x + 4, y + 15, 9, 1, SG[2]);
+    const rows = [6, 10, 12, 14, 14, 14, 14, 13, 12, 10];
+    rows.forEach((w, i) => { const a = x + 8 - (w >> 1); R(a, y + 4 + i, w, 1, SST[3]); R(a, y + 4 + i, 1, 1, SST[0]); R(a + w - 1, y + 4 + i, 1, 1, SST[0]); });
+    R(x + 5, y + 3, 6, 1, SST[0]); R(x + 4, y + 14, 8, 1, SST[0]);
+    R(x + 3, y + 10, 10, 3, SST[2]); R(x + 4, y + 13, 8, 1, SST[1]);
+    R(x + 4, y + 5, 5, 2, SST[5]); R(x + 3, y + 7, 3, 2, SST[4]); R(x + 5, y + 4, 2, 1, SST[6]); R(x + 9, y + 8, 1, 3, SST[1]);
+    return;
+  }
+  tileW(s, ch, tx, ty, fr, plain);
+};
