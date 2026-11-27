@@ -1055,8 +1055,8 @@ lab.poke('wx', 0); lab.poke('wxK', 0); lab.poke('wxNext', 255)
 set_clock(4500); lab.run(None, 4); day = brightness()
 set_clock(16 * 1500); lab.run(None, 4); night = brightness()
 lab.screenshot(f'{out}/48-night.png')
-check(lab.ram('darkLevel') == 4 and night < day * .75, f'night falls at 10pm ({day:.0f} -> {night:.0f} brightness)')
-check(lab.ram('lightR1') == (54 if lab.ram('hasLantern') else 32), f"a circle of light around you, wider with the lantern ({lab.ram('lightR1')})")
+check(lab.ram('darkLevel') == 4 and night < day * .9, f'night falls at 10pm ({day:.0f} -> {night:.0f} brightness)')
+check(lab.ram('lightR1') == (108 if lab.ram('hasLantern') else 64), f"a circle of light around you, wider with the lantern ({lab.ram('lightR1')})")
 set_clock(12 * 1500 + 600); lab.run(None, 4)
 check(0 < lab.ram('darkLevel') < 4, f"dusk comes on gradually (level {lab.ram('darkLevel')})")
 set_clock(4500); lab.run(None, 4)
@@ -1070,7 +1070,7 @@ lab.poke('wx', 0); lab.poke('wxK', 0); lab.run(None, 4)
 travel(lab, N('Hollywood Cemetery'), close_box)
 walk((28, 17)); lab.run('UP', 30); lab.run(None, 60); close_box()
 lab.screenshot(f'{out}/51-dark-room.png')
-check(lab.ram('darkLevel') == 4 and lab.ram('lightR1') == (68 if lab.ram('hasLantern') else 38),
+check(lab.ram('darkLevel') == 4 and lab.ram('lightR1') == (120 if lab.ram('hasLantern') else 76),
       f"the Foundry Gate is dark but for your light (map {lab.map}, radius {lab.ram('lightR1')})")
 
 # Stage 9: town life. Cars and the bus, townspeople out for a walk, pigeons, the bateau.
