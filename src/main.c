@@ -671,8 +671,8 @@ u8 blocked(s16 x, s16 y)
     if (solidAt(x - HALF, y + HALF)) return 1;
     if (solidAt(x + HALF, y + HALF)) return 1;
     /* push blocks */
-    if (blockAtCell((x - HALF) >> 4, (y - HALF) >> 4) != 255 || blockAtCell((x + HALF) >> 4, (y - HALF) >> 4) != 255 ||
-        blockAtCell((x - HALF) >> 4, (y + HALF) >> 4) != 255 || blockAtCell((x + HALF) >> 4, (y + HALF) >> 4) != 255)
+    if (blkN && (blockAtCell((x - HALF) >> 4, (y - HALF) >> 4) != 255 || blockAtCell((x + HALF) >> 4, (y - HALF) >> 4) != 255 ||
+        blockAtCell((x - HALF) >> 4, (y + HALF) >> 4) != 255 || blockAtCell((x + HALF) >> 4, (y + HALF) >> 4) != 255))
         return 1;
     for (k = 0; k < npcCount; k++)
         if (ABS(x - npcX[k]) < 12 && ABS(y - npcY[k]) < 12)

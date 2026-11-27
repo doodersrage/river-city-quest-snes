@@ -177,6 +177,7 @@ u8 enemyCount(u8 type);
 extern u8 *brazPtr, *pickPtr;
 extern u8 pickupGot[];
 extern u8 carAny;
+extern u8 blkN;
 extern u8 hasBug, hasCarkey, pieces, hasKayak, tradeItem, melonTaken;
 extern u8 parts, bateauDone, hasLure;   /* stage 9: the bateau quest */
 /* stage 9: town life (life.c) */
