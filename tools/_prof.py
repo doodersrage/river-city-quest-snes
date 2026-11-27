@@ -25,3 +25,7 @@ for name,pokes in [('no people',[('npcCount',0)]),('no wanderers',[('nWander',0)
             lab.run('LEFT',40); lab.run('RIGHT',40)
         return (lab.ram('frameCount',2)-a)&0xFFFF
     print(f'{name:16}', w2(), '/ 240')
+lab.emu.set_state(base); lab.run(None,2)
+a=lab.ram('frameCount',2); lab.run(None,240); print('standing', (lab.ram('frameCount',2)-a)&0xFFFF)
+lab.emu.set_state(base); lab.run(None,2)
+a=lab.ram('frameCount',2); lab.run('UP',30); lab.run('DOWN',30); lab.run('UP',30); lab.run('DOWN',30); print('updown /120', (lab.ram('frameCount',2)-a)&0xFFFF)

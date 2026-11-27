@@ -28,25 +28,38 @@ tsAddr   DSB 4           ; the tile set's two 32 KB chunks: address in bank
 tsBank   DSB 2           ; and bank
 scrX     DSB 2           ; BG1 scroll to set in the next VBlank
 scrY     DSB 2
-; stLine's state (kept here, all reached with long addressing while DB holds the metatiles' bank)
-stTX     DSB 2
-stTY     DSB 2
-stDX     DSB 2
-stDY     DSB 2
-stN      DSB 2
-stPut    DSB 2
-stW      DSB 2
-stID     DSB 2
-stSlot   DSB 2
-stTmp    DSB 2
-stTmp2   DSB 2
 stMetaAddr DSB 2         ; the metatile table: address in its bank
 stMetaBank DSB 2         ; and the bank
 stTW     DSB 2           ; the map's size in tiles
 stTH     DSB 2
 stFreeTop DSB 2
+stN      DSB 2           ; (streamReset's byte count)
 gridRow  DSB 64*2        ; byte offset of each row of cells in sGrid
 .ENDS
+
+.RAMSECTION ".streamdp" BANK 0 SLOT 1
+stDP     DSB 40          ; stLine's working state, on the direct page while it runs (see D_* below)
+.ENDS
+
+.ENUM 0
+D_TX     DW
+D_TY     DW
+D_DX     DW
+D_DY     DW
+D_N      DW
+D_PUT    DW
+D_W      DW
+D_ID     DW
+D_SLOT   DW
+D_T      DW
+D_T2     DW
+D_MA     DW
+D_TW     DW
+D_TH     DW
+D_FT     DW
+D_UN     DW
+D_WN     DW
+.ENDE
 
 .ifdef FASTROM
 .BASE $80
@@ -140,59 +153,73 @@ streamSetMeta:
 ; void stLine(u16 tx, u16 ty, u16 dx, u16 dy, u16 n, u8 put)
 ; n tiles from (tx, ty), stepping (dx, dy): put = 1 loads each (caches its tile, queues its tilemap word), 0 drops
 ; it (one use less of its slot; a slot nobody uses goes back on the free stack). Tiles outside the map load as 0.
+; Runs with D on stDP (bank 0 RAM) and DB on the metatiles' bank: the hot state is all direct page.
 stLine:
     php
     phb
+    phd
     rep #$30
-    lda 6,s
-    sta.l stTX
+    lda.w #stDP
+    tcd
     lda 8,s
-    sta.l stTY
+    sta.b D_TX
     lda 10,s
-    sta.l stDX
+    sta.b D_TY
     lda 12,s
-    sta.l stDY
+    sta.b D_DX
     lda 14,s
-    sta.l stN
+    sta.b D_DY
     lda 16,s
+    sta.b D_N
+    lda 18,s
     and.w #$00FF
-    sta.l stPut
+    sta.b D_PUT
+    lda.l stMetaAddr
+    sta.b D_MA
+    lda.l stTW
+    sta.b D_TW
+    lda.l stTH
+    sta.b D_TH
+    lda.l stFreeTop
+    sta.b D_FT
+    lda.l upN
+    sta.b D_UN
+    lda.l wrN
+    sta.b D_WN
     sep #$20
     lda.l stMetaBank
     pha
     plb                     ; DB = the metatiles' bank
     rep #$20
 stLoop:
-    lda.l stN
+    lda.b D_N
     bne stGo
     jmp stEnd
 stGo:
     dec a
-    sta.l stN
-    lda.l stTX
-    cmp.l stTW
-    bcc stInX
-    jmp stOut
-stInX:
-    lda.l stTY
-    cmp.l stTH
+    sta.b D_N
+    lda.b D_TX
+    cmp.b D_TW
+    bcs stOutFar
+    lda.b D_TY
+    cmp.b D_TH
     bcc stIn
+stOutFar:
     jmp stOut
 stIn:
     ; the cell's metatile: sGrid[gridRow[ty >> 2] + (tx >> 2) * 2]
-    lda.l stTY
     lsr a
     lsr a
     asl a
     tax
     lda.l gridRow,x
-    sta.l stTmp
-    lda.l stTX
+    sta.b D_T
+    lda.b D_TX
     lsr a
     lsr a
     asl a
     clc
-    adc.l stTmp
+    adc.b D_T
     tax
     lda.l sGrid,x
     asl a
@@ -200,220 +227,203 @@ stIn:
     asl a
     asl a
     asl a
-    sta.l stTmp             ; metatile * 32
-    lda.l stTY
+    sta.b D_T               ; metatile * 32
+    lda.b D_TY
     and.w #3
     asl a
     asl a
-    sta.l stTmp2
-    lda.l stTX
+    sta.b D_T2
+    lda.b D_TX
     and.w #3
-    clc
-    adc.l stTmp2
+    adc.b D_T2              ; (carry clear: the asl's shifted out zeros)
     asl a
+    adc.b D_T
     clc
-    adc.l stTmp
-    clc
-    adc.l stMetaAddr
+    adc.b D_MA
     tay
     lda.w $0000,y           ; the map word
-    sta.l stW
+    sta.b D_W
     and.w #$07FF
-    sta.l stID
+    sta.b D_ID
     asl a
     tax                     ; X = tile * 2
-    lda.l stPut
+    lda.b D_PUT
     bne stPutOne
     jmp stDropOne
 stPutOne:
     lda.l sSlotOf,x
     bne stHave
-    lda.l stFreeTop
-    bne stAlloc
-    jmp stOut               ; (no slot left: draw the blank tile)
-stAlloc:
+    lda.b D_FT
+    beq stOut               ; (no slot left: draw the blank tile)
     dec a
-    sta.l stFreeTop
-    phx
+    sta.b D_FT
     asl a
+    phx
     tax
-    lda.l sFree,x
+    lda.l sFree,x           ; sFree[top]
     plx
     sta.l sSlotOf,x
-    sta.l stSlot
+    sta.b D_SLOT
     jsr stQueueUp
-    lda.l stSlot
+    lda.b D_SLOT
 stHave:
-    sta.l stSlot
+    sta.b D_SLOT
     asl a
     tax
     lda.l sRef,x
     inc a
     sta.l sRef,x
-    lda.l stW
+    lda.b D_W
     lsr a
     and.w #$1C00
-    ora.l stSlot
-    sta.l stTmp
-    lda.l stW
+    ora.b D_SLOT
+    sta.b D_T
+    lda.b D_W
     and.w #$C000
-    ora.l stTmp
+    ora.b D_T
     bra stWrite
 stOut:
-    lda.l stPut
+    lda.b D_PUT
     beq stNext
     lda.w #0
 stWrite:
-    sta.l stTmp
+    sta.b D_T
     jsr stQueueWr
 stNext:
-    lda.l stTX
+    lda.b D_TX
     clc
-    adc.l stDX
-    sta.l stTX
-    lda.l stTY
+    adc.b D_DX
+    sta.b D_TX
+    lda.b D_TY
     clc
-    adc.l stDY
-    sta.l stTY
+    adc.b D_DY
+    sta.b D_TY
     jmp stLoop
 stDropOne:
     lda.l sSlotOf,x
     beq stNext
-    sta.l stSlot
-    phx
+    sta.b D_SLOT
+    txy                     ; Y = tile * 2
     asl a
     tax
     lda.l sRef,x
     dec a
     sta.l sRef,x
-    bne stKeep
-    plx
+    bne stNext
+    tyx
     lda.w #0
-    sta.l sSlotOf,x
-    lda.l stFreeTop
+    sta.l sSlotOf,x         ; nobody uses the slot: back on the free stack
+    lda.b D_FT
     asl a
     tax
-    lda.l stSlot
+    lda.b D_SLOT
     sta.l sFree,x
-    lda.l stFreeTop
-    inc a
-    sta.l stFreeTop
-    bra stNext
-stKeep:
-    plx
+    inc.b D_FT
     bra stNext
 stEnd:
+    lda.b D_FT
+    sta.l stFreeTop
+    lda.b D_UN
+    sta.l upN
+    lda.b D_WN
+    sta.l wrN
+    pld
     plb
     plp
     rtl
 
-; queue the upload of tile stID into slot stSlot
+; queue the upload of tile D_ID into slot D_SLOT
 stQueueUp:
-    lda.l upN
+    lda.b D_UN
     cmp.w #UPQ
     bcs stQUFull
     asl a
     tax
-    lda.l stID
+    lda.b D_ID
     and.w #$03FF
     asl a
     asl a
     asl a
     asl a
     asl a
-    sta.l stTmp2
-    lda.l stID
+    sta.b D_T2
+    lda.b D_ID
     and.w #$0400
     beq stQU0
     lda.l tsAddr+2
     clc
-    adc.l stTmp2
+    adc.b D_T2
     sta.l upAddr,x
-    phx
-    txa
-    lsr a
-    tax
     sep #$20
     lda.l tsBank+1
-    sta.l upBank,x
-    rep #$20
-    plx
-    bra stQUDst
+    bra stQUBank
 stQU0:
     lda.l tsAddr
     clc
-    adc.l stTmp2
+    adc.b D_T2
     sta.l upAddr,x
-    phx
+    sep #$20
+    lda.l tsBank
+stQUBank:
+    pha
+    rep #$20
     txa
     lsr a
     tax
     sep #$20
-    lda.l tsBank
+    pla
     sta.l upBank,x
     rep #$20
-    plx
-stQUDst:
-    lda.l stSlot
+    txa
+    asl a
+    tax
+    lda.b D_SLOT
     asl a
     asl a
     asl a
     asl a
     sta.l upDst,x
-    lda.l upN
-    inc a
-    sta.l upN
+    inc.b D_UN
 stQUFull:
     rts
 
-; queue the tilemap word stTmp for tile (stTX, stTY): its place in the 64x64 ring at $4000
+; queue the tilemap word D_T for tile (D_TX, D_TY): its place in the 64x64 ring at $4000
 stQueueWr:
-    lda.l wrN
+    lda.b D_WN
     cmp.w #WRQ
     bcs stQWFull
     asl a
     tax
-    lda.l stTY
+    lda.b D_TY
+    and.w #32
+    asl a
+    sta.b D_T2              ; (ty & 32) << 1, shifted 5 more below with the row
+    lda.b D_TY
+    and.w #31
+    ora.b D_T2
+    asl a
+    asl a
+    asl a
+    asl a
+    asl a
+    sta.b D_T2              ; ((ty & 31) << 5) + ((ty & 32) << 6)
+    lda.b D_TX
     and.w #32
     asl a
     asl a
     asl a
     asl a
     asl a
-    asl a
-    sta.l stTmp2
-    lda.l stTX
-    and.w #32
-    asl a
-    asl a
-    asl a
-    asl a
-    asl a
-    clc
-    adc.l stTmp2
-    sta.l stTmp2
-    lda.l stTY
+    ora.b D_T2
+    sta.b D_T2
+    lda.b D_TX
     and.w #31
-    asl a
-    asl a
-    asl a
-    asl a
-    asl a
-    clc
-    adc.l stTmp2
-    sta.l stTmp2
-    lda.l stTX
-    and.w #31
-    clc
-    adc.l stTmp2
-    clc
-    adc.w #$4000
+    ora.b D_T2
+    ora.w #$4000
     sta.l wrAddr,x
-    lda.l stTmp
+    lda.b D_T
     sta.l wrVal,x
-    lda.l wrN
-    inc a
-    sta.l wrN
+    inc.b D_WN
 stQWFull:
     rts
 

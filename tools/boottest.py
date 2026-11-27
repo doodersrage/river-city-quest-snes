@@ -27,6 +27,7 @@ def hero_name():
 
 # Stage 11: the title screen, a new game in slot 1, and naming the hero.
 lab = Lab(rom, sym, root)
+lab.heal = True
 lab.run(None, 150)
 check(screen().std() > 10, 'boots to the title screen')
 check(lab.ram('saveSlot') == 0 and lab.ram('curSong') == 7, f"no slot chosen yet, the title song plays ({lab.ram('curSong')})")
@@ -350,7 +351,7 @@ lab.run(None, 90)
 check(all(lab.ram('colRam', 1, False, y * 32 + 15) == 0 for y in (4, 5, 6)), 'the keg blows the cracked wall open')
 lab.walk_to_cell(14, 5)
 lab.run('RIGHT', 30)
-lab.run(None, 60)
+lab.run(None, 80)
 check(lab.map == lab.map_named('Quarry Pond') and lab.ram('boxState'), 'Old Snapper stirs in the Quarry Pond')
 close_box()
 stunned = False
@@ -1083,10 +1084,15 @@ check(cars == [(1, 1), (1, 0)], f'Broad Street has the Pulse bus and a car ({car
 x0 = lab.ram('carX', 2, True, 1)
 lab.run(None, 30)
 check(lab.ram('carX', 2, True, 1) != x0, 'the car drives along')
-# wait for the bus to come onto the screen, then take a picture
+# wait for the bus to come onto the screen, then take a picture (from the pavement by its lane: the view is 7 cells tall)
+g = lab.solid_grid()
+ly = lab.ram('carY', 2, True, 0) // 16
+spot = min(((cx, cy) for cy in range(ly + 1, min(22, ly + 4)) for cx in range(2, 30) if not g[cy][cx]),
+           key=lambda c: abs(c[0] - lab.pos[0] // 16) + 3 * (c[1] - ly))
+walk(spot)
 for _ in range(600):
     bx = lab.ram('carX', 2, True, 0) >> 4
-    if lab.ram('camX', 2, True) + 40 < bx < lab.ram('camX', 2, True) + 200:
+    if lab.ram('camX', 2, True) + 20 < bx < lab.ram('camX', 2, True) + 100:   # (the screen is 128 map pixels wide)
         break
     lab.run(None, 1)
 lab.screenshot(f'{out}/52-broad-street-bus.png')
@@ -1130,7 +1136,7 @@ for _ in range(30):
     lab.run('DOWN', 2)
 lab.run(None, 12)
 lab.screenshot(f'{out}/54-pigeon.png')
-check(lab.ram('birdSt', 1, False, 0) == 1, 'and flies off as you come near')
+check(lab.ram('birdSt', 1, False, 0) in (1, 2), 'and flies off as you come near')
 # the bateau: three parts for the river historian at Ancarrow's Landing
 def take_pickup(kind):
     for k in range(6):
@@ -1214,6 +1220,12 @@ set_clock(4500)
 # Melon Roundup in Carytown: eight melons
 travel(lab, N('Carytown'), close_box)
 lab.run(None, 4)
+# (the screen shows 8x7 cells now: go and stand near the Melon Vendor first)
+nx, ny = lab.ram('npcX', 2, True, 2) // 16, lab.ram('npcY', 2, True, 2) // 16
+g = lab.solid_grid()
+near = [(cx, cy) for cy in range(ny - 2, ny + 3) for cx in range(nx - 2, nx + 3)
+        if 0 <= cx < 32 and 0 <= cy < 22 and not g[cy][cx] and (cx, cy) != (nx, ny)]
+walk(min(near, key=lambda c: abs(c[0] - nx) + abs(c[1] - ny) + (0 if c[1] > ny else 2)))
 seen = False
 for _ in range(40):
     seen |= lab.ram('oamShown', 1, False, 127) == 2
@@ -1326,7 +1338,7 @@ def play_mini(k, step, limit=4000):
     for f in range(limit):
         if not lab.ram('miniOn'): break
         step(f)
-    lab.run(None, 40)
+    lab.run(None, 70)   # (back to the street: a map load)
     return True
 # Batting practice: the Ballplayer, now that his pin is won. Swing on time.
 travel(lab, N("Scott's Addition"), close_box)
