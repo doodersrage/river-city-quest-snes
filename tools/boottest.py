@@ -1527,8 +1527,10 @@ close_box()
 # Frogs: out near the water when it rains
 lab.poke('wx', 1); lab.poke('wxK', 255); lab.poke('wxNext', 255)
 got = 0
+frog_map = lab.map
 for t in range(60):
     lab.run(None, 30)
+    lab.poke('hp', lab.ram('hpMax'))     # (out in the rain at night, the bot doesn't fight back while it hunts frogs)
     for k in range(10):
         if lab.ram('pkKind', 1, False, k) == 17:
             back = lab.pos
@@ -1539,6 +1541,7 @@ for t in range(60):
                 close_box()
     if lab.ram('frogs') >= 5: break
 check(lab.ram('frogs') >= 5, f"frogs come out in the rain: {lab.ram('frogs')} caught")
+if lab.map != frog_map: travel(lab, frog_map, close_box)
 coins, before = lab.ram('coins', 2), ncards()
 for _ in range(3):
     talk_to(2)
