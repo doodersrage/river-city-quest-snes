@@ -473,3 +473,38 @@ tile = function (s, ch, tx, ty, fr, plain) {
   if (solid(at(0, -1))) { shadeRect(x, y, 16, 5); for (let i = 0; i < 16; i += 2) shadeRect(x + i + 1, y + 5, 1, 1); }
   if (solid(at(-1, 0))) shadeRect(x, y + (solid(at(0, -1)) ? 5 : 0), 3, solid(at(0, -1)) ? 11 : 16);
 };
+
+/* ---------- props: lamps, benches, signs, fences, statues, furniture ----------
+   Drawn twice on a scratch layer, whole and as just their ground, so the prop's own pixels can be told apart;
+   those get the landmarks' shading, cast a short shadow, and go back on the map. The web game's translucent
+   shadows are left out (they come out as odd blends after palette reduction): the cast shadow replaces them. */
+const PROPS = 'z1+xfkKM%jJcoYGQVhObg^Rliaquyt';
+const tileP = tile;
+tile = function (s, ch, tx, ty, fr, plain) {
+  if (!PROPS.includes(ch) || (ch == '%' && !s.ow)) return tileP(s, ch, tx, ty, fr, plain);
+  const x = tx * TS, y = ty * TS, main = g, oldR = R;
+  const base = s.interior ? 'F' : ('.,psnF'.includes(s.base) ? s.base : '.');
+  const layer = (c) => { const cv = mkCanvas(32, 32), cx = cv.getContext('2d'); cx.translate(8 - x, 8 - y); g = cx;
+    try { tileP(s, c, tx, ty, fr, plain); } finally { g = main; } return cv; };
+  R = (a, b, w, h, c) => { if (typeof c == 'string' && c.startsWith('rgba')) return; oldR(a, b, w, h, c); };
+  let A, B;
+  try { A = layer(ch); B = layer(base); } finally { R = oldR; }
+  const a = A.getContext('2d').getImageData(0, 0, 32, 32), b = B.getContext('2d').getImageData(0, 0, 32, 32).data, ad = a.data;
+  for (let i = 0; i < ad.length; i += 4)
+    if (Math.abs(ad[i] - b[i]) + Math.abs(ad[i + 1] - b[i + 1]) + Math.abs(ad[i + 2] - b[i + 2]) < 6 && b[i + 3]) ad[i + 3] = 0;
+  A.getContext('2d').putImageData(a, 0, 0);
+  shadeLayer(A, 8, 8, 16, 16);
+  // the ground, then the prop's shadow 3 px down and right, then the prop
+  tileP(s, base, tx, ty, fr, plain);
+  const X0 = Math.max(0, x - 8), Y0 = Math.max(0, y - 8), W = Math.min(main.canvas.width, x + 24) - X0, H = Math.min(main.canvas.height, y + 24) - Y0;
+  const lay = A.getContext('2d').getImageData(X0 - (x - 8), Y0 - (y - 8), W, H).data, im = main.getImageData(X0, Y0, W, H), d = im.data;
+  for (let yy = 3; yy < H; yy++) for (let xx = 3; xx < W; xx++) {
+    const i = (yy * W + xx) * 4, j = ((yy - 3) * W + xx - 3) * 4;
+    if (lay[i + 3] || !lay[j + 3]) continue;
+    const c = toHex(d[i], d[i + 1], d[i + 2]), sc = SHADE.get(c);
+    const [r, g2, bb] = sc ? hx(sc) : [d[i] * .62 + 15, d[i + 1] * .62 + 9, d[i + 2] * .62 + 21];
+    d[i] = r; d[i + 1] = g2; d[i + 2] = bb;
+  }
+  main.putImageData(im, X0, Y0);
+  main.drawImage(A, x - 8, y - 8);
+};
