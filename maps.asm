@@ -3,13 +3,18 @@
 .section ".map0c" superfree
 m0_chr:
 .incbin "data/m0.chr"
-m0_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map0d" superfree
+m0_ch1:
+.incbin "data/m0.ch1"
 .ends
 
 .section ".map0" superfree
 m0_map:
 .incbin "data/m0.map"
+m0_grid:
+.incbin "data/m0.grd"
 m0_pal:
 .incbin "data/m0.pal"
 m0_col:
@@ -35,13 +40,18 @@ m0_ani:
 .section ".map1c" superfree
 m1_chr:
 .incbin "data/m1.chr"
-m1_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map1d" superfree
+m1_ch1:
+.incbin "data/m1.ch1"
 .ends
 
 .section ".map1" superfree
 m1_map:
 .incbin "data/m1.map"
+m1_grid:
+.incbin "data/m1.grd"
 m1_pal:
 .incbin "data/m1.pal"
 m1_col:
@@ -67,13 +77,18 @@ m1_ani:
 .section ".map2c" superfree
 m2_chr:
 .incbin "data/m2.chr"
-m2_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map2d" superfree
+m2_ch1:
+.incbin "data/m2.ch1"
 .ends
 
 .section ".map2" superfree
 m2_map:
 .incbin "data/m2.map"
+m2_grid:
+.incbin "data/m2.grd"
 m2_pal:
 .incbin "data/m2.pal"
 m2_col:
@@ -99,13 +114,18 @@ m2_ani:
 .section ".map3c" superfree
 m3_chr:
 .incbin "data/m3.chr"
-m3_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map3d" superfree
+m3_ch1:
+.incbin "data/m3.ch1"
 .ends
 
 .section ".map3" superfree
 m3_map:
 .incbin "data/m3.map"
+m3_grid:
+.incbin "data/m3.grd"
 m3_pal:
 .incbin "data/m3.pal"
 m3_col:
@@ -131,13 +151,18 @@ m3_ani:
 .section ".map4c" superfree
 m4_chr:
 .incbin "data/m4.chr"
-m4_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map4d" superfree
+m4_ch1:
+.incbin "data/m4.ch1"
 .ends
 
 .section ".map4" superfree
 m4_map:
 .incbin "data/m4.map"
+m4_grid:
+.incbin "data/m4.grd"
 m4_pal:
 .incbin "data/m4.pal"
 m4_col:
@@ -163,13 +188,18 @@ m4_ani:
 .section ".map5c" superfree
 m5_chr:
 .incbin "data/m5.chr"
-m5_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map5d" superfree
+m5_ch1:
+.incbin "data/m5.ch1"
 .ends
 
 .section ".map5" superfree
 m5_map:
 .incbin "data/m5.map"
+m5_grid:
+.incbin "data/m5.grd"
 m5_pal:
 .incbin "data/m5.pal"
 m5_col:
@@ -195,13 +225,18 @@ m5_ani:
 .section ".map6c" superfree
 m6_chr:
 .incbin "data/m6.chr"
-m6_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map6d" superfree
+m6_ch1:
+.incbin "data/m6.ch1"
 .ends
 
 .section ".map6" superfree
 m6_map:
 .incbin "data/m6.map"
+m6_grid:
+.incbin "data/m6.grd"
 m6_pal:
 .incbin "data/m6.pal"
 m6_col:
@@ -227,13 +262,18 @@ m6_ani:
 .section ".map7c" superfree
 m7_chr:
 .incbin "data/m7.chr"
-m7_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map7d" superfree
+m7_ch1:
+.incbin "data/m7.ch1"
 .ends
 
 .section ".map7" superfree
 m7_map:
 .incbin "data/m7.map"
+m7_grid:
+.incbin "data/m7.grd"
 m7_pal:
 .incbin "data/m7.pal"
 m7_col:
@@ -259,13 +299,18 @@ m7_ani:
 .section ".map8c" superfree
 m8_chr:
 .incbin "data/m8.chr"
-m8_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map8d" superfree
+m8_ch1:
+.incbin "data/m8.ch1"
 .ends
 
 .section ".map8" superfree
 m8_map:
 .incbin "data/m8.map"
+m8_grid:
+.incbin "data/m8.grd"
 m8_pal:
 .incbin "data/m8.pal"
 m8_col:
@@ -291,13 +336,18 @@ m8_ani:
 .section ".map9c" superfree
 m9_chr:
 .incbin "data/m9.chr"
-m9_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map9d" superfree
+m9_ch1:
+.incbin "data/m9.ch1"
 .ends
 
 .section ".map9" superfree
 m9_map:
 .incbin "data/m9.map"
+m9_grid:
+.incbin "data/m9.grd"
 m9_pal:
 .incbin "data/m9.pal"
 m9_col:
@@ -323,13 +373,18 @@ m9_ani:
 .section ".map10c" superfree
 m10_chr:
 .incbin "data/m10.chr"
-m10_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map10d" superfree
+m10_ch1:
+.incbin "data/m10.ch1"
 .ends
 
 .section ".map10" superfree
 m10_map:
 .incbin "data/m10.map"
+m10_grid:
+.incbin "data/m10.grd"
 m10_pal:
 .incbin "data/m10.pal"
 m10_col:
@@ -355,13 +410,18 @@ m10_ani:
 .section ".map11c" superfree
 m11_chr:
 .incbin "data/m11.chr"
-m11_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map11d" superfree
+m11_ch1:
+.incbin "data/m11.ch1"
 .ends
 
 .section ".map11" superfree
 m11_map:
 .incbin "data/m11.map"
+m11_grid:
+.incbin "data/m11.grd"
 m11_pal:
 .incbin "data/m11.pal"
 m11_col:
@@ -387,13 +447,18 @@ m11_ani:
 .section ".map12c" superfree
 m12_chr:
 .incbin "data/m12.chr"
-m12_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map12d" superfree
+m12_ch1:
+.incbin "data/m12.ch1"
 .ends
 
 .section ".map12" superfree
 m12_map:
 .incbin "data/m12.map"
+m12_grid:
+.incbin "data/m12.grd"
 m12_pal:
 .incbin "data/m12.pal"
 m12_col:
@@ -419,13 +484,18 @@ m12_ani:
 .section ".map13c" superfree
 m13_chr:
 .incbin "data/m13.chr"
-m13_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map13d" superfree
+m13_ch1:
+.incbin "data/m13.ch1"
 .ends
 
 .section ".map13" superfree
 m13_map:
 .incbin "data/m13.map"
+m13_grid:
+.incbin "data/m13.grd"
 m13_pal:
 .incbin "data/m13.pal"
 m13_col:
@@ -451,13 +521,18 @@ m13_ani:
 .section ".map14c" superfree
 m14_chr:
 .incbin "data/m14.chr"
-m14_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map14d" superfree
+m14_ch1:
+.incbin "data/m14.ch1"
 .ends
 
 .section ".map14" superfree
 m14_map:
 .incbin "data/m14.map"
+m14_grid:
+.incbin "data/m14.grd"
 m14_pal:
 .incbin "data/m14.pal"
 m14_col:
@@ -483,13 +558,18 @@ m14_ani:
 .section ".map15c" superfree
 m15_chr:
 .incbin "data/m15.chr"
-m15_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map15d" superfree
+m15_ch1:
+.incbin "data/m15.ch1"
 .ends
 
 .section ".map15" superfree
 m15_map:
 .incbin "data/m15.map"
+m15_grid:
+.incbin "data/m15.grd"
 m15_pal:
 .incbin "data/m15.pal"
 m15_col:
@@ -506,16 +586,27 @@ m15_xtr:
 .incbin "data/m15.xtr"
 .ends
 
+.section ".map15a" superfree
+m15_ani:
+.incbin "data/m15.ani"
+.db 0
+.ends
+
 .section ".map16c" superfree
 m16_chr:
 .incbin "data/m16.chr"
-m16_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map16d" superfree
+m16_ch1:
+.incbin "data/m16.ch1"
 .ends
 
 .section ".map16" superfree
 m16_map:
 .incbin "data/m16.map"
+m16_grid:
+.incbin "data/m16.grd"
 m16_pal:
 .incbin "data/m16.pal"
 m16_col:
@@ -541,13 +632,18 @@ m16_ani:
 .section ".map17c" superfree
 m17_chr:
 .incbin "data/m17.chr"
-m17_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map17d" superfree
+m17_ch1:
+.incbin "data/m17.ch1"
 .ends
 
 .section ".map17" superfree
 m17_map:
 .incbin "data/m17.map"
+m17_grid:
+.incbin "data/m17.grd"
 m17_pal:
 .incbin "data/m17.pal"
 m17_col:
@@ -573,13 +669,18 @@ m17_ani:
 .section ".map18c" superfree
 m18_chr:
 .incbin "data/m18.chr"
-m18_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map18d" superfree
+m18_ch1:
+.incbin "data/m18.ch1"
 .ends
 
 .section ".map18" superfree
 m18_map:
 .incbin "data/m18.map"
+m18_grid:
+.incbin "data/m18.grd"
 m18_pal:
 .incbin "data/m18.pal"
 m18_col:
@@ -596,16 +697,27 @@ m18_xtr:
 .incbin "data/m18.xtr"
 .ends
 
+.section ".map18a" superfree
+m18_ani:
+.incbin "data/m18.ani"
+.db 0
+.ends
+
 .section ".map19c" superfree
 m19_chr:
 .incbin "data/m19.chr"
-m19_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map19d" superfree
+m19_ch1:
+.incbin "data/m19.ch1"
 .ends
 
 .section ".map19" superfree
 m19_map:
 .incbin "data/m19.map"
+m19_grid:
+.incbin "data/m19.grd"
 m19_pal:
 .incbin "data/m19.pal"
 m19_col:
@@ -631,13 +743,18 @@ m19_ani:
 .section ".map20c" superfree
 m20_chr:
 .incbin "data/m20.chr"
-m20_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map20d" superfree
+m20_ch1:
+.incbin "data/m20.ch1"
 .ends
 
 .section ".map20" superfree
 m20_map:
 .incbin "data/m20.map"
+m20_grid:
+.incbin "data/m20.grd"
 m20_pal:
 .incbin "data/m20.pal"
 m20_col:
@@ -654,16 +771,27 @@ m20_xtr:
 .incbin "data/m20.xtr"
 .ends
 
+.section ".map20a" superfree
+m20_ani:
+.incbin "data/m20.ani"
+.db 0
+.ends
+
 .section ".map21c" superfree
 m21_chr:
 .incbin "data/m21.chr"
-m21_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map21d" superfree
+m21_ch1:
+.incbin "data/m21.ch1"
 .ends
 
 .section ".map21" superfree
 m21_map:
 .incbin "data/m21.map"
+m21_grid:
+.incbin "data/m21.grd"
 m21_pal:
 .incbin "data/m21.pal"
 m21_col:
@@ -689,13 +817,18 @@ m21_ani:
 .section ".map22c" superfree
 m22_chr:
 .incbin "data/m22.chr"
-m22_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map22d" superfree
+m22_ch1:
+.incbin "data/m22.ch1"
 .ends
 
 .section ".map22" superfree
 m22_map:
 .incbin "data/m22.map"
+m22_grid:
+.incbin "data/m22.grd"
 m22_pal:
 .incbin "data/m22.pal"
 m22_col:
@@ -721,13 +854,18 @@ m22_ani:
 .section ".map23c" superfree
 m23_chr:
 .incbin "data/m23.chr"
-m23_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map23d" superfree
+m23_ch1:
+.incbin "data/m23.ch1"
 .ends
 
 .section ".map23" superfree
 m23_map:
 .incbin "data/m23.map"
+m23_grid:
+.incbin "data/m23.grd"
 m23_pal:
 .incbin "data/m23.pal"
 m23_col:
@@ -744,16 +882,27 @@ m23_xtr:
 .incbin "data/m23.xtr"
 .ends
 
+.section ".map23a" superfree
+m23_ani:
+.incbin "data/m23.ani"
+.db 0
+.ends
+
 .section ".map24c" superfree
 m24_chr:
 .incbin "data/m24.chr"
-m24_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map24d" superfree
+m24_ch1:
+.incbin "data/m24.ch1"
 .ends
 
 .section ".map24" superfree
 m24_map:
 .incbin "data/m24.map"
+m24_grid:
+.incbin "data/m24.grd"
 m24_pal:
 .incbin "data/m24.pal"
 m24_col:
@@ -779,13 +928,18 @@ m24_ani:
 .section ".map25c" superfree
 m25_chr:
 .incbin "data/m25.chr"
-m25_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map25d" superfree
+m25_ch1:
+.incbin "data/m25.ch1"
 .ends
 
 .section ".map25" superfree
 m25_map:
 .incbin "data/m25.map"
+m25_grid:
+.incbin "data/m25.grd"
 m25_pal:
 .incbin "data/m25.pal"
 m25_col:
@@ -811,13 +965,18 @@ m25_ani:
 .section ".map26c" superfree
 m26_chr:
 .incbin "data/m26.chr"
-m26_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map26d" superfree
+m26_ch1:
+.incbin "data/m26.ch1"
 .ends
 
 .section ".map26" superfree
 m26_map:
 .incbin "data/m26.map"
+m26_grid:
+.incbin "data/m26.grd"
 m26_pal:
 .incbin "data/m26.pal"
 m26_col:
@@ -843,13 +1002,18 @@ m26_ani:
 .section ".map27c" superfree
 m27_chr:
 .incbin "data/m27.chr"
-m27_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map27d" superfree
+m27_ch1:
+.incbin "data/m27.ch1"
 .ends
 
 .section ".map27" superfree
 m27_map:
 .incbin "data/m27.map"
+m27_grid:
+.incbin "data/m27.grd"
 m27_pal:
 .incbin "data/m27.pal"
 m27_col:
@@ -875,13 +1039,18 @@ m27_ani:
 .section ".map28c" superfree
 m28_chr:
 .incbin "data/m28.chr"
-m28_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map28d" superfree
+m28_ch1:
+.incbin "data/m28.ch1"
 .ends
 
 .section ".map28" superfree
 m28_map:
 .incbin "data/m28.map"
+m28_grid:
+.incbin "data/m28.grd"
 m28_pal:
 .incbin "data/m28.pal"
 m28_col:
@@ -907,13 +1076,18 @@ m28_ani:
 .section ".map29c" superfree
 m29_chr:
 .incbin "data/m29.chr"
-m29_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map29d" superfree
+m29_ch1:
+.incbin "data/m29.ch1"
 .ends
 
 .section ".map29" superfree
 m29_map:
 .incbin "data/m29.map"
+m29_grid:
+.incbin "data/m29.grd"
 m29_pal:
 .incbin "data/m29.pal"
 m29_col:
@@ -939,13 +1113,18 @@ m29_ani:
 .section ".map30c" superfree
 m30_chr:
 .incbin "data/m30.chr"
-m30_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map30d" superfree
+m30_ch1:
+.incbin "data/m30.ch1"
 .ends
 
 .section ".map30" superfree
 m30_map:
 .incbin "data/m30.map"
+m30_grid:
+.incbin "data/m30.grd"
 m30_pal:
 .incbin "data/m30.pal"
 m30_col:
@@ -971,13 +1150,18 @@ m30_ani:
 .section ".map31c" superfree
 m31_chr:
 .incbin "data/m31.chr"
-m31_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map31d" superfree
+m31_ch1:
+.incbin "data/m31.ch1"
 .ends
 
 .section ".map31" superfree
 m31_map:
 .incbin "data/m31.map"
+m31_grid:
+.incbin "data/m31.grd"
 m31_pal:
 .incbin "data/m31.pal"
 m31_col:
@@ -1003,13 +1187,18 @@ m31_ani:
 .section ".map32c" superfree
 m32_chr:
 .incbin "data/m32.chr"
-m32_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map32d" superfree
+m32_ch1:
+.incbin "data/m32.ch1"
 .ends
 
 .section ".map32" superfree
 m32_map:
 .incbin "data/m32.map"
+m32_grid:
+.incbin "data/m32.grd"
 m32_pal:
 .incbin "data/m32.pal"
 m32_col:
@@ -1035,13 +1224,18 @@ m32_ani:
 .section ".map33c" superfree
 m33_chr:
 .incbin "data/m33.chr"
-m33_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map33d" superfree
+m33_ch1:
+.incbin "data/m33.ch1"
 .ends
 
 .section ".map33" superfree
 m33_map:
 .incbin "data/m33.map"
+m33_grid:
+.incbin "data/m33.grd"
 m33_pal:
 .incbin "data/m33.pal"
 m33_col:
@@ -1067,13 +1261,18 @@ m33_ani:
 .section ".map34c" superfree
 m34_chr:
 .incbin "data/m34.chr"
-m34_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map34d" superfree
+m34_ch1:
+.incbin "data/m34.ch1"
 .ends
 
 .section ".map34" superfree
 m34_map:
 .incbin "data/m34.map"
+m34_grid:
+.incbin "data/m34.grd"
 m34_pal:
 .incbin "data/m34.pal"
 m34_col:
@@ -1099,13 +1298,18 @@ m34_ani:
 .section ".map35c" superfree
 m35_chr:
 .incbin "data/m35.chr"
-m35_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map35d" superfree
+m35_ch1:
+.incbin "data/m35.ch1"
 .ends
 
 .section ".map35" superfree
 m35_map:
 .incbin "data/m35.map"
+m35_grid:
+.incbin "data/m35.grd"
 m35_pal:
 .incbin "data/m35.pal"
 m35_col:
@@ -1131,13 +1335,18 @@ m35_ani:
 .section ".map36c" superfree
 m36_chr:
 .incbin "data/m36.chr"
-m36_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map36d" superfree
+m36_ch1:
+.incbin "data/m36.ch1"
 .ends
 
 .section ".map36" superfree
 m36_map:
 .incbin "data/m36.map"
+m36_grid:
+.incbin "data/m36.grd"
 m36_pal:
 .incbin "data/m36.pal"
 m36_col:
@@ -1163,13 +1372,18 @@ m36_ani:
 .section ".map37c" superfree
 m37_chr:
 .incbin "data/m37.chr"
-m37_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map37d" superfree
+m37_ch1:
+.incbin "data/m37.ch1"
 .ends
 
 .section ".map37" superfree
 m37_map:
 .incbin "data/m37.map"
+m37_grid:
+.incbin "data/m37.grd"
 m37_pal:
 .incbin "data/m37.pal"
 m37_col:
@@ -1195,13 +1409,18 @@ m37_ani:
 .section ".map38c" superfree
 m38_chr:
 .incbin "data/m38.chr"
-m38_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map38d" superfree
+m38_ch1:
+.incbin "data/m38.ch1"
 .ends
 
 .section ".map38" superfree
 m38_map:
 .incbin "data/m38.map"
+m38_grid:
+.incbin "data/m38.grd"
 m38_pal:
 .incbin "data/m38.pal"
 m38_col:
@@ -1227,13 +1446,18 @@ m38_ani:
 .section ".map39c" superfree
 m39_chr:
 .incbin "data/m39.chr"
-m39_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map39d" superfree
+m39_ch1:
+.incbin "data/m39.ch1"
 .ends
 
 .section ".map39" superfree
 m39_map:
 .incbin "data/m39.map"
+m39_grid:
+.incbin "data/m39.grd"
 m39_pal:
 .incbin "data/m39.pal"
 m39_col:
@@ -1259,13 +1483,18 @@ m39_ani:
 .section ".map40c" superfree
 m40_chr:
 .incbin "data/m40.chr"
-m40_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map40d" superfree
+m40_ch1:
+.incbin "data/m40.ch1"
 .ends
 
 .section ".map40" superfree
 m40_map:
 .incbin "data/m40.map"
+m40_grid:
+.incbin "data/m40.grd"
 m40_pal:
 .incbin "data/m40.pal"
 m40_col:
@@ -1291,13 +1520,18 @@ m40_ani:
 .section ".map41c" superfree
 m41_chr:
 .incbin "data/m41.chr"
-m41_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map41d" superfree
+m41_ch1:
+.incbin "data/m41.ch1"
 .ends
 
 .section ".map41" superfree
 m41_map:
 .incbin "data/m41.map"
+m41_grid:
+.incbin "data/m41.grd"
 m41_pal:
 .incbin "data/m41.pal"
 m41_col:
@@ -1323,13 +1557,18 @@ m41_ani:
 .section ".map42c" superfree
 m42_chr:
 .incbin "data/m42.chr"
-m42_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map42d" superfree
+m42_ch1:
+.incbin "data/m42.ch1"
 .ends
 
 .section ".map42" superfree
 m42_map:
 .incbin "data/m42.map"
+m42_grid:
+.incbin "data/m42.grd"
 m42_pal:
 .incbin "data/m42.pal"
 m42_col:
@@ -1355,13 +1594,18 @@ m42_ani:
 .section ".map43c" superfree
 m43_chr:
 .incbin "data/m43.chr"
-m43_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map43d" superfree
+m43_ch1:
+.incbin "data/m43.ch1"
 .ends
 
 .section ".map43" superfree
 m43_map:
 .incbin "data/m43.map"
+m43_grid:
+.incbin "data/m43.grd"
 m43_pal:
 .incbin "data/m43.pal"
 m43_col:
@@ -1387,13 +1631,18 @@ m43_ani:
 .section ".map44c" superfree
 m44_chr:
 .incbin "data/m44.chr"
-m44_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map44d" superfree
+m44_ch1:
+.incbin "data/m44.ch1"
 .ends
 
 .section ".map44" superfree
 m44_map:
 .incbin "data/m44.map"
+m44_grid:
+.incbin "data/m44.grd"
 m44_pal:
 .incbin "data/m44.pal"
 m44_col:
@@ -1419,13 +1668,18 @@ m44_ani:
 .section ".map45c" superfree
 m45_chr:
 .incbin "data/m45.chr"
-m45_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map45d" superfree
+m45_ch1:
+.incbin "data/m45.ch1"
 .ends
 
 .section ".map45" superfree
 m45_map:
 .incbin "data/m45.map"
+m45_grid:
+.incbin "data/m45.grd"
 m45_pal:
 .incbin "data/m45.pal"
 m45_col:
@@ -1451,13 +1705,18 @@ m45_ani:
 .section ".map46c" superfree
 m46_chr:
 .incbin "data/m46.chr"
-m46_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map46d" superfree
+m46_ch1:
+.incbin "data/m46.ch1"
 .ends
 
 .section ".map46" superfree
 m46_map:
 .incbin "data/m46.map"
+m46_grid:
+.incbin "data/m46.grd"
 m46_pal:
 .incbin "data/m46.pal"
 m46_col:
@@ -1483,13 +1742,18 @@ m46_ani:
 .section ".map47c" superfree
 m47_chr:
 .incbin "data/m47.chr"
-m47_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map47d" superfree
+m47_ch1:
+.incbin "data/m47.ch1"
 .ends
 
 .section ".map47" superfree
 m47_map:
 .incbin "data/m47.map"
+m47_grid:
+.incbin "data/m47.grd"
 m47_pal:
 .incbin "data/m47.pal"
 m47_col:
@@ -1515,13 +1779,18 @@ m47_ani:
 .section ".map48c" superfree
 m48_chr:
 .incbin "data/m48.chr"
-m48_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map48d" superfree
+m48_ch1:
+.incbin "data/m48.ch1"
 .ends
 
 .section ".map48" superfree
 m48_map:
 .incbin "data/m48.map"
+m48_grid:
+.incbin "data/m48.grd"
 m48_pal:
 .incbin "data/m48.pal"
 m48_col:
@@ -1547,13 +1816,18 @@ m48_ani:
 .section ".map49c" superfree
 m49_chr:
 .incbin "data/m49.chr"
-m49_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map49d" superfree
+m49_ch1:
+.incbin "data/m49.ch1"
 .ends
 
 .section ".map49" superfree
 m49_map:
 .incbin "data/m49.map"
+m49_grid:
+.incbin "data/m49.grd"
 m49_pal:
 .incbin "data/m49.pal"
 m49_col:
@@ -1579,13 +1853,18 @@ m49_ani:
 .section ".map50c" superfree
 m50_chr:
 .incbin "data/m50.chr"
-m50_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map50d" superfree
+m50_ch1:
+.incbin "data/m50.ch1"
 .ends
 
 .section ".map50" superfree
 m50_map:
 .incbin "data/m50.map"
+m50_grid:
+.incbin "data/m50.grd"
 m50_pal:
 .incbin "data/m50.pal"
 m50_col:
@@ -1611,13 +1890,18 @@ m50_ani:
 .section ".map51c" superfree
 m51_chr:
 .incbin "data/m51.chr"
-m51_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map51d" superfree
+m51_ch1:
+.incbin "data/m51.ch1"
 .ends
 
 .section ".map51" superfree
 m51_map:
 .incbin "data/m51.map"
+m51_grid:
+.incbin "data/m51.grd"
 m51_pal:
 .incbin "data/m51.pal"
 m51_col:
@@ -1643,13 +1927,18 @@ m51_ani:
 .section ".map52c" superfree
 m52_chr:
 .incbin "data/m52.chr"
-m52_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map52d" superfree
+m52_ch1:
+.incbin "data/m52.ch1"
 .ends
 
 .section ".map52" superfree
 m52_map:
 .incbin "data/m52.map"
+m52_grid:
+.incbin "data/m52.grd"
 m52_pal:
 .incbin "data/m52.pal"
 m52_col:
@@ -1675,13 +1964,18 @@ m52_ani:
 .section ".map53c" superfree
 m53_chr:
 .incbin "data/m53.chr"
-m53_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map53d" superfree
+m53_ch1:
+.incbin "data/m53.ch1"
 .ends
 
 .section ".map53" superfree
 m53_map:
 .incbin "data/m53.map"
+m53_grid:
+.incbin "data/m53.grd"
 m53_pal:
 .incbin "data/m53.pal"
 m53_col:
@@ -1707,13 +2001,18 @@ m53_ani:
 .section ".map54c" superfree
 m54_chr:
 .incbin "data/m54.chr"
-m54_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map54d" superfree
+m54_ch1:
+.incbin "data/m54.ch1"
 .ends
 
 .section ".map54" superfree
 m54_map:
 .incbin "data/m54.map"
+m54_grid:
+.incbin "data/m54.grd"
 m54_pal:
 .incbin "data/m54.pal"
 m54_col:
@@ -1739,13 +2038,18 @@ m54_ani:
 .section ".map55c" superfree
 m55_chr:
 .incbin "data/m55.chr"
-m55_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map55d" superfree
+m55_ch1:
+.incbin "data/m55.ch1"
 .ends
 
 .section ".map55" superfree
 m55_map:
 .incbin "data/m55.map"
+m55_grid:
+.incbin "data/m55.grd"
 m55_pal:
 .incbin "data/m55.pal"
 m55_col:
@@ -1771,13 +2075,18 @@ m55_ani:
 .section ".map56c" superfree
 m56_chr:
 .incbin "data/m56.chr"
-m56_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map56d" superfree
+m56_ch1:
+.incbin "data/m56.ch1"
 .ends
 
 .section ".map56" superfree
 m56_map:
 .incbin "data/m56.map"
+m56_grid:
+.incbin "data/m56.grd"
 m56_pal:
 .incbin "data/m56.pal"
 m56_col:
@@ -1803,13 +2112,18 @@ m56_ani:
 .section ".map57c" superfree
 m57_chr:
 .incbin "data/m57.chr"
-m57_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map57d" superfree
+m57_ch1:
+.incbin "data/m57.ch1"
 .ends
 
 .section ".map57" superfree
 m57_map:
 .incbin "data/m57.map"
+m57_grid:
+.incbin "data/m57.grd"
 m57_pal:
 .incbin "data/m57.pal"
 m57_col:
@@ -1835,13 +2149,18 @@ m57_ani:
 .section ".map58c" superfree
 m58_chr:
 .incbin "data/m58.chr"
-m58_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map58d" superfree
+m58_ch1:
+.incbin "data/m58.ch1"
 .ends
 
 .section ".map58" superfree
 m58_map:
 .incbin "data/m58.map"
+m58_grid:
+.incbin "data/m58.grd"
 m58_pal:
 .incbin "data/m58.pal"
 m58_col:
@@ -1867,13 +2186,18 @@ m58_ani:
 .section ".map59c" superfree
 m59_chr:
 .incbin "data/m59.chr"
-m59_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map59d" superfree
+m59_ch1:
+.incbin "data/m59.ch1"
 .ends
 
 .section ".map59" superfree
 m59_map:
 .incbin "data/m59.map"
+m59_grid:
+.incbin "data/m59.grd"
 m59_pal:
 .incbin "data/m59.pal"
 m59_col:
@@ -1899,13 +2223,18 @@ m59_ani:
 .section ".map60c" superfree
 m60_chr:
 .incbin "data/m60.chr"
-m60_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map60d" superfree
+m60_ch1:
+.incbin "data/m60.ch1"
 .ends
 
 .section ".map60" superfree
 m60_map:
 .incbin "data/m60.map"
+m60_grid:
+.incbin "data/m60.grd"
 m60_pal:
 .incbin "data/m60.pal"
 m60_col:
@@ -1931,13 +2260,18 @@ m60_ani:
 .section ".map61c" superfree
 m61_chr:
 .incbin "data/m61.chr"
-m61_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map61d" superfree
+m61_ch1:
+.incbin "data/m61.ch1"
 .ends
 
 .section ".map61" superfree
 m61_map:
 .incbin "data/m61.map"
+m61_grid:
+.incbin "data/m61.grd"
 m61_pal:
 .incbin "data/m61.pal"
 m61_col:
@@ -1963,13 +2297,18 @@ m61_ani:
 .section ".map62c" superfree
 m62_chr:
 .incbin "data/m62.chr"
-m62_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map62d" superfree
+m62_ch1:
+.incbin "data/m62.ch1"
 .ends
 
 .section ".map62" superfree
 m62_map:
 .incbin "data/m62.map"
+m62_grid:
+.incbin "data/m62.grd"
 m62_pal:
 .incbin "data/m62.pal"
 m62_col:
@@ -1995,13 +2334,18 @@ m62_ani:
 .section ".map63c" superfree
 m63_chr:
 .incbin "data/m63.chr"
-m63_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map63d" superfree
+m63_ch1:
+.incbin "data/m63.ch1"
 .ends
 
 .section ".map63" superfree
 m63_map:
 .incbin "data/m63.map"
+m63_grid:
+.incbin "data/m63.grd"
 m63_pal:
 .incbin "data/m63.pal"
 m63_col:
@@ -2027,13 +2371,18 @@ m63_ani:
 .section ".map64c" superfree
 m64_chr:
 .incbin "data/m64.chr"
-m64_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map64d" superfree
+m64_ch1:
+.incbin "data/m64.ch1"
 .ends
 
 .section ".map64" superfree
 m64_map:
 .incbin "data/m64.map"
+m64_grid:
+.incbin "data/m64.grd"
 m64_pal:
 .incbin "data/m64.pal"
 m64_col:
@@ -2059,13 +2408,18 @@ m64_ani:
 .section ".map65c" superfree
 m65_chr:
 .incbin "data/m65.chr"
-m65_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map65d" superfree
+m65_ch1:
+.incbin "data/m65.ch1"
 .ends
 
 .section ".map65" superfree
 m65_map:
 .incbin "data/m65.map"
+m65_grid:
+.incbin "data/m65.grd"
 m65_pal:
 .incbin "data/m65.pal"
 m65_col:
@@ -2091,13 +2445,18 @@ m65_ani:
 .section ".map66c" superfree
 m66_chr:
 .incbin "data/m66.chr"
-m66_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map66d" superfree
+m66_ch1:
+.incbin "data/m66.ch1"
 .ends
 
 .section ".map66" superfree
 m66_map:
 .incbin "data/m66.map"
+m66_grid:
+.incbin "data/m66.grd"
 m66_pal:
 .incbin "data/m66.pal"
 m66_col:
@@ -2123,13 +2482,18 @@ m66_ani:
 .section ".map67c" superfree
 m67_chr:
 .incbin "data/m67.chr"
-m67_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map67d" superfree
+m67_ch1:
+.incbin "data/m67.ch1"
 .ends
 
 .section ".map67" superfree
 m67_map:
 .incbin "data/m67.map"
+m67_grid:
+.incbin "data/m67.grd"
 m67_pal:
 .incbin "data/m67.pal"
 m67_col:
@@ -2155,13 +2519,18 @@ m67_ani:
 .section ".map68c" superfree
 m68_chr:
 .incbin "data/m68.chr"
-m68_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map68d" superfree
+m68_ch1:
+.incbin "data/m68.ch1"
 .ends
 
 .section ".map68" superfree
 m68_map:
 .incbin "data/m68.map"
+m68_grid:
+.incbin "data/m68.grd"
 m68_pal:
 .incbin "data/m68.pal"
 m68_col:
@@ -2187,13 +2556,18 @@ m68_ani:
 .section ".map69c" superfree
 m69_chr:
 .incbin "data/m69.chr"
-m69_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map69d" superfree
+m69_ch1:
+.incbin "data/m69.ch1"
 .ends
 
 .section ".map69" superfree
 m69_map:
 .incbin "data/m69.map"
+m69_grid:
+.incbin "data/m69.grd"
 m69_pal:
 .incbin "data/m69.pal"
 m69_col:
@@ -2219,13 +2593,18 @@ m69_ani:
 .section ".map70c" superfree
 m70_chr:
 .incbin "data/m70.chr"
-m70_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map70d" superfree
+m70_ch1:
+.incbin "data/m70.ch1"
 .ends
 
 .section ".map70" superfree
 m70_map:
 .incbin "data/m70.map"
+m70_grid:
+.incbin "data/m70.grd"
 m70_pal:
 .incbin "data/m70.pal"
 m70_col:
@@ -2251,13 +2630,18 @@ m70_ani:
 .section ".map71c" superfree
 m71_chr:
 .incbin "data/m71.chr"
-m71_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map71d" superfree
+m71_ch1:
+.incbin "data/m71.ch1"
 .ends
 
 .section ".map71" superfree
 m71_map:
 .incbin "data/m71.map"
+m71_grid:
+.incbin "data/m71.grd"
 m71_pal:
 .incbin "data/m71.pal"
 m71_col:
@@ -2283,13 +2667,18 @@ m71_ani:
 .section ".map72c" superfree
 m72_chr:
 .incbin "data/m72.chr"
-m72_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map72d" superfree
+m72_ch1:
+.incbin "data/m72.ch1"
 .ends
 
 .section ".map72" superfree
 m72_map:
 .incbin "data/m72.map"
+m72_grid:
+.incbin "data/m72.grd"
 m72_pal:
 .incbin "data/m72.pal"
 m72_col:
@@ -2315,13 +2704,18 @@ m72_ani:
 .section ".map73c" superfree
 m73_chr:
 .incbin "data/m73.chr"
-m73_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map73d" superfree
+m73_ch1:
+.incbin "data/m73.ch1"
 .ends
 
 .section ".map73" superfree
 m73_map:
 .incbin "data/m73.map"
+m73_grid:
+.incbin "data/m73.grd"
 m73_pal:
 .incbin "data/m73.pal"
 m73_col:
@@ -2347,13 +2741,18 @@ m73_ani:
 .section ".map74c" superfree
 m74_chr:
 .incbin "data/m74.chr"
-m74_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map74d" superfree
+m74_ch1:
+.incbin "data/m74.ch1"
 .ends
 
 .section ".map74" superfree
 m74_map:
 .incbin "data/m74.map"
+m74_grid:
+.incbin "data/m74.grd"
 m74_pal:
 .incbin "data/m74.pal"
 m74_col:
@@ -2379,13 +2778,18 @@ m74_ani:
 .section ".map75c" superfree
 m75_chr:
 .incbin "data/m75.chr"
-m75_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map75d" superfree
+m75_ch1:
+.incbin "data/m75.ch1"
 .ends
 
 .section ".map75" superfree
 m75_map:
 .incbin "data/m75.map"
+m75_grid:
+.incbin "data/m75.grd"
 m75_pal:
 .incbin "data/m75.pal"
 m75_col:
@@ -2411,13 +2815,18 @@ m75_ani:
 .section ".map76c" superfree
 m76_chr:
 .incbin "data/m76.chr"
-m76_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map76d" superfree
+m76_ch1:
+.incbin "data/m76.ch1"
 .ends
 
 .section ".map76" superfree
 m76_map:
 .incbin "data/m76.map"
+m76_grid:
+.incbin "data/m76.grd"
 m76_pal:
 .incbin "data/m76.pal"
 m76_col:
@@ -2443,13 +2852,18 @@ m76_ani:
 .section ".map77c" superfree
 m77_chr:
 .incbin "data/m77.chr"
-m77_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map77d" superfree
+m77_ch1:
+.incbin "data/m77.ch1"
 .ends
 
 .section ".map77" superfree
 m77_map:
 .incbin "data/m77.map"
+m77_grid:
+.incbin "data/m77.grd"
 m77_pal:
 .incbin "data/m77.pal"
 m77_col:
@@ -2475,13 +2889,18 @@ m77_ani:
 .section ".map78c" superfree
 m78_chr:
 .incbin "data/m78.chr"
-m78_chrend:
-.db 0   ; (keeps the end label inside the bank)
+.ends
+
+.section ".map78d" superfree
+m78_ch1:
+.incbin "data/m78.ch1"
 .ends
 
 .section ".map78" superfree
 m78_map:
 .incbin "data/m78.map"
+m78_grid:
+.incbin "data/m78.grd"
 m78_pal:
 .incbin "data/m78.pal"
 m78_col:

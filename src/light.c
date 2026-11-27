@@ -118,8 +118,8 @@ void lightFrame(void)
     if (boxState != BOX_MENU && ++dayClock >= DAY) dayClock = 0;
     darkLevel = kind == 1 ? 0 : kind >= 2 ? 4 : nightLevel();
     r1 = r2 = 0;
-    hx = px - camX;
-    hy = py - 4 - camY;
+    hx = SX(px);
+    hy = SY(py - 4);
     bx = by = 0;
     if (darkLevel)
     {
@@ -180,8 +180,8 @@ void lightFrame(void)
         if (srcR)
         {
             r2 = srcR;
-            bx = srcX - camX;
-            by = srcY - camY;
+            bx = SX(srcX);
+            by = SY(srcY);
         }
     }
     if (r1 != lightR1 || (r1 && (hx != lightX1 || hy != lightY1)))

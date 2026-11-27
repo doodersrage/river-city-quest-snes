@@ -66,8 +66,8 @@ void weatherFrame(void)
     if (n > DROPS) n = DROPS;
     if (darkLevel) n >>= 1; /* at night the dark hides most of the sky: half as many */
     if (!n && !wxShown) return;
-    dx = camX - wxCamX;
-    dy = camY - wxCamY;
+    dx = (camX - wxCamX) << 1;
+    dy = (camY - wxCamY) << 1;
     wxCamX = camX;
     wxCamY = camY;
     for (i = 0; i < DROPS; i++)

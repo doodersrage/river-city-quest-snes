@@ -853,8 +853,8 @@ void drawBoss(void)
         /* the turtle's and the Raven's frames face right: mirror the 3x3 grid to face left */
         col = k % 3;
         if ((bossType == BOSS_TURTLE || bossType == BOSS_RAVEN || bossType == BOSS_VAMPIRE) && bossFlip) col = 2 - col;
-        sx = (bossX >> 4) - camX - 24 + col * 16 + sh;
-        sy = (bossY >> 4) - camY - 40 + (k / 3) * 16 - (bossType == BOSS_BELL ? bossZ : 0);
+        sx = SX(bossX >> 4) - 24 + col * 16 + sh;
+        sy = SY(bossY >> 4) - 40 + (k / 3) * 16 - (bossType == BOSS_BELL ? bossZ : 0);
         if (!t || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
         {
             sprHide((id) >> 2);
@@ -945,8 +945,8 @@ void drawBombs(void)
     for (i = 0; i < MAX_BOMB; i++)
     {
         id = (OAM_BOMBS + i) * 4;
-        sx = bombX[i] - camX - 8;
-        sy = bombY[i] - camY - 10;
+        sx = SX(bombX[i]) - 8;
+        sy = SY(bombY[i]) - 10;
         if (!bombOn[i] || (bombT[i] < 24 && (frameCount & 2)))
         {
             sprHide((id) >> 2);
@@ -962,8 +962,8 @@ void drawBombs(void)
             sprHide((id) >> 2);
             continue;
         }
-        sx = boomX - camX - 16 + (k & 1) * 16;
-        sy = boomY - camY - 16 + (k >> 1) * 16;
+        sx = SX(boomX) - 16 + (k & 1) * 16;
+        sy = SY(boomY) - 16 + (k >> 1) * 16;
         sprPut((id) >> 2, 1, sx, sy, 3, 0, OBJ_I_BOOM + ((boomT < 8 ? 4 : 0) + k) * 2, PAL_ITEM);
     }
 }
@@ -1090,7 +1090,7 @@ void drawBlocks(void)
             sprHide(OAM_BLOCKS + k);
             continue;
         }
-        sprPut(OAM_BLOCKS + k, 1, blkX[k] - camX, blkY[k] - camY - 1, 2, 0, OBJ_I_BLOCK, PAL_BLOCK);
+        sprPut(OAM_BLOCKS + k, 1, SX(blkX[k]), SY(blkY[k]) - 1, 2, 0, OBJ_I_BLOCK, PAL_BLOCK);
     }
 }
 
@@ -1181,7 +1181,7 @@ void drawBug(void)
         sprHide(OAM_BUG);
         return;
     }
-    sprPut(OAM_BUG, 1, bugX - camX - 8, bugY - camY - 8, 3, 0, OBJ_I_BUG, PAL_ITEM);
+    sprPut(OAM_BUG, 1, SX(bugX) - 8, SY(bugY) - 8, 3, 0, OBJ_I_BUG, PAL_ITEM);
 }
 
 /* ---------- items on B ---------- */
@@ -1452,8 +1452,8 @@ void drawHook(void)
         }
         if (k == 0)
         {
-            sx = hookX - camX - 4;
-            sy = hookY - camY - 4;
+            sx = SX(hookX) - 4;
+            sy = SY(hookY) - 4;
         }
         else
         {
@@ -1463,8 +1463,8 @@ void drawHook(void)
             {
                 sx = px + (hookX - px) * k / 14;
                 sy = py - 4 + (hookY - py + 4) * k / 14;
-                sx -= camX + 4;
-                sy -= camY + 4;
+                sx = SX(sx) - 4;
+                sy = SY(sy) - 4;
             }
             else
             {
@@ -1473,8 +1473,8 @@ void drawHook(void)
                     sprHide((id) >> 2);
                     continue;
                 }
-                sx = px + dirX[hookDir] * d - camX - 4;
-                sy = py - 4 + dirY[hookDir] * d - camY - 4;
+                sx = SX(px + dirX[hookDir] * d) - 4;
+                sy = SY(py - 4 + dirY[hookDir] * d) - 4;
             }
         }
         sprPut((id) >> 2, 0, sx, sy, 3, 0, k ? OBJ_CHAIN : OBJ_HOOK, PAL_HUD);
@@ -1489,8 +1489,8 @@ void drawShots(void)
     for (i = 0; i < MAX_SHOT; i++)
     {
         id = (OAM_SHOTS + i) * 4;
-        sx = (shotX[i] >> 4) - camX - 4;
-        sy = (shotY[i] >> 4) - camY - 4;
+        sx = SX(shotX[i] >> 4) - 4;
+        sy = SY(shotY[i] >> 4) - 4;
         if (!shotOn[i] || sx < -8 || sx > SCREEN_W || sy < -8 || sy > SCREEN_H)
         {
             sprHide((id) >> 2);

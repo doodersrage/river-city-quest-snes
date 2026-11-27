@@ -668,8 +668,8 @@ void combatDraw(void)
     if (charging && charge >= 40 && (frameCount & 4)) show = 0;
     if (show)
     {
-        sx = px - camX + paddleOx[a];
-        sy = py - camY + paddleOy[a];
+        sx = SX(px) + paddleOx[a];
+        sy = SY(py) + paddleOy[a];
         sprPut((id) >> 2, 1, sx, sy, 3, 0, paddleTile[a], PAL_HUD);
     }
     else
@@ -678,8 +678,8 @@ void combatDraw(void)
     for (k = 0; k < MAX_EN; k++)
     {
         id = (OAM_ENEMIES + k) * 4;
-        sx = (enX[k] >> 4) - camX - 8;
-        sy = (enY[k] >> 4) - camY - 9;
+        sx = SX(enX[k] >> 4) - 8;
+        sy = SY(enY[k] >> 4) - 9;
         if (!enAlive[k] || (enFlash[k] & 2) || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
         {
             sprHide((id) >> 2);
@@ -698,8 +698,8 @@ void combatDraw(void)
             sprHide((id) >> 2);
             continue;
         }
-        sx = pkX[k] - camX - 4;
-        sy = pkY[k] - camY - 5;
+        sx = SX(pkX[k]) - 4;
+        sy = SY(pkY[k]) - 5;
         if (!pkKind[k] || (pkKind[k] < 3 && pkLife[k] < 120 && (frameCount & 4)) || sx < -8 || sx > SCREEN_W || sy < -8 || sy > SCREEN_H)
         {
             sprHide((id) >> 2);

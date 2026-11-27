@@ -97,8 +97,8 @@ void drawBalls(void)
     s16 sx, sy;
     for (i = 0; i < MAX_BALL; i++)
     {
-        sx = (ballX[i] >> 4) - camX - 8;
-        sy = (ballY[i] >> 4) - camY - 8;
+        sx = SX(ballX[i] >> 4) - 8;
+        sy = SY(ballY[i] >> 4) - 8;
         if (!ballOn[i] || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H) sprHide(OAM_BALLS + i);
         else sprPut(OAM_BALLS + i, 1, sx, sy, 3, 0, OBJ_I_BALL, PAL_ITEM);
     }
@@ -128,7 +128,7 @@ void updDash(void)
 
 void drawBike(void)
 {
-    s16 sx = px - camX - 8, sy = py - camY - 4;
+    s16 sx = SX(px) - 8, sy = SY(py) - 4;
     if (!riding || dying)
     {
         sprHide(OAM_BIKE);
@@ -252,7 +252,7 @@ void openMenu(void)
     menuList[menuN++] = MENU_CARDS;
     if (hasCamera) menuList[menuN++] = MENU_ALBUM;
     menuTop = menuCur > 3 ? menuCur - 3 : 0;
-    boxTop = (py - camY > 120) ? 0 : 20;
+    boxTop = (SY(py) > 120) ? 0 : 20;
     drawMenu();
 }
 

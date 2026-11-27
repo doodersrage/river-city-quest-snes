@@ -273,6 +273,18 @@ void animVBlank(void);
 void textVBlank(void);
 void animStop(void);
 void rcqAnim(u8 *frames, u16 first, u16 count);
+/* stage 13: the streamed map (src/stream.c) */
+extern u8 sLive;
+void streamInit(u8 *ts0, u8 *ts1, u8 *meta, u8 *grid, u8 w, u8 h);
+u16 streamPin(u16 first, u16 count);
+void streamFull(void);
+void streamUpdate(void);
+void streamCell(u8 cx, u8 cy, u16 meta);
+void streamStop(void);
+void streamVBlank(void);
+/* the screen shows the map at double size: a map point's place on screen */
+#define SX(x) ((s16)(((x) - camX) << 1))
+#define SY(y) ((s16)(((y) - camY) << 1))
 void drawHero(void);
 void sprPair(u8 top, u8 bot, s16 x, s16 y, u16 tile, u8 attr); /* src/sprpair.asm: a 16x32 character */
 void runEnding(void);

@@ -8,7 +8,8 @@ Sprites: 4bpp 16x16 frames laid out 8 per row as the PPU expects, plus one palet
 Usage: snesconv.py <export-heroDir> <repo-root>
 Writes <repo-root>/data/*, maps.asm, maps.h and src/maploader.c for the ROM build.
 """
-import json, os, sys
+import json
+import struct, os, sys
 from PIL import Image
 
 MAX_PALS, PAL_COLORS, MAX_TILES = 8, 15, 1024
@@ -295,6 +296,120 @@ def convert_bg(path, extra=(), flip_dedup=True, frames=()):
         for j in range(PAL_COLORS):
             palbin += bgr555(p[j] if j < len(p) else (0, 0, 0))
     return b''.join(chr_data), bytes(tm), bytes(palbin), len(chr_data), len(pals), extra_entries
+
+
+# ---------- Stage 13: maps at double size, as metatiles ----------
+TILE_IDS = 2048    # a map entry keeps 11 bits of tile number (plus 3 of palette and 2 of flips)
+
+
+def scale2x(im):
+    """EPX/Scale2x: double a pixel-art image, rounding diagonals instead of making blocks."""
+    import numpy as np
+    a = np.array(im.convert('RGB'))
+    H, W, _ = a.shape
+    p = np.pad(a, ((1, 1), (1, 1), (0, 0)), mode='edge')
+    B, D, E, F, Hh = p[0:H, 1:W + 1], p[1:H + 1, 0:W], p[1:H + 1, 1:W + 1], p[1:H + 1, 2:W + 2], p[2:H + 2, 1:W + 1]
+    eq = lambda x, y: (x == y).all(-1)
+    c = lambda m: m[..., None]
+    out = np.zeros((H * 2, W * 2, 3), a.dtype)
+    out[0::2, 0::2] = np.where(c(eq(D, B) & ~eq(B, F) & ~eq(D, Hh)), D, E)
+    out[0::2, 1::2] = np.where(c(eq(B, F) & ~eq(B, D) & ~eq(F, Hh)), F, E)
+    out[1::2, 0::2] = np.where(c(eq(D, Hh) & ~eq(D, B) & ~eq(Hh, F)), D, E)
+    out[1::2, 1::2] = np.where(c(eq(Hh, F) & ~eq(D, Hh) & ~eq(B, F)), F, E)
+    return Image.fromarray(out)
+
+
+def convert_map2x(path, w, h, swaps=(), alt=None, opened=None, frames=()):
+    """A map for the streaming engine (stage 13). Cells are 32 px: 4x4 tiles, one metatile each.
+    Returns dict: tiles (bytes, 32 a tile), meta (16 words a metatile), grid (a metatile number a cell), pal,
+    swap_meta (the metatile for each (key, cx, cy) in swaps), anim (first id, count, frames bytes) or None."""
+    def big(p):
+        im = Image.open(p).convert('RGB')
+        return im if im.width >= w * 32 else scale2x(im)   # (stage 13b art comes from the exporter at full size)
+    base = big(path)
+    fims = [big(f) for f in frames if os.path.exists(f)]
+    if len(fims) != 3: fims = []
+    imgs = {'alt': big(alt) if alt else None, 'open': big(opened) if opened else None}
+    # every 8x8 tile we need: the map's (with its frames) and the swap cells'
+    def tiles_at(im, x0, y0):
+        px = im.load()
+        return [c15(px[x0 + x, y0 + y]) for y in range(8) for x in range(8)]
+    cells = []   # per cell: 16 lists of frames
+    for cy in range(h):
+        for cx in range(w):
+            ts = []
+            for ty in range(4):
+                for tx in range(4):
+                    x0, y0 = cx * 32 + tx * 8, cy * 32 + ty * 8
+                    fr = [tiles_at(base, x0, y0)] + [tiles_at(f, x0, y0) for f in fims]
+                    ts.append(fr)
+            cells.append(ts)
+    swap_cells = []
+    for key, cx, cy in swaps:
+        im = imgs[key]
+        swap_cells.append([[tiles_at(im, cx * 32 + tx * 8, cy * 32 + ty * 8)] for ty in range(4) for tx in range(4)])
+    all_tiles = [fr for c in cells + swap_cells for fr in c]
+    joined = [fr[0] if all(f == fr[0] for f in fr) else sum(fr, []) for fr in all_tiles]
+    # palettes: exact if they pack, else clustered
+    r = pack_palettes(joined, allow_remap=False) if len(set(c for t in joined for c in t)) <= 120 else None
+    if not r:
+        cols = sorted(set(c for t in joined for c in t))
+        if len(cols) > 64:   # bring the colour count down first so the clustering stays quick
+            im = Image.new('RGB', (len(joined) * 8, 8 * max(1, max(len(t) for t in joined) // 64)))
+            red = reduce_colors(base, 64)
+            keep = {c15(c) for _, c in red.getcolors(1 << 24)}
+            remap = {c: min(keep, key=lambda k: dist(c, k)) for c in cols}
+            all_tiles = [[[remap[c] for c in f] for f in fr] for fr in all_tiles]
+            joined = [fr[0] if all(f == fr[0] for f in fr) else sum(fr, []) for fr in all_tiles]
+        r = cluster_palettes(joined)
+    pals, assign = r
+    def ix(t, pal):
+        return [pal.index(c) + 1 if c in pal else nearest(c, pal) + 1 for c in t]
+    tiles, lookup, anim_keys, anim_frames = [bytes(32)], {(0,) * 64: (0, 0, 0)}, {}, [[], [], [], []]   # tile 0 blank
+    def static_id(idx):
+        key = tuple(idx)
+        if key in lookup: return lookup[key]
+        n = len(tiles); tiles.append(tile4bpp(idx)); lookup[key] = (n, 0, 0)
+        rows = [idx[y * 8:(y + 1) * 8] for y in range(8)]
+        lookup.setdefault(tuple(v for rr in rows for v in rr[::-1]), (n, 1, 0))
+        lookup.setdefault(tuple(v for rr in rows[::-1] for v in rr), (n, 0, 1))
+        lookup.setdefault(tuple(v for rr in rows[::-1] for v in rr[::-1]), (n, 1, 1))
+        return lookup[key]
+    entries = []
+    for fr, pi in zip(all_tiles, assign):
+        pal = pals[pi]
+        if all(f == fr[0] for f in fr):
+            n, hf, vf = static_id(ix(fr[0], pal))
+            entries.append(['s', n, pi, hf, vf])
+        else:
+            key = (pi,) + tuple(tuple(ix(f, pal)) for f in fr)
+            anim_keys.setdefault(key, len(anim_keys))
+            entries.append(['a', anim_keys[key], pi, 0, 0])
+    nstatic = len(tiles)
+    for key, k in sorted(anim_keys.items(), key=lambda kv: kv[1]):
+        tiles.append(tile4bpp(list(key[1])))
+        for f in range(4): anim_frames[f].append(tile4bpp(list(key[1 + f])))
+    if len(tiles) > TILE_IDS: raise SystemExit(f'{path}: {len(tiles)} tiles, over the {TILE_IDS} a map can name')
+    def word(e):
+        n = e[1] + (nstatic if e[0] == 'a' else 0)
+        return n | (e[2] << 11) | (e[3] << 14) | (e[4] << 15)
+    metas, meta_of = [], {}
+    def meta(ents):
+        key = tuple(word(e) for e in ents)
+        if key not in meta_of: meta_of[key] = len(metas); metas.append(key)
+        return meta_of[key]
+    grid = [meta(entries[i * 16:(i + 1) * 16]) for i in range(len(cells))]
+    off = len(cells) * 16
+    swap_meta = [meta(entries[off + k * 16: off + (k + 1) * 16]) for k in range(len(swap_cells))]
+    palbin = bytearray()
+    for i in range(MAX_PALS):
+        pl = pals[i] if i < len(pals) else []
+        palbin += bgr555((0, 0, 0))
+        for j in range(PAL_COLORS):
+            palbin += bgr555(pl[j] if j < len(pl) else (0, 0, 0))
+    return {'tiles': b''.join(tiles), 'ntiles': len(tiles), 'meta': b''.join(struct.pack('<16H', *m) for m in metas),
+            'nmeta': len(metas), 'grid': struct.pack(f'<{len(grid)}H', *grid), 'pal': bytes(palbin), 'swap_meta': swap_meta,
+            'anim': (nstatic, len(anim_keys), b''.join(b''.join(f) for f in anim_frames)) if anim_keys else None}
 
 
 def tm_offset(cx, cy):
@@ -1197,20 +1312,19 @@ def main():
             for c in d['cells']: swaps.append(('alt', c[0], c[1]))
         for c in stairs: swaps.append(('alt', c[0], c[1]))
         for c in braz: swaps.append(('alt', c[0], c[1]))
-        extra_tiles = []
-        if swaps:
-            imgs = {'alt': Image.open(os.path.join(exp, m['altFile'])).convert('RGB'),
-                    'open': Image.open(os.path.join(exp, m['openFile'])).convert('RGB')}
-            for key, cx_, cy_ in swaps:
-                for qy in (0, 1):
-                    for qx in (0, 1):
-                        x0, y0 = cx_ * 16 + qx * 8, cy_ * 16 + qy * 8
-                        extra_tiles.append([c15(imgs[key].getpixel((x0 + x, y0 + y))) for y in range(8) for x in range(8)])
-        def words(k):
-            return b''.join(bytes((e & 0xFF, e >> 8)) for e in open_entries[k * 4:k * 4 + 4])
+        # Stage 13: the map at double size as metatiles; each swap is a cell's other metatile (8 bytes kept per
+        # swap in the records below, so their layout stays: the metatile number, then six zeros)
         mfile = os.path.join(exp, m['file'])
-        chr_, tm, pal, nt, npal, open_entries = convert_bg(mfile, extra_tiles, frames=[mfile[:-4] + f'.f{k}.png' for k in (1, 2, 3)])
-        anim = LAST_ANIM
+        mp = convert_map2x(mfile, m['w'], m['h'], swaps,
+                           alt=os.path.join(exp, m['altFile']) if swaps else None,
+                           opened=os.path.join(exp, m['openFile']) if swaps else None,
+                           frames=[mfile[:-4] + f'.f{k}.png' for k in (1, 2, 3)])
+        def words(k):
+            v = mp['swap_meta'][k]
+            return bytes((v & 0xFF, v >> 8)) + bytes(6)
+        chr_, pal, nt = mp['tiles'], mp['pal'], mp['ntiles']
+        tm = mp['meta']
+        anim = mp['anim']
         def cell(ch):
             return CELL_BRAZIER if ch in 'jJ' else CELL_BUSH if ch == 'b' else CELL_COUNTER if ch == 'V' else CELL_POST if ch == '+' else \
                 CELL_LOCK if ch == 'L' else CELL_SPROUT if ch == 'z' else CELL_RIVER if ch == '~' else CELL_WATER if ch == 'w' and ch in solid else CELL_LOW if ch == '_' and ch in solid else CELL_SOLID if ch in solid else CELL_DOOR if ch == 'D' else CELL_EXIT if ch == 'E' else CELL_OPEN
@@ -1294,14 +1408,20 @@ def main():
         ochr, opal = convert_npcs(exp, npcs)
         for ext, data in (('chr', chr_), ('map', tm), ('pal', pal), ('col', col), ('wld', wld), ('och', ochr), ('opl', opal), ('ene', ene), ('xtr', xtr)):
             open(os.path.join(out, f'm{i}.{ext}'), 'wb').write(data)
-        size = sum(map(len, (chr_, tm, pal, col, wld, ochr, opal, ene, xtr)))
+        size = sum(map(len, (chr_, tm, mp['grid'], pal, col, wld, ochr, opal, ene, xtr)))
         # a map's tiles fill up to a whole bank by themselves (1,024 tiles is exactly 32 KB): they get their own
         # section, so the linker can put them in a different bank from the rest of the map
-        if len(chr_) > 0x8000: raise SystemExit(f'{m["id"]}: {len(chr_)} bytes of tiles, over one 32 KB bank')
         if size - len(chr_) > 0x8000: raise SystemExit(f'{m["id"]}: {size - len(chr_)} bytes of map data, over one 32 KB bank')
-        asm += [f'.section ".map{i}c" superfree', f'm{i}_chr:', f'.incbin "data/m{i}.chr"', f'm{i}_chrend:', '.db 0   ; (keeps the end label inside the bank)', '.ends', '',
+        # the tile set in two 32 KB chunks (1,024 tiles each), each a section of its own
+        c0, c1 = chr_[:0x8000], chr_[0x8000:] or bytes(32)
+        open(os.path.join(out, f'm{i}.grd'), 'wb').write(mp['grid'])
+        open(os.path.join(out, f'm{i}.chr'), 'wb').write(c0)
+        open(os.path.join(out, f'm{i}.ch1'), 'wb').write(c1)
+        asm += [f'.section ".map{i}c" superfree', f'm{i}_chr:', f'.incbin "data/m{i}.chr"', '.ends', '',
+                f'.section ".map{i}d" superfree', f'm{i}_ch1:', f'.incbin "data/m{i}.ch1"', '.ends', '',
                 f'.section ".map{i}" superfree',
                 f'm{i}_map:', f'.incbin "data/m{i}.map"',
+                f'm{i}_grid:', f'.incbin "data/m{i}.grd"',
                 f'm{i}_pal:', f'.incbin "data/m{i}.pal"',
                 f'm{i}_col:', f'.incbin "data/m{i}.col"',
                 f'm{i}_wld:', f'.incbin "data/m{i}.wld"',
@@ -1309,18 +1429,18 @@ def main():
                 f'm{i}_opl:', f'.incbin "data/m{i}.opl"',
                 f'm{i}_ene:', f'.incbin "data/m{i}.ene"',
                 f'm{i}_xtr:', f'.incbin "data/m{i}.xtr"', '.ends', '']
-        hdr.append(f'extern char m{i}_chr, m{i}_chrend, m{i}_map, m{i}_pal, m{i}_col, m{i}_wld, m{i}_och, m{i}_opl, m{i}_ene, m{i}_xtr;  /* {m["name"]} */')
+        hdr.append(f'extern char m{i}_chr, m{i}_ch1, m{i}_map, m{i}_grid, m{i}_pal, m{i}_col, m{i}_wld, m{i}_och, m{i}_opl, m{i}_ene, m{i}_xtr;  /* {m["name"]}: {nt} tiles, {mp["nmeta"]} metatiles */')
         if anim:
             open(os.path.join(out, f'm{i}.ani'), 'wb').write(anim[2])
             asm += [f'.section ".map{i}a" superfree', f'm{i}_ani:', f'.incbin "data/m{i}.ani"', '.db 0', '.ends', '']
-            hdr.append(f'extern char m{i}_ani;  /* {anim[1]} animated tiles from tile {anim[0]} */')
+            hdr.append(f'extern char m{i}_ani;  /* {anim[1]} animated tiles from tile id {anim[0]} */')
         map_anim[i] = anim
         ax, ay = m['ax'], m['ay']
         for k, (dx, dy) in zip('NSEW', ((0, -1), (0, 1), (1, 0), (-1, 0))):
             if m['ow']: nb[k].append(pos.get((ax + dx, ay + dy), 255))
             elif m['area'] in area_id: nb[k].append(index_of.get(f"{m['area']}:{ax + dx},{ay + dy}", 255))
             else: nb[k].append(255)
-        report.append(f'{i:2} {m["id"]:14} {m["name"]:32} tiles {nt:4}  palettes {npal}  npcs {len(npcs)}  bytes {size}')
+        report.append(f'{i:2} {m["id"]:14} {m["name"]:32} tiles {nt:4}  metatiles {mp["nmeta"]:4}  npcs {len(npcs)}  bytes {size}')
 
     hero_chr, hero_pal, hero_frames = convert_hero32(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'art', 'hero32.png'))
     open(os.path.join(out, 'hero.chr'), 'wb').write(hero_chr)
@@ -1603,13 +1723,13 @@ def main():
 
     # One loader per map so the C side never needs a table of far pointers.
     loader = ['/* Generated by tools/snesconv.py. Do not edit. */', '#include <snes.h>', '#include "maps.h"', '',
-              'extern void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl, u8 *ene, u8 *xtr);',
+              'extern void rcqUpload(u8 *ts0, u8 *ts1, u8 *meta, u8 *grid, u8 *pal, u8 *col, u8 *wld, u8 *och, u8 *opl, u8 *ene, u8 *xtr);',
               'extern void rcqAnim(u8 *frames, u16 first, u16 count);', '',
               'void rcqLoadMap(u8 i)', '{', '    switch (i)', '    {']
     for i in range(len(maps)):
         a = map_anim.get(i)
         an = f'rcqAnim(&m{i}_ani, {a[0]}, {a[1]});' if a else 'rcqAnim(0, 0, 0);'
-        loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_chrend - &m{i}_chr, &m{i}_map, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl, &m{i}_ene, &m{i}_xtr); {an} break;')
+        loader.append(f'    case {i}: rcqUpload(&m{i}_chr, &m{i}_ch1, &m{i}_map, &m{i}_grid, &m{i}_pal, &m{i}_col, &m{i}_wld, &m{i}_och, &m{i}_opl, &m{i}_ene, &m{i}_xtr); {an} break;')
     loader += ['    }', '}', '']
     loader += convert_minis(exp, out, asm, hdr, maps)
 

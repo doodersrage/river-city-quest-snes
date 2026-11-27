@@ -81,7 +81,7 @@ void fishCast(void)
     fishT = 80 + rnd() % 160;
     if (hasLure) fishT = (fishT * 11) / 20; /* the Golden Lure: bites come sooner */
     sfx(SFX_SWING);
-    boxTop = (py - camY > 120) ? 0 : 20;
+    boxTop = (SY(py) > 120) ? 0 : 20;
     boxDrawFrame();
     boxText(1, 2, (u8 *)"Fishing", FONT_GOLD);
     fishBox();
@@ -199,7 +199,7 @@ void fishUpdate(u16 pressed)
     }
     if (fishPh == 2) fishBox();
     /* the bobber bobs, dips on a bite */
-    sprPut(OAM_BOBBER, 0, fishX - camX - 2, fishY - camY - 2 + ((frameCount >> 4) & 1) + (fishPh == 1 ? 3 : fishPh == 2 ? 2 : 0), 3, 0, HUD_BOBBER, PAL_HUD);
+    sprPut(OAM_BOBBER, 0, SX(fishX) - 2, SY(fishY) - 2 + ((frameCount >> 4) & 1) + (fishPh == 1 ? 3 : fishPh == 2 ? 2 : 0), 3, 0, HUD_BOBBER, PAL_HUD);
 }
 
 /* ---------- frogs: out on rainy days near the water (web frogTick) ---------- */

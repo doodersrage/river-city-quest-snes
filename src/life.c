@@ -277,8 +277,8 @@ void lifeDraw(void)
         n = carBus[k] ? 3 : 2;
         base = carBus[k] ? TOWN_BUS : TOWN_CAR + (carCol[k] << 1);
         flip = carDir[k] < 0;
-        sx = (carX[k] >> 4) - (n << 3) - camX;
-        sy = carY[k] - 10 - camY;
+        sx = SX((carX[k] >> 4) - (n << 3));
+        sy = SY(carY[k] - 10);
         i = k * 3;
         for (c = 0; c < n; c++, i++, sx += 16)
             townPut(i, sx, sy, flip, townTile[base + (flip ? n - 1 - c : c)]);
@@ -291,8 +291,8 @@ void lifeDraw(void)
             townHide(i);
             continue;
         }
-        sx = (birdX[k] >> 4) - 8 - camX;
-        sy = (birdY[k] >> 4) - 10 - camY;
+        sx = SX(birdX[k] >> 4) - 8;
+        sy = SY(birdY[k] >> 4) - 10;
         if (birdSt[k] == 0)
             townPut(i, sx, sy, (birdHx[k] >> 8) & 1, townTile[TOWN_SIT]);
         else

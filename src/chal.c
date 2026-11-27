@@ -359,8 +359,8 @@ void chalDraw(void)
     /* the "!" over the person with a challenge you haven't won, blinking */
     if (bangK != 255)
     {
-        sx = npcX[bangK] - camX - 8;
-        sy = npcY[bangK] - camY - 44; /* over a 16x32 head */
+        sx = SX(npcX[bangK]) - 8;
+        sy = SY(npcY[bangK]) - 36; /* over a 16x32 head */
         if (chalOn || boxState || ((frameCount >> 4) & 1) || (pins & bangBit) || sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H)
         {
             sprHide(OAM_BANG);

@@ -209,7 +209,7 @@ void openTextAt(u8 *p)
     u8 c;
     txt = p;
     /* Keep the hero visible: box at the top when they stand low on screen. */
-    boxTop = (py - camY > 120) ? 0 : 20;
+    boxTop = (SY(py) > 120) ? 0 : 20;
     boxDrawFrame();
     c = 2;
     while (*txt)
@@ -342,7 +342,7 @@ void openShop(u8 id)
     shopCur = 0;
     shopTop = 0;
     shopReturn = 0;
-    boxTop = (py - camY > 120) ? 0 : 20;
+    boxTop = (SY(py) > 120) ? 0 : 20;
     drawShop();
 }
 
@@ -542,13 +542,6 @@ void updateText(u16 pressed)
 /* Call right after WaitForVBlank: copy the box rows to VRAM. */
 void flushText(void)
 {
-    u8 k;
-    for (k = 0; k < patchCount; k++)
-    {
-        dmaCopyVram((u8 *)&patchWords[k][0], patchAddr[k], 4);
-        dmaCopyVram((u8 *)&patchWords[k][2], patchAddr[k] + 32, 4);
-    }
-    patchCount = 0;
     if (!boxDirty)
         return;
     dmaCopyVram((u8 *)boxMap, VRAM_BG3_MAP + boxTop * 32, BOX_ROWS * 32 * 2);
@@ -568,20 +561,12 @@ u8 *chestRec(u8 k)
     return chests + 1 + k * 23;
 }
 
-/* Queue a 2x2 tile change for 16px cell (tx, ty); w points at 4 little-endian words.
-   now = 1 during forced blank: a full queue is written out at once instead of dropping changes. */
+/* A cell changes to another of its metatiles (stage 13): w points at the metatile's number (the converter keeps
+   8 bytes a swap, so the records' layout didn't change). The stream copies its tiles when the cell is loaded. */
 void queuePatch(u8 tx, u8 ty, u8 *w, u8 now)
 {
-    u8 i;
-    if (patchCount >= MAX_PATCH)
-    {
-        if (!now) return;
-        flushText();
-    }
-    for (i = 0; i < 4; i++)
-        patchWords[patchCount][i] = w[i * 2] | (w[i * 2 + 1] << 8);
-    patchAddr[patchCount] = cellAddr(tx * 2, ty * 2); /* the row below is +32 words */
-    patchCount++;
+    (void)now;
+    streamCell(tx, ty, w[0] | (w[1] << 8));
 }
 
 /* Queue (or, during forced blank, write now) the opened-chest tiles for chest k. */
@@ -616,13 +601,13 @@ void cutAt(s16 x, s16 y)
     else if (r < 3) dropKind(tx * 16 + 8, ty * 16 + 8, 2);
 }
 
-void rcqUpload(u8 *chr, u16 chrSize, u8 *map, u8 *pal, u8 *col, u8 *w, u8 *och, u8 *opl, u8 *ene, u8 *xtr)
+void rcqUpload(u8 *ts0, u8 *ts1, u8 *meta, u8 *grid, u8 *pal, u8 *col, u8 *w, u8 *och, u8 *opl, u8 *ene, u8 *xtr)
 {
     u8 k, gid;
     u16 n;
     u8 *rec;
-    dmaCopyVram(chr, VRAM_BG1_CHR, chrSize);
-    dmaCopyVram(map, VRAM_BG1_MAP, 64 * 64 * 2);
+    /* stage 13: the map streams (src/stream.c); the camera's first view is loaded by updateCamera */
+    streamInit(ts0, ts1, meta, grid, xtr[0], xtr[1]);
     dmaCopyCGram(pal, 0, 8 * 16 * 2);
     /* stage 12: people are 16x32 and streamed like the hero; here, while the screen is off, each one's first frame */
     /* the enemies, two frames each (stage 12): OBJ tiles 64-127, which the minigames borrow, so with every map */
@@ -723,18 +708,18 @@ void settle(void)
                 }
 }
 
+/* Stage 13: the screen shows the map at double size, so the camera (in the game's 16 px-cell pixels) spans
+   half the screen: 128 x 112. The stream loads its edges, and sets the scroll in VBlank. */
 void updateCamera(void)
 {
-    camX = px - SCREEN_W / 2;
-    camY = py - SCREEN_H / 2;
+    camX = px - SCREEN_W / 4;
+    camY = py - SCREEN_H / 4;
+    if (camX > MAP_PX_W - SCREEN_W / 2) camX = MAP_PX_W - SCREEN_W / 2;
+    if (camY > MAP_PX_H - SCREEN_H / 2) camY = MAP_PX_H - SCREEN_H / 2;
     if (camX < 0) camX = 0;
     if (camY < 0) camY = 0;
-    if (camX > MAP_PX_W - SCREEN_W) camX = MAP_PX_W - SCREEN_W;
-    if (camY > MAP_PX_H - SCREEN_H) camY = MAP_PX_H - SCREEN_H;
-    /* rooms smaller than the screen sit in the middle (the area around them is blank tile 0) */
-    if (MAP_PX_W < SCREEN_W) camX = -(SCREEN_W - MAP_PX_W) / 2;
-    if (MAP_PX_H < SCREEN_H) camY = -(SCREEN_H - MAP_PX_H) / 2;
-    bgSetScroll(0, camX, camY);
+    if (!sLive) streamFull();
+    else streamUpdate();
 }
 
 static const u8 walkFrame[4] = {0, 1, 0, 2}; /* stand, step, stand, the other step */
@@ -763,8 +748,8 @@ void drawNpcs(void)
             sprHide(OAM_NPCTOP + k);
             continue;
         }
-        sx = npcX[k] - camX - 8;
-        sy = npcY[k] - camY - 10;
+        sx = SX(npcX[k]) - 8;
+        sy = SY(npcY[k]) - 2; /* (stage 13: feet on the cell's bottom edge) */
         if (sx < -16 || sx > SCREEN_W || sy < -16 || sy > SCREEN_H + 16)
         {
             sprHide(OAM_NPCS + k);
@@ -842,7 +827,7 @@ u16 animDst, animLen;
 void rcqAnim(u8 *frames, u16 first, u16 count)
 {
     animData = frames;
-    animFirst = first;
+    animFirst = streamPin(first, count); /* stage 13: the animated tiles' own VRAM slots, at the top */
     animCount = count;
     animDone = count; /* frame 0 came with the map */
     animFrame = animTimer = animPend = 0;
@@ -853,6 +838,7 @@ void animStop(void)
 {
     animCount = 0;
     animPend = 0;
+    streamStop();
 }
 
 void animTick(void)
@@ -901,7 +887,7 @@ void drawHero(void)
         sprHide(OAM_HEROTOP);
         return;
     }
-    sprPair(OAM_HEROTOP, OAM_HERO, px - camX - 8, py - camY - 10, 0, (flip << 6) | (3 << 4));
+    sprPair(OAM_HEROTOP, OAM_HERO, SX(px) - 8, SY(py) - 2, 0, (flip << 6) | (3 << 4));
 }
 
 /* Walking off an edge moves to the neighboring neighborhood, if there is one. */
