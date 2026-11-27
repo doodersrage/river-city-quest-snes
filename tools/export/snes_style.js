@@ -440,3 +440,36 @@ drawLandmarks = function (s, fr) {
     }
   }
 };
+
+/* ---------- floors inside: staggered planks or bevelled flagstones, shadowed under the walls ---------- */
+floor = function (s, x, y, h) {
+  const f = s.fl || ['#4a4458', '#38324a', '#5c566c'], r = ramp(f[0]);
+  if (s.wood) {   // long boards: a soft lit edge, a dark seam, now and then a board's end, grain along it
+    R(x, y, 16, 16, r[2]);
+    for (let i = 0; i < 16; i += 4) {
+      const q = HH(h, i, 3);
+      R(x, y + i + 3, 16, 1, r[1]);
+      if (q % 3 == 0) { const e = (q >> 4) % 14 + 1; R(x + e, y + i, 1, 3, r[1]); }
+      R(x + (q >> 2) % 10, y + i + 1, 4 + (q >> 7) % 4, 1, (i >> 2) & 1 ? r[3] : r[1]);
+    }
+  } else {        // flagstones, two to a tile and staggered, softly bevelled
+    R(x, y, 16, 16, r[1]);
+    for (const [a, b, w] of [[0, 0, 16], [-8, 8, 16], [8, 8, 16]]) {
+      const x0 = Math.max(0, a), x1 = Math.min(16, a + w) - 1;
+      R(x + x0, y + b, x1 - x0, 7, r[2]);
+      R(x + x0, y + b, x1 - x0, 1, r[3]);
+      if (a >= 0) R(x + x0, y + b, 1, 7, r[3]);
+    }
+    if (h % 5 == 0) { R(x + 3, y + 3, 2, 1, r[1]); R(x + 5, y + 4, 1, 1, r[1]); }
+  }
+};
+const tileF = tile;
+tile = function (s, ch, tx, ty, fr, plain) {
+  tileF(s, ch, tx, ty, fr, plain);
+  if (ch != 'F' || !s.interior && s.ow) return;
+  const x = tx * TS, y = ty * TS;
+  const at = (dx, dy) => { const X = tx + dx, Y = ty + dy; return X < 0 || Y < 0 || X >= s.w || Y >= s.h ? '' : s.g[Y][X]; };
+  const solid = c => c == 'W';   // the walls throw a shadow on the floor (not the furniture)
+  if (solid(at(0, -1))) { shadeRect(x, y, 16, 5); for (let i = 0; i < 16; i += 2) shadeRect(x + i + 1, y + 5, 1, 1); }
+  if (solid(at(-1, 0))) shadeRect(x, y + (solid(at(0, -1)) ? 5 : 0), 3, solid(at(0, -1)) ? 11 : 16);
+};
