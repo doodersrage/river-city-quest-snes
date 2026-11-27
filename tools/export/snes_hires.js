@@ -9,6 +9,7 @@
    Loaded after snes_style.js. */
 
 var HIRES_GROUND = false;   // painting B
+var MASKCV = null;          // (one canvas for the landmark masks, reused: node-canvas memory isn't freed promptly)
 
 /* ---------- Scale2x on RGBA pixels (EPX: each pixel becomes four, corners follow matching neighbours) ---------- */
 function scale2xData(src, w, h) {
@@ -32,24 +33,45 @@ function scale2xData(src, w, h) {
 /* ---------- native 32 px ground ---------- */
 /* each draws the cell at (X, Y) on the 32 px canvas in g; h is the cell's hash, nb its neighbours, fr the frame */
 const NATIVE = {};
+/* R(.., 'shade'): darken what's already there (a shadow drawn into native art) */
+const R0 = R;
+R = function (x, y, w, h, c) {
+  if (c !== 'shade') return R0(x, y, w, h, c);
+  SHADEQ.push([x, y, w, h]);   // (applied in one pass on the finished ground: per-call getImageData leaks native memory)
+};
+var SHADEQ = [];
 const OWNS = 'Tr~';   // native cells that draw their own object (the scale2x'd one in that cell is dropped)
 
+/* Stage 14 grass: 16 px quarters, each one of six designs, so the 32 px cell grid doesn't show; and a slow
+   "lushness" field across the map (darker clumps where it's lush, sunlit flecks where it's dry) so a lawn has
+   patches the way a real one does. Every design shares the base green, so the patches blend without seams. */
+function smoothNoise(x, y, seed) {   // value noise, x and y in 16 px quarters, smooth over about six of them
+  const S = 6, gx = Math.floor(x / S), gy = Math.floor(y / S), fx = x / S - gx, fy = y / S - gy;
+  const v = (a, b) => (HH(a, b, seed) % 1000) / 1000;
+  const s_ = t => t * t * (3 - 2 * t), u = s_(fx), w = s_(fy);
+  return (v(gx, gy) * (1 - u) + v(gx + 1, gy) * u) * (1 - w) + (v(gx, gy + 1) * (1 - u) + v(gx + 1, gy + 1) * u) * w;
+}
+function grass16(X, Y, d, tone) {
+  R(X, Y, 16, 16, SG[3]);
+  const q = k => HH(d, k, 101 + tone);
+  const clumps = tone == 0 ? 5 : tone == 1 ? 3 : 1, flecks = tone == 2 ? 4 : tone == 1 ? 2 : 0;
+  for (let i = 0; i < clumps; i++) {          // a dark clump: a soft blot, two shades
+    const r = q(i), a = X + 1 + r % 12, b = Y + 2 + (r >> 4) % 12;
+    R(a, b, 4, 2, SG[2]); R(a + 1, b - 1, 2, 1, SG[2]); R(a + 1, b + 1, 2, 1, SG[1]);
+  }
+  for (let i = 0; i < 3; i++) {               // tufts: three blades fanning out, lit tips, a shadow at the root
+    const r = q(i + 9), a = X + 2 + r % 11, b = Y + 5 + (r >> 4) % 10;
+    R(a - 1, b, 5, 1, SG[2]);
+    R(a, b - 2, 1, 2, SG[4]); R(a + 1, b - 4, 1, 4, SG[4]); R(a + 2, b - 3, 1, 3, SG[4]);
+    R(a + 1, b - 5, 1, 1, SG[5]); R(a - 1, b - 3, 1, 1, SG[4]); R(a + 3, b - 4, 1, 1, SG[5]);
+  }
+  for (let i = 0; i < flecks; i++) { const r = q(i + 20); R(X + r % 15, Y + (r >> 4) % 15, 1, 1, i & 1 ? SG[5] : SG[6]); }
+}
 function grass32(X, Y, h) {
-  R(X, Y, 32, 32, SG[3]);
-  for (let i = 0; i < 12; i++) {                 // darker clumps, soft blots of two or three pixels
-    const q = HH(h, i, 41), a = X + q % 30, b = Y + (q >> 5) % 30;
-    R(a, b, 3, 1, SG[2]); R(a + 1, b - 1, 1, 1, SG[2]); if (q & 0x8000) R(a - 1, b + 1, 2, 1, SG[2]);
-  }
-  for (let i = 0; i < 8; i++) {                  // tufts: a dark root, three blades in two greens, lit tips
-    const q = HH(h, i, 43), a = X + 2 + q % 26, b = Y + 5 + (q >> 5) % 25;
-    R(a, b, 5, 1, SG[1]); R(a + 1, b - 1, 3, 1, SG[2]);
-    R(a, b - 3, 1, 2, SG[4]); R(a + 2, b - 5, 1, 4, SG[4]); R(a + 4, b - 3, 1, 2, SG[4]);
-    R(a + 1, b - 2, 1, 1, SG[3]); R(a + 3, b - 2, 1, 1, SG[3]);
-    R(a + 2, b - 6, 1, 1, SG[5]); if (q & 0x10000) R(a, b - 4, 1, 1, SG[5]);
-  }
-  for (let i = 0; i < 4; i++) {                  // a few sunlit flecks
-    const q = HH(h, i, 47); R(X + 1 + q % 30, Y + 1 + (q >> 5) % 30, 1, 1, i & 1 ? SG[5] : SG[6]);
-  }
+  // (one lushness and one of four quarter layouts a cell: a map's cells then come in a dozen kinds, so its
+  // metatiles stay few; the quarters still break up the 32 px grid)
+  const n = smoothNoise((X >> 4) + 1, (Y >> 4) + 1, 7), tone = n < .38 ? 0 : n < .68 ? 1 : 2, v = HH(X >> 5, Y >> 5, 13) % 4;
+  for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) grass16(X + i * 16, Y + j * 16, (v + i + 2 * j) % 4, tone);
 }
 function flowers32(X, Y, h) {
   grass32(X, Y, h + 1);
@@ -61,25 +83,34 @@ function flowers32(X, Y, h) {
     R(a + 1, b + 1, 1, 1, c[1]); R(a - 2, b + 1, 1, 1, c[1]); R(a, b, 1, 1, '#f8c040'); R(a - 1, b - 1, 1, 1, '#ffffff');
   }
 }
-/* the edge of a lawn onto paving: blades leaning out over it, lit tips, a shadow line under them */
+/* the edge of a lawn onto paving (stage 14): a lumpy lip of grass whose depth wanders smoothly along the edge
+   (worked from map position, so neighbouring cells join up), a dark rim and blade tips at its front, and the
+   lip's shadow on the paving below it; rounded where two lawn sides meet */
+function lip(t, k) { const n = t >> 3, a = HH(n, k, 31) % 5, b = HH((n + 1) & 7, k, 31) % 5, f = (t & 7) / 8; return 2 + Math.round(a * (1 - f) + b * f); }   // (t in 0..63: a loop)
 function fringe32(X, Y, h, nb) {
   const G = (dx, dy) => GRASSY.includes(nb(dx, dy));
   for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
     if (!G(dx, dy)) continue;
     for (let i = 0; i < 32; i++) {
-      const q = HH(h, i + dx * 7, dy + 11), l = 2 + q % 4 + (i % 7 == 3 ? 2 : 0);
-      const a = dx ? (dx < 0 ? 0 : 32 - l) : i, b = dy ? (dy < 0 ? 0 : 32 - l) : i, w = dx ? l : 1, hh = dy ? l : 1;
-      R(X + a, Y + b, w, hh, q & 16 ? SG[3] : SG[4]);
-      const ex = dx ? (dx < 0 ? a + l : a - 1) : a, ey = dy ? (dy < 0 ? b + l : b - 1) : b;
-      R(X + ex, Y + ey, 1, 1, dy < 0 || dx < 0 ? SST[2] : SG[2]);
-      if (dy > 0 || dx > 0) R(X + a, Y + b, 1, 1, SG[5]);
-      else if (q & 32) R(X + (dx ? a + l - 1 : a), Y + (dy ? b + l - 1 : b), 1, 1, SG[5]);
+      // (the wander repeats every 64 px and doesn't depend on the row, so edges reuse a few tiles)
+      const along = (dx ? Y + i : X + i) & 63, k = dx ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 4);
+      const d = lip(along, k);
+      // the lip, from the edge inwards d px, then its rim; tips poke out now and then
+      const tip = HH(along, k, 37) % 5 == 0 ? 2 : 0;
+      if (dy < 0) { R(X + i, Y, 1, d, SG[3]); R(X + i, Y + d, 1, 1, SG[2]); R(X + i, Y + d + 1, 1, 1, SG[1]); if (tip) { R(X + i, Y + d, 1, 2, SG[4]); R(X + i, Y + d + 2, 1, 1, SG[1]); }
+        R(X + i, Y + d + 2 + (tip ? 1 : 0), 1, 2, 'shade'); }
+      else if (dy > 0) { R(X + i, Y + 32 - d, 1, d, SG[3]); R(X + i, Y + 31 - d, 1, 1, SG[4]); if (tip) R(X + i, Y + 30 - d, 1, 1, SG[4]); }
+      else if (dx < 0) { R(X, Y + i, d, 1, SG[3]); R(X + d, Y + i, 1, 1, SG[1]); if (tip) R(X + d, Y + i, 2, 1, SG[4]); R(X + d + 1, Y + i, 1, 1, 'shade'); }
+      else { R(X + 32 - d, Y + i, d, 1, SG[3]); R(X + 31 - d, Y + i, 1, 1, SG[2]); if (tip) R(X + 30 - d, Y + i, 1, 1, SG[4]); }
     }
   }
-  if (G(0, -1) && G(-1, 0)) R(X, Y, 6, 6, SG[3]);
-  if (G(0, -1) && G(1, 0)) R(X + 26, Y, 6, 6, SG[3]);
-  if (G(0, 1) && G(-1, 0)) R(X, Y + 26, 6, 6, SG[3]);
-  if (G(0, 1) && G(1, 0)) R(X + 26, Y + 26, 6, 6, SG[3]);
+  const corner = (a, b, x0, y0) => { if (G(a, 0) && G(0, b)) for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) if (x * x + y * y < 40) R(X + (a < 0 ? x : 31 - x), Y + (b < 0 ? y : 31 - y), 1, 1, SG[3]); };
+  corner(-1, -1); corner(1, -1); corner(-1, 1); corner(1, 1);
+  // a tuft on the lip here and there
+  for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0]]) if (G(dx, dy) && h % 3 == 0) {
+    const i = 6 + h % 20, a = dx ? (dx < 0 ? X + 1 : X + 26) : X + i, b = dx ? Y + i : Y + 1;
+    R(a, b + 3, 4, 1, SG[2]); R(a + 1, b, 1, 3, SG[4]); R(a + 2, b - 1, 1, 4, SG[5]); R(a + 3, b + 1, 1, 2, SG[4]);
+  }
 }
 /* cobbles: rows of worn, rounded setts in soft greys, each lit on top and left, shaded under, in quiet joints */
 function cobble32(X, Y, h) {
@@ -101,17 +132,21 @@ function cobble32(X, Y, h) {
     }
   }
 }
-/* pavement: one big slab a cell, bevelled, lightly worn, now and then a crack */
+/* pavement (stage 14): 16 px slabs, each bevelled (lit top and left, shaded under), its own shade of stone, worn
+   in places: a crack, a dark stain, a patch of grit */
+function slab16(X, Y, k) {
+  const t = k % 9, base = t == 0 ? '#a89c98' : t == 1 ? '#bcb0aa' : SST[4], lo = SST[3], hi = SST[5];
+  R(X, Y, 16, 16, base);
+  R(X, Y, 16, 1, hi); R(X, Y, 1, 16, hi);
+  R(X + 1, Y + 15, 15, 1, SST[2]); R(X + 15, Y + 1, 1, 15, SST[2]); R(X + 1, Y + 14, 14, 1, lo); R(X + 14, Y + 1, 1, 13, lo);
+  for (let i = 0; i < 3; i++) { const r = HH(k, i, 41); R(X + 2 + r % 11, Y + 2 + (r >> 4) % 11, 1, 1, i & 1 ? lo : hi); }
+  const f = (k >> 3) % 14;
+  if (f == 0) { let a = X + 4 + k % 6, b = Y + 2; for (let i = 0; i < 6; i++) { R(a, b, 1, 2, SST[2]); R(a + 1, b, 1, 1, hi); a += HH(k, i, 3) % 3 - 1; b += 2; } }   // a crack
+  else if (f == 1) { R(X + 5, Y + 6, 5, 3, '#a89c98'); R(X + 6, Y + 5, 3, 5, '#a89c98'); }                                                        // a stain
+  else if (f == 2) { for (let i = 0; i < 6; i++) { const r = HH(k, i, 47); R(X + 3 + r % 9, Y + 3 + (r >> 4) % 9, 1, 1, SST[2]); } }                  // grit
+}
 function sidewalk32(X, Y, h) {
-  R(X, Y, 32, 32, SST[4]);
-  R(X, Y, 32, 1, SST[6]); R(X, Y, 1, 32, SST[6]); R(X + 1, Y + 1, 30, 1, SST[5]); R(X + 1, Y + 1, 1, 30, SST[5]);
-  R(X, Y + 31, 32, 1, SST[2]); R(X + 31, Y, 1, 32, SST[2]); R(X + 1, Y + 30, 30, 1, SST[3]); R(X + 30, Y + 1, 1, 29, SST[3]);
-  for (let i = 0; i < 14; i++) { const q = HH(h, i, 57); R(X + 3 + q % 26, Y + 3 + (q >> 5) % 26, 1, 1, i & 1 ? SST[3] : SST[5]); }
-  for (let i = 0; i < 3; i++) { const q = HH(h, i, 59), a = X + 4 + q % 20, b = Y + 4 + (q >> 5) % 22; R(a, b, 4, 2, SST[5]); R(a + 1, b + 2, 3, 1, SST[3]); }
-  if (h % 5 == 0) {
-    const q = HH(h, 1, 61); let a = X + 8 + q % 8, b = Y + 6;
-    for (let i = 0; i < 9; i++) { R(a, b, 2, 1, SST[2]); R(a, b + 1, 1, 1, SST[5]); a += (HH(q, i, 3) % 3) - 1; b += 2; }
-  }
+  for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) slab16(X + i * 16, Y + j * 16, (HH(X >> 5, Y >> 5, 17) % 4) * 2 + ((i + j) & 1) + (i * 3 + j * 5) * 8);
 }
 function sand32(X, Y, h) {
   R(X, Y, 32, 32, SSA[2]);
@@ -253,6 +288,13 @@ NATIVE['B'] = (s, X, Y, h, nb, fr, tx, ty) => {
   const above = up || (nb(0, -1) == 'B' && !(!tin && upperStorey(s, tx, ty - 1)));
   if (c[3] == 'clap') { clap32(X, Y, h, c); cornice32(X, Y, ramp(c[0]), above); return; }
   brick32(X, Y, h, ramp(c[0]), above);
+  // stage 14: its windows, door, bay, awning or porch at 32 px too (the 16 px ones are then dropped)
+  if (typeof facade32 == 'undefined' || tin || isDecor(s, tx, ty)) return;
+  const hb = HH(tx, ty, s.seed);
+  if (up ? storey32(s, X, Y, hb) : facade32(s, X, Y, hb, tx, ty, ramp(c[0]))) {
+    if (!up && upperStorey(s, tx, ty - 1)) R(X, Y, 32, 2, '#a08c6c');
+    return 'own';
+  }
 };
 /* in B, fronts are bare brick: their windows and doors count as objects */
 const facadeH = facade, storeyH = storey, styledH = styledFacade;
@@ -419,6 +461,46 @@ tile = function (s, ch, tx, ty, fr, plain) {
   return tileH(s, ch, tx, ty, fr, plain);
 };
 
+/* ---------- stage 14: objects remastered at 32 px ----------
+   Scale2x keeps the 16 px art's flat fills and single-pixel steps, which is what reads as 8-bit. At 32 px there's
+   room for what 16-bit art does with its extra resolution: each flat area gets a 1 px lit edge along its top and
+   left and a 1 px shaded edge along its bottom and right (so shapes look rounded, not cut out), and tall flat
+   areas fall off from light at the top to shade at the bottom in three bands. Outlines (the darkest colours) and
+   small details are left as they are. Light comes from the top left, as in the rest of the art. */
+function lum(r, g2, b) { return r * .3 + g2 * .59 + b * .11; }
+function lighter(r, g2, b) { return [r + (255 - r) * .2, g2 + (248 - g2) * .2, b + (230 - b) * .16]; }
+function darker(r, g2, b) { return [r * .8 + 40 * .2, g2 * .8 + 26 * .2, b * .8 + 60 * .2]; }
+function remaster(O, W, H) {
+  const out = new Uint8ClampedArray(O);
+  const at = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? -1 : (y * W + x) * 4;
+  const same = (i, j) => j >= 0 && O[j + 3] && O[i] == O[j] && O[i + 1] == O[j + 1] && O[i + 2] == O[j + 2];
+  // how far each pixel's colour runs up and down (for the bands)
+  const up = new Uint16Array(W * H), dn = new Uint16Array(W * H);
+  for (let x = 0; x < W; x++) {
+    for (let y = 0; y < H; y++) { const i = at(x, y); up[y * W + x] = O[i + 3] && same(i, at(x, y - 1)) ? up[(y - 1) * W + x] + 1 : 0; }
+    for (let y = H - 1; y >= 0; y--) { const i = at(x, y); dn[y * W + x] = O[i + 3] && same(i, at(x, y + 1)) ? dn[(y + 1) * W + x] + 1 : 0; }
+  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = at(x, y);
+    if (!O[i + 3]) continue;
+    const L = lum(O[i], O[i + 1], O[i + 2]);
+    if (L < 52) continue;                                   // outlines and deep shadows stay
+    const p = y * W + x, run = up[p] + dn[p] + 1;
+    // edges: is the neighbour another colour? (only edges of areas at least 4 px across, so fine detail stays crisp)
+    const big = run >= 4 && (same(i, at(x + 1, y)) || same(i, at(x - 1, y)));
+    if (!big) continue;
+    let c = null;
+    if (!same(i, at(x, y - 1)) || !same(i, at(x - 1, y))) c = lighter(O[i], O[i + 1], O[i + 2]);
+    else if (!same(i, at(x, y + 1)) || !same(i, at(x + 1, y))) c = darker(O[i], O[i + 1], O[i + 2]);
+    else if (run >= 14) {                                   // a tall flat: light at the top, shade at the bottom
+      if (up[p] < run * .22) c = lighter(O[i], O[i + 1], O[i + 2]);
+      else if (dn[p] < run * .3) c = darker(O[i], O[i + 1], O[i + 2]);
+    }
+    if (c) { out[i] = c[0]; out[i + 1] = c[1]; out[i + 2] = c[2]; }
+  }
+  return out;
+}
+
 /* ---------- the 32 px map ---------- */
 /* a cell's hash, cut to a few variants like the web art's (export.js VARIANTS) so tiles repeat */
 function cellHash(s, tx, ty) { const h = HH(tx, ty, s.seed); return typeof SNES_VARIANTS != 'undefined' && SNES_VARIANTS ? HH(h % SNES_VARIANTS, 7, 7) : h; }
@@ -444,6 +526,17 @@ renderMap = function (s, fr) {
     if (Math.abs(A[i] - sh[0]) < 9 && Math.abs(A[i + 1] - sh[1]) < 9 && Math.abs(A[i + 2] - sh[2]) < 9) { kind[p] = 1; continue; }
     kind[p] = 2; obj[i] = A[i]; obj[i + 1] = A[i + 1]; obj[i + 2] = A[i + 2]; obj[i + 3] = 255;
   }
+  // stage 14: landmarks with native art (snes_lm32.js): cut their 16 px drawing out of the objects, pixel for pixel
+  const lms = NOFX.includes('lm') ? [] : (s.lm || []).filter(L => typeof LM32 != 'undefined' && LM32[L.art] && LMART[L.art]);
+  const cv = lms.length ? (MASKCV && MASKCV.width == W && MASKCV.height == H ? MASKCV : (MASKCV = mkCanvas(W, H))) : null;
+  for (const L of lms) {
+    const gg = g;
+    cv.getContext('2d').clearRect(0, 0, W, H);
+    g = cv.getContext('2d');
+    try { LMART[L.art](L.x * TS, L.y * TS, L.w * TS, L.h * TS, fr, s, L); } catch (e) {} finally { g = gg; }
+    const M = cv.getContext('2d').getImageData(0, 0, W, H).data;
+    for (let p = 0; p < W * H; p++) if (M[p * 4 + 3] && kind[p] == 2) { kind[p] = 0; obj[p * 4 + 3] = 0; }
+  }
   // the ground at 32 px: B through Scale2x, then the native cells drawn over it
   const out = mkCanvas(W * 2, H * 2), ctx = out.getContext('2d');
   const gi = ctx.createImageData(W * 2, H * 2); gi.data.set(scale2xData(B, W, H)); ctx.putImageData(gi, 0, 0);
@@ -451,26 +544,51 @@ renderMap = function (s, fr) {
   try {
     for (let ty = 0; ty < s.h; ty++) for (let tx = 0; tx < s.w; tx++) {
       let ch = s.g[ty][tx];
+      const ch0 = ch;
       if (PROPS.includes(ch) && (ch != '%' || s.ow)) ch = propGround(s, tx, ty);
       const f = NATIVE[ch];
       if (!f) continue;
       const nb = (dx, dy) => { const X = tx + dx, Y = ty + dy; return X < 0 || Y < 0 || X >= s.w || Y >= s.h ? ch : s.g[Y][X]; };
-      if (f(s, tx * 32, ty * 32, cellHash(s, tx, ty), nb, fr, tx, ty) === false) continue;
-      if (OWNS.includes(ch)) for (let y = ty * TS; y < ty * TS + TS; y++) for (let x = tx * TS; x < tx * TS + TS; x++) {
+      let res = f(s, tx * 32, ty * 32, cellHash(s, tx, ty), nb, fr, tx, ty);
+      if (res === false) continue;
+      // stage 14: a prop with 32 px art stands on the ground just drawn (and its 16 px drawing is dropped)
+      if (ch0 != ch && typeof PROP32 != 'undefined' && PROP32[ch0] && !isDecor(s, tx, ty)) {
+        const nb0 = (dx, dy) => { const X = tx + dx, Y = ty + dy; return X < 0 || Y < 0 || X >= s.w || Y >= s.h ? ch0 : s.g[Y][X]; };
+        PROP32[ch0](s, tx * 32, ty * 32, cellHash(s, tx, ty), nb0, fr);   // (a few variants: tiles repeat)
+        res = 'own';
+      }
+      if (typeof DBG != 'undefined') DBG[String(ch) + ':' + String(res)] = (DBG[String(ch) + ':' + String(res)] || 0) + 1;
+      if (OWNS.includes(ch) || res === 'own') for (let y = ty * TS; y < ty * TS + TS; y++) for (let x = tx * TS; x < tx * TS + TS; x++) {
         const p = y * W + x; kind[p] = 0; obj[p * 4 + 3] = 0;
       }
     }
   } finally { g = old; }
-  // shadows back on, as the shade of what's there now
+  // shadows back on, as the shade of what's there now (and the native art's own shadows)
   const N = ctx.getImageData(0, 0, W * 2, H * 2), nd = N.data;
+  const shq = new Uint8Array(W * H * 4);
+  for (const [x0, y0, w0, h0] of SHADEQ) for (let y = Math.max(0, y0); y < Math.min(H * 2, y0 + h0); y++) for (let x = Math.max(0, x0); x < Math.min(W * 2, x0 + w0); x++) shq[y * W * 2 + x] = 1;
+  SHADEQ = [];
+  for (let p = 0; p < W * H * 4; p++) if (shq[p]) { const i = p * 4, sh = shadeOf(nd[i], nd[i + 1], nd[i + 2]); nd[i] = sh[0]; nd[i + 1] = sh[1]; nd[i + 2] = sh[2]; }
   for (let y = 0; y < H * 2; y++) for (let x = 0; x < W * 2; x++) {
     if (kind[(y >> 1) * W + (x >> 1)] != 1) continue;
     const i = (y * W * 2 + x) * 4, sh = shadeOf(nd[i], nd[i + 1], nd[i + 2]);
     nd[i] = sh[0]; nd[i + 1] = sh[1]; nd[i + 2] = sh[2];
   }
-  // and the objects on top
-  const O = scale2xData(obj, W, H);
-  for (let i = 0; i < nd.length; i += 4) if (O[i + 3]) { nd[i] = O[i]; nd[i + 1] = O[i + 1]; nd[i + 2] = O[i + 2]; }
+  // the native landmarks, and the doorways in them
   ctx.putImageData(N, 0, 0);
+  if (lms.length) {
+    const old2 = g; g = ctx;
+    try {
+      for (const L of lms) {
+        LM32[L.art](L.x * 32, L.y * 32, L.w * 32, L.h * 32, fr, s, L);
+        for (let yy = L.y; yy < L.y + L.h; yy++) for (let xx = L.x; xx < L.x + L.w; xx++) if (s.g[yy][xx] == 'D') door32(xx * 32, yy * 32);
+      }
+    } finally { g = old2; }
+  }
+  const N2 = ctx.getImageData(0, 0, W * 2, H * 2), nd2 = N2.data;
+  // and the objects on top
+  const O = NOFX.includes('rm') ? scale2xData(obj, W, H) : remaster(scale2xData(obj, W, H), W * 2, H * 2);
+  for (let i = 0; i < nd2.length; i += 4) if (O[i + 3]) { nd2[i] = O[i]; nd2[i + 1] = O[i + 1]; nd2[i + 2] = O[i + 2]; }
+  ctx.putImageData(N2, 0, 0);
   return out;
 };

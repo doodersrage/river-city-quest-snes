@@ -28,6 +28,7 @@ const sb = {
   navigator: {}, location: { protocol: 'file:', hostname: '' }, localStorage: { getItem: () => null, setItem() {} },
 };
 sb.window = sb; vm.createContext(sb);
+if (global.gc) sb.gc = global.gc;
 const VARIANTS = +(process.env.VARIANTS || 0);
 for (const f of files) {
   let src = fs.readFileSync(path.join(ROOT, f), 'utf8');
@@ -43,8 +44,11 @@ if (process.env.SNES_STYLE !== '0') vm.runInContext(fs.readFileSync(path.join(__
 const HIRES = process.env.SNES_STYLE !== '0' && process.env.HIRES !== '0';
 vm.runInContext('var SNES_VARIANTS=' + VARIANTS, sb);
 if (HIRES) vm.runInContext(fs.readFileSync(path.join(__dirname, 'snes_hires.js'), 'utf8'), sb, { filename: 'snes_hires.js' });
+if (HIRES) vm.runInContext(fs.readFileSync(path.join(__dirname, 'snes_lm32.js'), 'utf8'), sb, { filename: 'snes_lm32.js' });
 vm.runInContext('var ONLY_MAPS=' + JSON.stringify(process.env.ONLY ? process.env.ONLY.split(' ') : null), sb);
 vm.runInContext('var SNES_HIRES=' + (HIRES ? 1 : 0), sb);
+if (process.env.DBG) vm.runInContext('var DBG={}', sb);
+vm.runInContext('var NOFX=' + JSON.stringify(process.env.NOFX || ''), sb);
 
 // Top-level consts (SC, TS, g...) live in the context's shared script scope.
 // Scenes for the SNES port so far: the outdoor maps plus every single-room area (interiors, caves).
@@ -52,17 +56,16 @@ vm.runInContext(`var SNES_AREAN={};for(const id in SC){const a=SC[id].area;SNES_
   var PORT_AREAS=${JSON.stringify((process.env.DUNGEONS || 'tredegar,quarry,pyramid,poe,carillon,conserv,tunnel').split(','))};
   function portScene(s){return s.ow||SNES_AREAN[s.area]==1||PORT_AREAS.includes(s.area);}`, sb);
 vm.runInContext('shadow=()=>{};', sb);   // soft shadows don't survive palette reduction
-const dump = vm.runInContext(`(function(){
-  st=newState();p=newPlayer();   // a fresh game: chests closed, rubble in place
-  const out=[];
-  for(const id in SC){
-    if(ONLY_MAPS&&!ONLY_MAPS.includes(id))continue;
+vm.runInContext(`function dumpOne(id,out){
+  const PNG=c=>c?c.toBuffer('image/png'):null;   // (encoded as we go: holding every map's canvases ran out of memory)
+  {
+    if(ONLY_MAPS&&!ONLY_MAPS.includes(id))return;
     const s=SC[id];
     try{ if(typeof applyDyn==='function') applyDyn(s); }catch(e){}
     s.torches=[];
     let c; try{ c=renderMap(s,0); if(!SNES_HIRES){const old=g; g=c.getContext('2d');
       try{drawLandmarks(s,0);}catch(e){} try{drawDecor(s);}catch(e){} g=old;} }
-    catch(e){ out.push({id,err:String(e)}); continue; }
+    catch(e){ out.push({id,err:String(e)}); return; }
     // Light sources for night and dark rooms (web drawNight/drawLight): wall torches, lit windows, street lamps; pixel centres
     const lights={torches:(s.torches||[]).slice(),wins:Object.values(s.wins||{}).filter(w=>w[2]).map(w=>[w[0]+8,w[1]+9]),
       lamps:(s.lamps||[]).map(([x,y])=>[x*16+8,y*16+4])};
@@ -92,7 +95,7 @@ const dump = vm.runInContext(`(function(){
     // Stage 12: the animation frames (water, flames, banners), for the tiles the ROM animates
     const anim=[1,2,3].map(fr=>{try{const a=renderMap(s,fr);if(SNES_HIRES)return a;const o3=g;g=a.getContext('2d');try{drawLandmarks(s,fr);}catch(e){}try{drawDecor(s);}catch(e){}g=o3;return a;}catch(e){return null;}});
     out.push({id,name:s.name||'',area:s.area||'',ow:!!s.ow,port:portScene(s),w:s.w,h:s.h,ax:s.ax,ay:s.ay,
-      grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:c,opened,closed,anim,
+      grid:s.g.map(r=>Array.isArray(r)?r.join(''):r),canvas:PNG(c),opened:PNG(opened),closed:PNG(closed),anim:anim.map(PNG),
       solve:s.solve||null,bossT:s.bossT||null,entry:!!s.entry,reward:s.reward||null,braz:s.braz||[],lights,lit:!!s.lit,cars:(s.cars||[]).map(c=>({y:c.y,dir:c.dir,kind:c.kind||'car'})),birds:s.birds||[],spots:s.spots||[],murals:s.murals||[],lamps:s.lamps||[],
       pickups:(s.items||[]).filter(it=>['skey','carkey','piece','bib','part'].includes(it.kind)).map(it=>({id:it.id,kind:it.kind,x:it.px||it.tx*16+8,y:it.py||it.ty*16+8})),
       blocks:(s.g0||[]).flatMap((r,y)=>r.map((c,x)=>c=='#'?[x,y]:null).filter(Boolean)),
@@ -101,17 +104,28 @@ const dump = vm.runInContext(`(function(){
       doors:(s.doors||[]).map(d=>({tx:d.tx,ty:d.ty,to:d.to,need:d.need||null,ret:d.ret})),
       chests:(s.chests||[]).map(q=>({id:q.id,tx:q.tx,ty:q.ty,item:q.item,appear:!!q.appear})),bushes});
   }
-  return out;
-})()`, sb);
+}`, sb);
+vm.runInContext('st=newState();p=newPlayer();', sb);   // a fresh game: chests closed, rubble in place
+const dump = [];
+const mapIds = vm.runInContext('Object.keys(SC)', sb);
+(async () => {
+for (const id of mapIds) {
+  sb.__id = id; sb.__out = dump;
+  vm.runInContext('dumpOne(__id, __out)', sb);
+  // @napi-rs/canvas frees pixel buffers in finalizers that only run when the event loop turns: let it, per map
+  if (global.gc) global.gc();
+  await new Promise(r => setImmediate(r));
+}
+
 
 const index = [];
 for (const m of dump) {
   if (m.err) { console.log('skip', m.id, m.err); continue; }
   const safe = m.id.replace(/[^a-z0-9_-]+/gi, '_');
-  fs.writeFileSync(path.join(OUT, 'maps', safe + '.png'), m.canvas.toBuffer('image/png'));
-  if (m.opened) fs.writeFileSync(path.join(OUT, 'maps', safe + '.open.png'), m.opened.toBuffer('image/png'));
-  if (m.closed) fs.writeFileSync(path.join(OUT, 'maps', safe + '.alt.png'), m.closed.toBuffer('image/png'));
-  (m.anim || []).forEach((a, i) => { if (a) fs.writeFileSync(path.join(OUT, 'maps', safe + '.f' + (i + 1) + '.png'), a.toBuffer('image/png')); });
+  fs.writeFileSync(path.join(OUT, 'maps', safe + '.png'), m.canvas);
+  if (m.opened) fs.writeFileSync(path.join(OUT, 'maps', safe + '.open.png'), m.opened);
+  if (m.closed) fs.writeFileSync(path.join(OUT, 'maps', safe + '.alt.png'), m.closed);
+  (m.anim || []).forEach((a, i) => { if (a) fs.writeFileSync(path.join(OUT, 'maps', safe + '.f' + (i + 1) + '.png'), a); });
   const { canvas, opened, closed, ...meta } = m;
   index.push({ ...meta, file: 'maps/' + safe + '.png', openFile: opened ? 'maps/' + safe + '.open.png' : null,
     altFile: closed ? 'maps/' + safe + '.alt.png' : null });
@@ -459,3 +473,5 @@ const bossArt = vm.runInContext(`(function(){
   const intro = vm.runInContext("(function(){try{return Object.entries(BANNERS||{})}catch(e){return null}})()", sb);
   fs.writeFileSync(path.join(OUT, 'combat', 'boss.json'), JSON.stringify({ text: bossArt.text, keynames: bossArt.keynames, chal: bossArt.chal, lore: bossArt.lore, cards: bossArt.cards, pack: bossArt.pack, bosscard: bossArt.bosscard, fish: bossArt.fish, river: bossArt.river }, null, 1));
 }
+process.on('exit',()=>{ if(process.env.DBG) console.error(JSON.stringify(vm.runInContext('DBG',sb))); });
+})();
