@@ -366,8 +366,7 @@ tile = function (s, ch, tx, ty, fr, plain) {
     return;
   }
   if (ch == 'r') {   // a boulder: a rounded stone in five greys, lit on top, its shadow on the ground
-    const gb = '.,psnF'.includes(s.base) ? s.base : '.';
-    ground(s, gb, x, y, h);
+    ground(s, propGround(s, tx, ty), x, y, h);
     R(x + 2, y + 13, 13, 2, SG[1]); R(x + 4, y + 15, 9, 1, SG[2]);
     const rows = [6, 10, 12, 14, 14, 14, 14, 13, 12, 10];
     rows.forEach((w, i) => { const a = x + 8 - (w >> 1); R(a, y + 4 + i, w, 1, SST[3]); R(a, y + 4 + i, 1, 1, SST[0]); R(a + w - 1, y + 4 + i, 1, 1, SST[0]); });
@@ -479,11 +478,25 @@ tile = function (s, ch, tx, ty, fr, plain) {
    those get the landmarks' shading, cast a short shadow, and go back on the map. The web game's translucent
    shadows are left out (they come out as odd blends after palette reduction): the cast shadow replaces them. */
 const PROPS = 'z1+xfkKM%jJcoYGQVhObg^Rliaquyt';
+/* the ground under a prop: what most of its neighbours stand on (a lamp on the pavement, a bench on the grass) */
+function propGround(s, tx, ty) {
+  if (s.interior) return 'F';
+  const n = {};
+  for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const X = tx + dx, Y = ty + dy;
+    if (X < 0 || Y < 0 || X >= s.w || Y >= s.h) continue;
+    const c = s.g[Y][X] == 'T' ? '.' : s.g[Y][X];
+    if ('.,psn'.includes(c)) n[c == ',' ? '.' : c] = (n[c == ',' ? '.' : c] || 0) + (dx && dy ? 1 : 2);
+  }
+  let best = '.,psnF'.includes(s.base) ? s.base : '.', bn = 0;
+  for (const c in n) if (n[c] > bn) { best = c; bn = n[c]; }
+  return best;
+}
 const tileP = tile;
 tile = function (s, ch, tx, ty, fr, plain) {
   if (!PROPS.includes(ch) || (ch == '%' && !s.ow)) return tileP(s, ch, tx, ty, fr, plain);
   const x = tx * TS, y = ty * TS, main = g, oldR = R;
-  const base = s.interior ? 'F' : ('.,psnF'.includes(s.base) ? s.base : '.');
+  const base = propGround(s, tx, ty);
   const layer = (c) => { const cv = mkCanvas(32, 32), cx = cv.getContext('2d'); cx.translate(8 - x, 8 - y); g = cx;
     try { tileP(s, c, tx, ty, fr, plain); } finally { g = main; } return cv; };
   R = (a, b, w, h, c) => { if (typeof c == 'string' && c.startsWith('rgba')) return; oldR(a, b, w, h, c); };

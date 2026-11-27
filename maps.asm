@@ -31,12 +31,6 @@ m0_xtr:
 .incbin "data/m0.xtr"
 .ends
 
-.section ".map0a" superfree
-m0_ani:
-.incbin "data/m0.ani"
-.db 0
-.ends
-
 .section ".map1c" superfree
 m1_chr:
 .incbin "data/m1.chr"
@@ -253,12 +247,6 @@ m6_xtr:
 .incbin "data/m6.xtr"
 .ends
 
-.section ".map6a" superfree
-m6_ani:
-.incbin "data/m6.ani"
-.db 0
-.ends
-
 .section ".map7c" superfree
 m7_chr:
 .incbin "data/m7.chr"
@@ -436,12 +424,6 @@ m11_ene:
 .incbin "data/m11.ene"
 m11_xtr:
 .incbin "data/m11.xtr"
-.ends
-
-.section ".map11a" superfree
-m11_ani:
-.incbin "data/m11.ani"
-.db 0
 .ends
 
 .section ".map12c" superfree
@@ -697,12 +679,6 @@ m18_xtr:
 .incbin "data/m18.xtr"
 .ends
 
-.section ".map18a" superfree
-m18_ani:
-.incbin "data/m18.ani"
-.db 0
-.ends
-
 .section ".map19c" superfree
 m19_chr:
 .incbin "data/m19.chr"
@@ -732,12 +708,6 @@ m19_ene:
 .incbin "data/m19.ene"
 m19_xtr:
 .incbin "data/m19.xtr"
-.ends
-
-.section ".map19a" superfree
-m19_ani:
-.incbin "data/m19.ani"
-.db 0
 .ends
 
 .section ".map20c" superfree

@@ -216,11 +216,46 @@ function roof32(X, Y, h, nb) {
     R(X + 15, Y + 9, 2, 12, SRF[3]); R(X + 12, Y + 12, 2, 2, '#a8c8e8'); R(X + 8, Y + 22, 16, 1, SRF[4]);
   }
 }
+/* ---------- brick fronts: courses of shaded bricks, a cream cornice (or the roof's shadow) along the top.
+   Windows, doors, porches and awnings are objects, painted at 16 px and laid on through Scale2x. ---------- */
+function brick32(X, Y, h, r, roofAbove) {
+  R(X, Y, 32, 32, r[2]);
+  for (let row = 0; row < 8; row++) {
+    const b = Y + row * 4, o = row & 1 ? 4 : 0;
+    R(X, b + 3, 32, 1, r[0]);
+    for (let i = o - 8; i < 32; i += 8) {
+      const a = Math.max(0, i), w = Math.min(32, i + 7) - a;
+      if (w <= 0) continue;
+      const q = HH(h, row, i + 8) % 6;
+      R(X + a, b, w, 3, q == 0 ? r[3] : q == 1 ? r[1] : r[2]);
+      R(X + a, b, w, 1, q == 0 ? r[4] : r[3]); R(X + a, b + 2, w, 1, q == 1 ? r[0] : r[1]);
+      if (i + 7 < 32) R(X + i + 7, b, 1, 3, r[0]);
+    }
+  }
+  R(X + 31, Y, 1, 32, r[1]);
+  if (roofAbove) { R(X, Y, 32, 4, r[0]); R(X, Y + 4, 32, 1, r[1]); }
+  else {
+    R(X, Y, 32, 6, '#e8dcc0'); R(X, Y, 32, 1, '#fff8e8'); R(X, Y + 1, 32, 1, '#f4ecd8');
+    for (let i = 1; i < 32; i += 4) R(X + i, Y + 4, 2, 2, '#a08c6c');
+    R(X, Y + 6, 32, 1, '#a08c6c'); R(X, Y + 7, 32, 1, r[0]);
+  }
+}
 NATIVE['B'] = (s, X, Y, h, nb, fr, tx, ty) => {
-  if (!(s.roof != 'tin' && s.hs != 'glass') || s.interior || nb(0, 1) != 'B' || upperStorey(s, tx, ty)) return false;
-  roof32(X, Y, h, nb);
-  if (upperStorey(s, tx, ty + 1)) { R(X, Y + 24, 32, 4, SRF[4]); R(X, Y + 24, 32, 1, SRF[5]); R(X, Y + 28, 32, 4, SRF[0]); }
+  if (!(s.roof != 'tin' && s.hs != 'glass') || s.interior) return false;
+  const up = upperStorey(s, tx, ty);
+  if (nb(0, 1) == 'B' && !up) {
+    roof32(X, Y, h, nb);
+    if (upperStorey(s, tx, ty + 1)) { R(X, Y + 24, 32, 4, SRF[4]); R(X, Y + 24, 32, 1, SRF[5]); R(X, Y + 28, 32, 4, SRF[0]); }
+    return;
+  }
+  const pl = s.pal || [BRICK], c = pl[(tx + ((up ? ty + 1 : ty) > 5 ? 3 : 0)) % pl.length];
+  if (c[3] == 'clap') return false;
+  brick32(X, Y, h, ramp(c[0]), up || (nb(0, -1) == 'B' && !upperStorey(s, tx, ty - 1)));
 };
+/* in B, fronts are bare brick: their windows and doors count as objects */
+const facadeH = facade, storeyH = storey;
+facade = function (s, x, y, h, tx, ty, roofAbove, plain) { return facadeH(s, x, y, h, tx, ty, roofAbove, plain || HIRES_GROUND); };
+storey = function (s, x, y, h, tx, ty) { if (HIRES_GROUND) return facade(s, x, y, h * 7 + 3, tx, ty, true, true); return storeyH(s, x, y, h, tx, ty); };
 
 /* ---------- walls inside: big dressed blocks under a dark cornice; the wall tops; torches ---------- */
 function wall32(s, X, Y, h) {
@@ -266,10 +301,11 @@ NATIVE['w'] = (s, X, Y, h, nb, fr, tx, ty) => {
   R(X, Y, 32, 32, W[3]);
   for (let i = 0; i < 6; i++) { const q = HH(h, i, 81), a = X + q % 24, b = Y + 2 + (q >> 5) % 28; R(a, b, 7 + (q >> 9) % 6, 1, W[2]); R(a + 2, b + 1, 4 + (q >> 10) % 4, 1, W[2]); }
   for (let i = 0; i < 4; i++) {
-    const q = HH(h, i, 83), a = X + (q % 32 + fr * 2 * (i & 1 ? 1 : -1) + 64) % 22, b = Y + 3 + i * 7 + (q >> 5) % 3;
+    const q = HH(h, i, 83), a = X + q % 22, b = Y + 3 + i * 7 + (q >> 5) % 3;
     R(a, b + 1, 9, 1, W[2]); R(a + 1, b, 7, 1, W[4]); R(a + 2, b - 1, 3, 1, W[5]); R(a + 2, b - 1, 1, 1, W[6]);
   }
-  if (h % 3 == 0) { const a = X + 4 + (h >> 4) % 22, b = Y + 4 + (h >> 7) % 22; R(a, b, 2, 1, W[6]); R(a + 1, b - 1, 1, 1, W[5]); }
+  // a sun glint that moves from frame to frame, kept to the cell's middle so few tiles animate (VRAM pins them)
+  { const q = HH(h, fr, 89), a = X + 9 + q % 12, b = Y + 10 + (q >> 5) % 10; R(a, b, 3, 1, W[6]); R(a + 1, b - 1, 1, 1, W[6]); R(a - 1, b + 1, 5, 1, W[4]); }
   if (land(nb(0, -1))) { R(X, Y, 32, 6, W[1]); R(X, Y + 6, 32, 1, W[2]); for (let i = 0; i < 32; i++) if ((i + tx * 5) % 9 < 3) R(X + i, Y + 6, 1, 1, W[5]); }
   if (land(nb(-1, 0))) { R(X, Y, 4, 32, W[1]); R(X + 4, Y, 1, 32, W[2]); }
   if (land(nb(0, 1))) {   // lapping at the shore: a lit band, then foam of uneven depth
@@ -311,8 +347,7 @@ drawDecor = function (s) { if (!HIRES_GROUND) drawDecor1(s); };
 shadeRect = function (x, y, w, h) { if (!HIRES_GROUND) shadeRect1(x, y, w, h); };
 tile = function (s, ch, tx, ty, fr, plain) {
   if (HIRES_GROUND && (ch == 'T' || PROPS.includes(ch) || ch == 'r')) {
-    const gb = s.interior ? 'F' : ('.,psnF'.includes(s.base) ? s.base : '.');
-    return tileH(s, ch == 'T' ? '.' : gb, tx, ty, fr, plain);
+    return tileH(s, ch == 'T' ? '.' : propGround(s, tx, ty), tx, ty, fr, plain);
   }
   return tileH(s, ch, tx, ty, fr, plain);
 };
@@ -348,7 +383,9 @@ renderMap = function (s, fr) {
   const old = g; g = ctx;
   try {
     for (let ty = 0; ty < s.h; ty++) for (let tx = 0; tx < s.w; tx++) {
-      const ch = s.g[ty][tx], f = NATIVE[ch];
+      let ch = s.g[ty][tx];
+      if ((PROPS.includes(ch) && (ch != '%' || s.ow)) || ch == 'r') ch = propGround(s, tx, ty);
+      const f = NATIVE[ch];
       if (!f) continue;
       const nb = (dx, dy) => { const X = tx + dx, Y = ty + dy; return X < 0 || Y < 0 || X >= s.w || Y >= s.h ? ch : s.g[Y][X]; };
       if (f(s, tx * 32, ty * 32, cellHash(s, tx, ty), nb, fr, tx, ty) === false) continue;

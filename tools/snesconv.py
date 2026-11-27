@@ -344,6 +344,11 @@ def convert_map2x(path, w, h, swaps=(), alt=None, opened=None, frames=()):
                     fr = [tiles_at(base, x0, y0)] + [tiles_at(f, x0, y0) for f in fims]
                     ts.append(fr)
             cells.append(ts)
+    # animated tiles are pinned in VRAM and copied in VBlank: too many and the map stays still
+    moving = {tuple(map(tuple, fr)) for c in cells for fr in c if any(f != fr[0] for f in fr[1:])}
+    if len(moving) > 96:
+        print(f'{path}: {len(moving)} animated tiles, over 96: no animation')
+        cells = [[[fr[0]] for fr in c] for c in cells]
     swap_cells = []
     for key, cx, cy in swaps:
         im = imgs[key]
