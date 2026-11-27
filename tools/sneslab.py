@@ -73,7 +73,7 @@ class Lab:
         """Map index by its name, from the comments in the generated maps.h."""
         import re
         for line in open(os.path.join(self.root, 'maps.h')):
-            m = re.match(r'extern char m(\d+)_chr.*/\* (.*) \*/', line)
+            m = re.match(r'extern char m(\d+)_chr.*/\* (.*?)(: \d+ tiles, \d+ metatiles)? \*/', line)
             if m and m.group(2) == name:
                 return int(m.group(1))
         raise KeyError(name)
