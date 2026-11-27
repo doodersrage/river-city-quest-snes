@@ -51,6 +51,7 @@ extern u8 mapW, mapH; /* in 16px cells: 32x22 outdoors, 16x11 in rooms */
 void paddleVBlank(void);
 void bossBgLoad(void);
 void bossBgVBlank(void);
+void boomVBlank(void);
 #define OAM_NPCS 16   /* MAX_NPCS */
 #define OAM_ENEMIES 20
 #define OAM_PICKUPS 26

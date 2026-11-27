@@ -1814,6 +1814,31 @@ def main():
     open(os.path.join(out, 'block2.chr'), 'wb').write(b''.join(
         tile4bpp([big[ty_ * 8 + y][tx_ * 8 + x] for y in range(8) for x in range(8)]) for ty_ in range(4) for tx_ in range(4)))
     asm += ['.section ".block2" superfree', 'block2_chr:', '.incbin "data/block2.chr"', '.ends', '']
+    # stage 13e: the blast at 64 px, two frames (Scale2x of item cells 288-294 and 296-302); each frame 16 cells of
+    # four tiles (TL, TR, BL, BR), row by row, streamed in when it shows
+    def cell_idx(t):
+        rows = [[0] * 16 for _ in range(16)]
+        for q, tt in enumerate((t, t + 1, t + 16, t + 17)):
+            ix_ = untile4bpp(it[(tt - 256) * 32:(tt - 256) * 32 + 32])
+            for y in range(8):
+                for x in range(8): rows[(q >> 1) * 8 + y][(q & 1) * 8 + x] = ix_[y * 8 + x]
+        return rows
+    boom = b''
+    for f in range(2):
+        img = [[0] * 32 for _ in range(32)]
+        for k in range(4):
+            c = cell_idx(288 + (f * 4 + k) * 2)
+            for y in range(16):
+                for x in range(16): img[(k >> 1) * 16 + y][(k & 1) * 16 + x] = c[y][x]
+        big = scale2x_idx(img)
+        for cy in range(4):
+            for cx in range(4):
+                for qy in range(2):
+                    for qx in range(2):
+                        boom += tile4bpp([big[cy * 16 + qy * 8 + y][cx * 16 + qx * 8 + x] for y in range(8) for x in range(8)])
+    open(os.path.join(out, 'boom2.chr'), 'wb').write(boom)
+    asm += ['.section ".boom2" superfree', 'boom2_chr:', '.incbin "data/boom2.chr"', '.ends', '']
+    hdr += ['extern char boom2_chr;']
     hdr += ['extern char block2_chr;']
     asm += ['.section ".items" superfree', 'items_chr:', '.incbin "data/items.chr"', 'items_chrend:',
             'block_pal:', '.incbin "data/block.pal"', '.ends', '']

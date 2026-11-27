@@ -3053,6 +3053,11 @@ block2_chr:
 .incbin "data/block2.chr"
 .ends
 
+.section ".boom2" superfree
+boom2_chr:
+.incbin "data/boom2.chr"
+.ends
+
 .section ".items" superfree
 items_chr:
 .incbin "data/items.chr"

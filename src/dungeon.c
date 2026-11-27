@@ -56,6 +56,12 @@ u8 bombOn[MAX_BOMB], bombT[MAX_BOMB];
 s16 bombX[MAX_BOMB], bombY[MAX_BOMB];
 u8 boomT;
 s16 boomX, boomY;
+/* the 64 px blast (stage 13e): where its 16 cells go (the old blast's, and the paddle area's spare ones) and the
+   sprites that show them (spare slots: the old blast's, the old cars', the bobber's, the hook's last links) */
+static const u16 boomCell[16] = {288, 290, 292, 294, 296, 298, 300, 302, 168, 170, 172, 174, 200, 202, 204, 206};
+static const u8 boomSlot[16] = {82, 83, 84, 85, 112, 113, 114, 115, 116, 117, 98, 99, 78, 79, 76, 77};
+u8 boomF = 255, boomPend, boomShown;
+u8 *boomSrc;
 
 /* the boss (1/16 px) */
 u8 bossVis; /* the Wraith: frames left solid after its own orb hits it */
@@ -1034,7 +1040,7 @@ void updBombs(void)
 
 void drawBombs(void)
 {
-    u8 i, k;
+    u8 i, k, f;
     u16 id;
     s16 sx, sy;
     for (i = 0; i < MAX_BOMB; i++)
@@ -1049,18 +1055,46 @@ void drawBombs(void)
         }
         sprPut((id) >> 2, 1, sx, sy, 2, 0, OBJ_I_KEG, PAL_ITEM);
     }
-    for (k = 0; k < 4; k++)
+    /* stage 13e: the blast at 64 px, 16 sprites; its frame streams into 16 cells as it shows (boomVBlank) */
+    if (boomT)
     {
-        id = (OAM_BOOM + k) * 4;
-        if (!boomT)
+        f = boomT < 8 ? 1 : 0;
+        if (f != boomF)
         {
-            sprHide((id) >> 2);
+            boomF = f;
+            boomSrc = (u8 *)&boom2_chr + ((u16)f << 11);
+            boomPend = 1;
+        }
+    }
+    else boomF = 255;
+    if (!boomT && !boomShown) return;   /* (the slots are others' the rest of the time) */
+    boomShown = boomT;
+    for (k = 0; k < 16; k++)
+    {
+        if (!boomT || boomPend)
+        {
+            sprHide(boomSlot[k]);
             continue;
         }
-        sx = SX(boomX) - 16 + (k & 1) * 16;
-        sy = SY(boomY) - 16 + (k >> 1) * 16;
-        sprPut((id) >> 2, 1, sx, sy, 3, 0, OBJ_I_BOOM + ((boomT < 8 ? 4 : 0) + k) * 2, PAL_ITEM);
+        sx = SX(boomX) - 32 + (k & 3) * 16;
+        sy = SY(boomY) - 32 + (k >> 2) * 16;
+        sprPut(boomSlot[k], 1, sx, sy, 3, 0, boomCell[k], PAL_ITEM);
     }
+}
+
+void boomVBlank(void)
+{
+    u8 k;
+    u8 *src;
+    if (!boomPend) return;
+    src = boomSrc;
+    for (k = 0; k < 16; k++)
+    {
+        dmaCopyVram(src, VRAM_OBJ_CHR + boomCell[k] * 16, 64);
+        dmaCopyVram(src + 64, VRAM_OBJ_CHR + (boomCell[k] + 16) * 16, 64);
+        src += 128;
+    }
+    boomPend = 0;
 }
 
 /* ---------- push blocks and switches (web tryPush, updBlocks) ---------- */
