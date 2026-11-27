@@ -378,3 +378,65 @@ tile = function (s, ch, tx, ty, fr, plain) {
   }
   tileW(s, ch, tx, ty, fr, plain);
 };
+
+/* ---------- landmarks: the web game's hand-drawn buildings, given later-SNES shading automatically ----------
+   Each landmark is drawn alone on a clear layer, then every shape gets a lit top-left edge and a shadow along its
+   lower right (colour shifted warm and violet like the ramps), large flat areas a soft light-to-shade fall from top
+   to bottom in three steps, and the layer goes onto the map. Outlines and window glass (the darkest colours) stay. */
+function shadeLayer(cv, x0, y0, w, h) {
+  const ctx = cv.getContext('2d');
+  x0 = Math.max(0, x0 - 8); y0 = Math.max(0, y0 - 8);
+  w = Math.min(cv.width - x0, w + 16); h = Math.min(cv.height - y0, h + 16);
+  const im = ctx.getImageData(x0, y0, w, h), d = im.data, src = new Uint8ClampedArray(d);
+  const at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? -1 : (y * w + x) * 4;
+  const same = (i, j) => j >= 0 && src[j + 3] && Math.abs(src[i] - src[j]) + Math.abs(src[i + 1] - src[j + 1]) + Math.abs(src[i + 2] - src[j + 2]) < 40;
+  const mix = (i, t, to) => { d[i] = src[i] + (to[0] - src[i]) * t; d[i + 1] = src[i + 1] + (to[1] - src[i + 1]) * t; d[i + 2] = src[i + 2] + (to[2] - src[i + 2]) * t; };
+  const LIGHT = [255, 244, 214], DARK = [40, 24, 56];
+  let bot = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (src[at(x, y) + 3]) bot = Math.max(bot, y);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = at(x, y);
+    if (!src[i + 3]) continue;
+    const luma = src[i] * .3 + src[i + 1] * .5 + src[i + 2] * .2;
+    if (luma < 48) continue;                                    // outlines, doors and dark glass stay as drawn
+    const upE = !same(i, at(x, y - 1)), leftE = !same(i, at(x - 1, y));
+    const downE = !same(i, at(x, y + 1)), rightE = !same(i, at(x + 1, y));
+    if (upE || leftE) mix(i, .28, LIGHT);
+    else if (downE || rightE) mix(i, .3, DARK);
+    else if (bot - y < 3) mix(i, .18, DARK);                     // the foot of the building, where it meets the ground
+  }
+  ctx.putImageData(im, x0, y0);
+}
+/* the landmark's silhouette, thrown 5 px down and right onto what's under it, in ramp shadow colours */
+function castShadow(main, cv, x0, y0, w, h) {
+  const SH = 5;
+  x0 = Math.max(0, x0 - 8); y0 = Math.max(0, y0 - 8);
+  w = Math.min(cv.width - x0, w + 16 + SH); h = Math.min(cv.height - y0, h + 16 + SH);
+  const lay = cv.getContext('2d').getImageData(x0, y0, w, h).data;
+  const im = main.getImageData(x0, y0, w, h), d = im.data;
+  for (let y = SH; y < h; y++) for (let x = SH; x < w; x++) {
+    const i = (y * w + x) * 4, j = ((y - SH) * w + x - SH) * 4;
+    if (lay[i + 3] || !lay[j + 3]) continue;
+    const c = toHex(d[i], d[i + 1], d[i + 2]), sc = SHADE.get(c);
+    const [r, g2, b] = sc ? hx(sc) : [d[i] * .62 + 40 * .38, d[i + 1] * .62 + 24 * .38, d[i + 2] * .62 + 56 * .38];
+    d[i] = r; d[i + 1] = g2; d[i + 2] = b;
+  }
+  main.putImageData(im, x0, y0);
+}
+drawLandmarks = function (s, fr) {
+  const main = g;
+  for (const L of s.lm || []) {
+    const f = LMART[L.art];
+    if (!f) continue;
+    const cv = mkCanvas(s.w * TS, s.h * TS);
+    g = cv.getContext('2d');
+    try { f(L.x * TS, L.y * TS, L.w * TS, L.h * TS, fr, s, L); } catch (e) {} finally { g = main; }
+    shadeLayer(cv, L.x * TS, L.y * TS, L.w * TS, L.h * TS);
+    castShadow(main, cv, L.x * TS, L.y * TS, L.w * TS, L.h * TS);
+    main.drawImage(cv, 0, 0);
+    for (let yy = L.y; yy < L.y + L.h; yy++) for (let xx = L.x; xx < L.x + L.w; xx++) {
+      const c = s.g[yy][xx];
+      if (c == 'D') doorway(xx * TS, yy * TS); else if (c == '%') rubbleAt(xx * TS, yy * TS);
+    }
+  }
+};
