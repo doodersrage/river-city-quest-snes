@@ -115,22 +115,7 @@ void combatLoad(u8 *ene)
 }
 
 /* Walls and the map edge stop walking enemies. */
-u8 riverAt(s16 x, s16 y)
-{
-    return colGrid[(y >> 4) * COL_STRIDE + (x >> 4)] == CELL_RIVER;
-}
-
-u8 enBlocked(s16 x, s16 y)
-{
-    if (x - HALF < 0 || y - HALF < 0 || x + HALF >= MAP_PX_W || y + HALF >= MAP_PX_H) return 1;
-    /* enemies never cross the river, kayak or not */
-    if (riverAt(x - HALF, y - HALF) || riverAt(x + HALF, y - HALF) || riverAt(x - HALF, y + HALF) || riverAt(x + HALF, y + HALF)) return 1;
-    if (solidAt(x - HALF, y - HALF)) return 1;
-    if (solidAt(x + HALF, y - HALF)) return 1;
-    if (solidAt(x - HALF, y + HALF)) return 1;
-    if (solidAt(x + HALF, y + HALF)) return 1;
-    return 0;
-}
+/* riverAt and enBlocked: src/collide.asm (stage 13e) */
 
 /* Move enemy k by (dx, dy) sixteenths; returns 0 if a wall stopped it. */
 u8 moveE(u8 k, s16 dx, s16 dy)

@@ -661,17 +661,7 @@ void rcqUpload(u8 *ts0, u8 *ts1, u8 *meta, u8 *grid, u8 *pal, u8 *col, u8 *w, u8
     lifeLoad();
 }
 
-u8 solidAt(s16 x, s16 y)
-{
-    s16 tx, ty;
-    if (x < 0 || y < 0 || x >= MAP_PX_W || y >= MAP_PX_H)
-        return 0; /* off-map: handled as a map exit */
-    tx = x >> 4;
-    ty = y >> 4;
-    tx = colGrid[ty * COL_STRIDE + tx];
-    if (tx == CELL_RIVER) return !hasKayak; /* the kayak paddles the James */
-    return tx == CELL_SOLID || tx == CELL_COUNTER || tx == CELL_BUSH || tx == CELL_POST || tx == CELL_LOW || tx == CELL_WATER || tx == CELL_LOCK || tx == CELL_BRAZIER || tx == CELL_SPROUT;
-}
+/* solidAt: src/collide.asm (stage 13e) */
 
 u8 blocked(s16 x, s16 y)
 {

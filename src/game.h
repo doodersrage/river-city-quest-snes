@@ -196,6 +196,7 @@ void collectPickup(u8 k);
 u8 bugStunsEnemy(s16 x, s16 y);
 void gotKeystone(u8 id);
 u8 enBlocked(s16 x, s16 y);
+u8 riverAt(s16 x, s16 y);
 u8 enemiesAlive(void);
 u8 hookHitsEnemy(s16 x, s16 y, s16 kx, s16 ky);
 void hookGrabsPickup(s16 x, s16 y);
