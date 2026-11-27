@@ -1513,13 +1513,13 @@ void dungeonUpdate(void)
 
 void dungeonDraw(void)
 {
-    drawBoss();
+    if (!carAny) drawBoss();   /* (stage 13c: on a street the boss's and the shots' sprites are the cars') */
     drawBug();
     drawBlocks();
     drawBombs();
     drawItemHud();
     drawHook();
-    drawShots();
+    if (!carAny) drawShots();
 }
 
 /* Called after a map is loaded (forced blank). */

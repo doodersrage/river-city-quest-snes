@@ -3008,6 +3008,12 @@ town_chr:
 town_chrend:
 .ends
 
+.section ".townb" superfree
+townb_chr:
+.incbin "data/townb.chr"
+townb_chrend:
+.ends
+
 .section ".font" superfree
 font_chr:
 .incbin "data/font.chr"

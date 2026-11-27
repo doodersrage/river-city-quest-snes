@@ -1099,7 +1099,7 @@ for _ in range(600):
         break
     lab.run(None, 1)
 lab.screenshot(f'{out}/52-broad-street-bus.png')
-check(lab.ram('oamShown', 1, False, 112) == 2, 'the bus is drawn')
+check(any(lab.ram('oamShown', 1, False, 40 + i) == 2 for i in range(20)), 'the bus is drawn')
 # step into the car's lane just ahead of it: it stops for you and waits
 cx, cy = lab.ram('carX', 2, True, 1) >> 4, lab.ram('carY', 2, True, 1)
 lab.poke('inv', 255)

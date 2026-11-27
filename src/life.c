@@ -3,7 +3,10 @@
 #include <snes.h>
 #include "game.h"
 
-#define OAM_CARS 112 /* 3 per car: 112-117 */
+#define OAM_CARS 40  /* stage 13c: the cars, 4 sprites a 32 px piece, 20 in all (a boss's and its shots' slots:
+                        no map has both); the pigeons are 118 and 119 */
+#define OAM_BIRDS 118
+#define TOWN_OBJS 22
 #define MAX_CARS 2
 #define MAX_BIRDS 2
 
@@ -25,15 +28,15 @@ s16 birdX[MAX_BIRDS], birdY[MAX_BIRDS], birdVx[MAX_BIRDS], birdVy[MAX_BIRDS];
 s16 birdHx[MAX_BIRDS], birdHy[MAX_BIRDS];
 
 /* the town's 8 OAM slots: only rewrite one when it changes (most frames, nothing does) */
-s16 lastSx[8], lastSy[8];
-u16 lastTile[8];
-u8 lastOn[8], lifeAny;
+s16 lastSx[TOWN_OBJS], lastSy[TOWN_OBJS];
+u16 lastTile[TOWN_OBJS];
+u8 lastOn[TOWN_OBJS], lifeAny, townB;
 
 static void townHide(u8 i)
 {
     if (!lastOn[i]) return;
     lastOn[i] = 0;
-    sprHide(OAM_CARS + i);
+    sprHide(i < 20 ? OAM_CARS + i : OAM_BIRDS + i - 20);
 }
 
 static void townPut(u8 i, s16 sx, s16 sy, u8 flip, u16 tile)
@@ -49,7 +52,7 @@ static void townPut(u8 i, s16 sx, s16 sy, u8 flip, u16 tile)
     lastSx[i] = sx;
     lastSy[i] = sy;
     lastTile[i] = tile;
-    sprPut(OAM_CARS + i, 1, sx, sy, 2, flip, tile & 0x7FFF, PAL_ITEM);
+    sprPut(i < 20 ? OAM_CARS + i : OAM_BIRDS + i - 20, 1, sx, sy, 2, flip, tile & 0x7FFF, PAL_ITEM);
 }
 
 static u8 carHalf(u8 k)
@@ -128,7 +131,7 @@ void lifeLoad(void)
         birdT[k] = rnd() % 60;
         birdV[k] = 1;
     }
-    for (k = 0; k < 8; k++)
+    for (k = 0; k < TOWN_OBJS; k++)
     {
         lastOn[k] = 1;
         townHide(k);
@@ -137,7 +140,12 @@ void lifeLoad(void)
     lifeAny = carAny || birdSt[0] != 255 || birdSt[1] != 255;
     /* their art goes where a boss would load: outdoor maps never have one */
     if (!roomBoss)   /* anywhere without a boss: also the challenge tokens, the '!' and the camera icon */
-        dmaCopyVram(&town_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&town_chrend - &town_chr));
+    {
+        /* sheet B has the bus (and one car colour), A two car colours */
+        townB = (carOn[0] && carBus[0]) || (carOn[1] && carBus[1]);
+        if (townB) dmaCopyVram(&townb_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&townb_chrend - &townb_chr));
+        else dmaCopyVram(&town_chr, VRAM_OBJ_CHR + 0x1000 + VRAM_BOSS_OFS, (&town_chrend - &town_chr));
+    }
 }
 
 static u8 npcFree(s16 x, s16 y)
@@ -155,137 +163,30 @@ static void lifeTraffic(void)
     s16 ah, cx;
     if (!carAny) return;
     /* cars stop for you when you're in the lane ahead (web: a short horn) */
+    i = 0;
     for (k = 0; k < MAX_CARS; k++)
     {
         if (!carOn[k]) continue;
-        cx = carX[k] >> 4;
-        ah = carDir[k] > 0 ? px - cx : cx - px;
-        if (ABS(py - carY[k]) < 13 && ah > -(s16)carHalf(k) - 6 && ah < (s16)carHalf(k) + 22)
-        {
-            if (!carStop[k])
-            {
-                carStop[k] = 1;
-                sfx(SFX_HORN);
-            }
-            continue;
-        }
-        carStop[k] = 0;
-        carX[k] += carSp[k] << 1;
-        if (cx > mapRight()) carX[k] = -40 << 4;
-        else if (cx < -40) carX[k] = mapRight() << 4;
-    }
-}
-
-void lifeUpdate(void)
-{
-    u8 k, i, a;
-    s16 nx, ny, dx, dy;
-    /* odd frames: townspeople and pigeons; even frames: traffic (each moves twice as far) */
-    if (!(frameCount & 1))
-    {
-        lifeTraffic();
-        return;
-    }
-    /* townspeople (web: 0.4 px a frame). Timers tick for all; one wanderer takes a step. */
-    if (nWander && !boxState)
-    {
-        for (i = 0; i < nWander; i++)
-        {
-            k = wanderer[i];
-            if (npcT[k]) npcT[k]--;
-            else
-            {
-                npcT[k] = 25 + rnd() % 45;
-                a = rnd() % 6;
-                npcVx[k] = a == 2 ? -1 : a == 3 ? 1 : 0;
-                npcVy[k] = a == 0 ? 1 : a == 1 ? -1 : 0;
-            }
-        }
-        if (++wTurn >= nWander) wTurn = 0;
-        k = wanderer[wTurn];
-        if (npcVx[k] || npcVy[k])
-        {
-            /* with two or three out walking, each gets a turn less often: take a bigger step */
-            nx = npcX[k] + (nWander > 1 ? npcVx[k] << 1 : npcVx[k]);
-            ny = npcY[k] + (nWander > 1 ? npcVy[k] << 1 : npcVy[k]);
-            if (ABS(nx - npcHx[k]) < 40 && ABS(ny - npcHy[k]) < 40 && npcFree(nx, ny))
-            {
-                npcX[k] = nx;
-                npcY[k] = ny;
-                npcDir[k] = npcVx[k] < 0 ? 2 : npcVx[k] > 0 ? 3 : npcVy[k] < 0 ? 1 : 0;
-            }
-            else
-            {
-                npcVx[k] = 0;
-                npcVy[k] = 0;
-            }
-        }
-    }
-    /* pigeons */
-    for (k = 0; k < MAX_BIRDS; k++)
-    {
-        if (birdSt[k] == 255) continue;
-        birdT[k]++;
-        if (birdSt[k] == 0)
-        {
-            dx = px - (birdX[k] >> 4);
-            dy = py - (birdY[k] >> 4);
-            if (ABS(dx) < 30 && ABS(dy) < 30 && ABS(dx) + ABS(dy) < 40)
-            {
-                birdSt[k] = 1;
-                birdT[k] = 0;
-                birdV[k] = 0;
-                birdVx[k] = 16 + (rnd() & 15);
-                if (dx > 0) birdVx[k] = -birdVx[k];
-                birdVy[k] = -26 - (rnd() & 15);
-                sfx(SFX_FLAP);
-            }
-        }
-        else if (birdSt[k] == 1)
-        {
-            birdX[k] += birdVx[k] << 1;
-            birdY[k] += birdVy[k] << 1;
-            if (++birdV[k] == 2) /* web: vy -= .02 a frame */
-            {
-                birdV[k] = 0;
-                birdVy[k]--;
-            }
-            if ((birdY[k] >> 4) < camY - 20 || birdT[k] > 150)
-            {
-                birdSt[k] = 2;
-                birdT[k] = 0;
-            }
-        }
-        else if (birdT[k] > 300 && (ABS(px - (birdHx[k] >> 4)) > 120 || ABS(py - (birdHy[k] >> 4)) > 120))
-        {
-            birdSt[k] = 0;
-            birdX[k] = birdHx[k];
-            birdY[k] = birdHy[k];
-        }
-    }
-}
-
-void lifeDraw(void)
-{
-    u8 k, c, n, i, flip, base;
-    s16 sx, sy;
-    if (!lifeAny) return;
-    for (k = 0; k < MAX_CARS; k++)
-    {
-        if (!carOn[k]) continue;
-        /* drawn facing right; going left, mirror each cell and take them in the other order */
+        /* stage 13c: 32 px tall, each old 16 px cell a 32 px piece of four sprites; drawn facing right, mirrored
+           going left (the pieces in the other order, and each piece's halves swapped) */
         n = carBus[k] ? 3 : 2;
-        base = carBus[k] ? TOWN_BUS : TOWN_CAR + (carCol[k] << 1);
+        base = carBus[k] ? 8 : (townB ? 0 : (carCol[k] & 1) << 3);
         flip = carDir[k] < 0;
         sx = SX((carX[k] >> 4) - (n << 3));
-        sy = SY(carY[k] - 10);
-        i = k * 3;
-        for (c = 0; c < n; c++, i++, sx += 16)
-            townPut(i, sx, sy, flip, townTile[base + (flip ? n - 1 - c : c)]);
+        sy = SY(carY[k]) - 22;
+        for (c = 0; c < n; c++, sx += 32)
+        {
+            q = base + ((flip ? n - 1 - c : c) << 2);
+            townPut(i++, sx + (flip ? 16 : 0), sy, flip, carTile[q]);
+            townPut(i++, sx + (flip ? 0 : 16), sy, flip, carTile[q + 1]);
+            townPut(i++, sx + (flip ? 16 : 0), sy + 16, flip, carTile[q + 2]);
+            townPut(i++, sx + (flip ? 0 : 16), sy + 16, flip, carTile[q + 3]);
+        }
     }
+    while (i < 20) townHide(i++);
     for (k = 0; k < MAX_BIRDS; k++)
     {
-        i = 6 + k;
+        i = 20 + k;
         if (birdSt[k] > 1)
         {
             townHide(i);

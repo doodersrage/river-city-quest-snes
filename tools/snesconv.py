@@ -758,7 +758,9 @@ def convert_combat(exp):
         px_ = [crop.getpixel((x0 + x, y0 + y)) if 0 <= x0 + x < 40 and 0 <= y0 + y < 40 else (0, 0, 0, 0)
                for y in range(16) for x in range(16)]
         put16(obj_tile_of_frame(OBJ_PADDLE, a), [ix(p) for p in px_])
-        pad_ox.append(x0 - 20); pad_oy.append(y0 - 23)
+        # stage 13c: the world is drawn twice as big, so the paddle swings twice as far out from the hero's middle
+        # (screen (0, -2) from his position), where its hits land
+        pad_ox.append(2 * (x0 + 8 - 20) - 8); pad_oy.append(2 * (y0 + 8 - 23) - 2 - 8)
 
     # 8x8 HUD tiles: heart, half heart, empty heart, coin x2, digits 0-9.
     def hud8(ox):
@@ -946,6 +948,26 @@ TOWN_CELLS = {'car': 0, 'bus': 6, 'sit': 9, 'fly': 10, 'tap': 12, 'melon': 13, '
 TOWN_N = 20   # car colour c at 2c; bus 3 cells; fly 2 frames; flag 2 colours; then challenge tokens and the '!'
 
 
+def scale2x_rgba(im):
+    """Scale2x keeping transparency (transparent pixels go through as a key colour)."""
+    key = (255, 0, 254)
+    rgb = Image.new('RGB', im.size, key)
+    rgb.paste(im.convert('RGB'), mask=im.split()[3].point(lambda a: 255 if a > 96 else 0))
+    big = scale2x(rgb)
+    out = big.convert('RGBA')
+    px = out.load()
+    for y in range(out.size[1]):
+        for x in range(out.size[0]):
+            if px[x, y][:3] == key: px[x, y] = (0, 0, 0, 0)
+    return out
+
+
+# Stage 13c: cars and the bus at 32 px tall (Scale2x), each 16x16 cell of the old art now four. The boss area holds
+# 32 cells, so a map loads one of two sheets: A, two car colours (cells 0-15); B, one car colour (0-7) and the bus
+# (8-19). The pigeons, tokens, flags and '!' (town cells 9-19) sit at cells 20-30 in both.
+TOWN2_OTHER = 20
+
+
 def convert_town(exp, tok_pal={}):
     im0 = Image.open(os.path.join(exp, 'combat', 'town.png')).convert('RGBA')
     tok = Image.open(os.path.join(exp, 'combat', 'tokens.png')).convert('RGBA')
@@ -953,21 +975,43 @@ def convert_town(exp, tok_pal={}):
     im.paste(im0, (0, 0)); im.paste(tok, (16 * 12, 0))
     pal = TOWN_PAL   # palette 7 (set by convert_combat), so night and weather tint them
     first = obj_tile_of_frame(0, BOSS_FIRST_CELL)
-    sheet = [bytes(32)] * 128
-    for c in range(TOWN_N):
-        t = obj_tile_of_frame(0, BOSS_FIRST_CELL + c)
+
+    def put(sheet, v, cell_im, palk):
+        t = obj_tile_of_frame(0, BOSS_FIRST_CELL + v)
         for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
             idx = []
             for y in range(8):
                 for x in range(8):
-                    p_ = im.getpixel((c * 16 + qx * 8 + x, qy * 8 + y))
-                    idx.append(nearest(c15(p_), tok_pal.get(c, pal)) + 1 if p_[3] > 96 else 0)
+                    p_ = cell_im.getpixel((qx * 8 + x, qy * 8 + y))
+                    idx.append(nearest(c15(p_), tok_pal.get(palk, pal)) + 1 if p_[3] > 96 else 0)
             sheet[t - first + qy * 16 + qx] = tile4bpp(idx)
-    used = obj_tile_of_frame(0, BOSS_FIRST_CELL + TOWN_N - 1) - first + 18
+
+    def vehicle(sheet, v0, cells):   # cells: town cells left to right; each becomes 4 VRAM cells (piece p: v0 + 4p + q)
+        strip = Image.new('RGBA', (16 * len(cells), 16), (0, 0, 0, 0))
+        for i, c in enumerate(cells): strip.paste(im.crop((c * 16, 0, c * 16 + 16, 16)), (i * 16, 0))
+        big = scale2x_rgba(strip)
+        for i in range(len(cells)):
+            for q, (qx, qy) in enumerate(((0, 0), (1, 0), (0, 1), (1, 1))):
+                put(sheet, v0 + i * 4 + q, big.crop((i * 32 + qx * 16, qy * 16, i * 32 + qx * 16 + 16, qy * 16 + 16)), -1)
+
+    sheets = []
+    for kind in 'AB':
+        sheet = [bytes(32)] * 128
+        vehicle(sheet, 0, [0, 1])                      # car colour 0
+        if kind == 'A': vehicle(sheet, 8, [2, 3])      # car colour 1
+        else: vehicle(sheet, 8, [6, 7, 8])             # the bus
+        for c in range(9, TOWN_N):
+            put(sheet, TOWN2_OTHER + c - 9, im.crop((c * 16, 0, c * 16 + 16, 16)), c)
+        used = obj_tile_of_frame(0, BOSS_FIRST_CELL + TOWN2_OTHER + TOWN_N - 10) - first + 18
+        sheets.append(b''.join(sheet[:used]))
+    vt = lambda v: 256 + obj_tile_of_frame(0, BOSS_FIRST_CELL + v)
+    tiles = [vt(TOWN2_OTHER + c - 9) if c >= 9 else 0 for c in range(TOWN_N)]
     defs = [f'#define TOWN_{n.upper()} {c}' for n, c in TOWN_CELLS.items()]
-    defs.append('static const u16 townTile[%d] = {%s};  /* OBJ tile of each town cell */'
-                % (TOWN_N, ', '.join(str(256 + obj_tile_of_frame(0, BOSS_FIRST_CELL + c)) for c in range(TOWN_N))))
-    return b''.join(sheet[:used]), defs
+    defs.append('static const u16 townTile[%d] = {%s};  /* OBJ tile of each town cell (cars: see carTile) */'
+                % (TOWN_N, ', '.join(map(str, tiles))))
+    defs.append('static const u16 carTile[20] = {%s};  /* stage 13c: OBJ tile of each 32 px vehicle\'s quarter (piece p, quarter q at 4p + q; car colour c at 8c, the bus at 8) */'
+                % ', '.join(str(vt(v)) for v in range(20)))
+    return sheets, defs
 
 
 def town_tables(maps):
@@ -1706,11 +1750,13 @@ def main():
                     tok_pal[TOWN_CELLS[boss_json_chal[cid]]] = sorted({c15(q) for q in im.getdata() if q[3] > 0})[:15]
                     pal_no = k + 1
         chal_pal.append(pal_no)
-    town_chr, town_defs = convert_town(exp, tok_pal)
+    (town_chr, townb_chr), town_defs = convert_town(exp, tok_pal)
     town_defs.append('static const u8 chalPal[%d] = {%s};  /* the token\'s sprite palette */' % (len(chal_pal), ', '.join(map(str, chal_pal))))
     open(os.path.join(out, 'town.chr'), 'wb').write(town_chr)
-    asm += ['.section ".town" superfree', 'town_chr:', '.incbin "data/town.chr"', 'town_chrend:', '.ends', '']
-    hdr += ['extern char town_chr, town_chrend;'] + town_defs
+    open(os.path.join(out, 'townb.chr'), 'wb').write(townb_chr)
+    asm += ['.section ".town" superfree', 'town_chr:', '.incbin "data/town.chr"', 'town_chrend:', '.ends', '',
+            '.section ".townb" superfree', 'townb_chr:', '.incbin "data/townb.chr"', 'townb_chrend:', '.ends', '']
+    hdr += ['extern char town_chr, town_chrend, townb_chr, townb_chrend;'] + town_defs
     hdr += ['extern char combat_chr, combat_chrend, combat_pal, enemy_chr, enemy_chrend;', ''] + ctables + ['']
     font = convert_font(os.path.join(exp, 'font.png'))
     open(os.path.join(out, 'font.chr'), 'wb').write(font)

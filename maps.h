@@ -569,7 +569,7 @@ static const u16 boss7Tile[9] = {0, 0, 0, 0, 384, 0, 0, 386, 0};  /* vampire: fr
 #define PAL_BLOCK 3
 
 extern char items_chr, items_chrend, block_pal;
-extern char town_chr, town_chrend;
+extern char town_chr, town_chrend, townb_chr, townb_chrend;
 #define TOWN_CAR 0
 #define TOWN_BUS 6
 #define TOWN_SIT 9
@@ -581,7 +581,8 @@ extern char town_chr, town_chrend;
 #define TOWN_FLAG 16
 #define TOWN_BANG 18
 #define TOWN_CAMERA 19
-static const u16 townTile[20] = {384, 386, 388, 390, 392, 394, 396, 398, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452, 454};  /* OBJ tile of each town cell */
+static const u16 townTile[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 456, 458, 460, 462, 480, 482, 484, 486, 488, 490, 492};  /* OBJ tile of each town cell (cars: see carTile) */
+static const u16 carTile[20] = {384, 386, 388, 390, 392, 394, 396, 398, 416, 418, 420, 422, 424, 426, 428, 430, 448, 450, 452, 454};  /* stage 13c: OBJ tile of each 32 px vehicle's quarter (piece p, quarter q at 4p + q; car colour c at 8c, the bus at 8) */
 static const u8 chalPal[14] = {7, 7, 2, 7, 3, 7, 7, 7, 2, 7, 2, 7, 7, 7};  /* the token's sprite palette */
 extern char combat_chr, combat_chrend, combat_pal, enemy_chr, enemy_chrend;
 
@@ -613,8 +614,8 @@ static const u8 enemyHp[7] = {1, 1, 2, 2, 2, 1, 2};
 static const u16 enemyTile[7] = {64, 68, 72, 76, 96, 100, 104};   /* frame a; frame b is +2 */
 static const u8 enemyPal[7] = {5, 5, 6, 5, 5, 6, 6};
 static const u16 paddleTile[16] = {160, 162, 164, 166, 168, 170, 172, 174, 192, 194, 196, 198, 200, 202, 204, 206};
-static const s16 paddleOx[16] = {4, 3, 1, -2, -7, -12, -15, -18, -19, -18, -15, -12, -7, -2, 1, 3};
-static const s16 paddleOy[16] = {-10, -5, -2, 0, 1, 0, -2, -5, -10, -15, -18, -21, -22, -21, -18, -15};
+static const s16 paddleOx[16] = {16, 14, 10, 4, -6, -16, -22, -28, -30, -28, -22, -16, -6, 4, 10, 14};
+static const s16 paddleOy[16] = {-14, -4, 2, 6, 8, 6, 2, -4, -14, -24, -30, -36, -38, -36, -30, -24};
 static const u8 swingStep[15] = {3, 3, 3, 3, 3, 3, 3, 2, 1, 1, 0, 15, 15, 14, 13};  /* by atk */
 static const u8 spinStep[23] = {0, 15, 15, 14, 13, 12, 12, 11, 10, 9, 9, 8, 7, 7, 6, 5, 4, 4, 3, 2, 1, 1, 0};   /* by spin */
 /* 0..63 -> sin * 64 */
