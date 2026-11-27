@@ -6,7 +6,7 @@
    (ROM: up to 2,048, more than BG1's 1,024 slots). So only what's on screen is in VRAM: the tilemap is a 64x64
    ring that holds the 33x29 tiles around the camera, and each slot of the tile cache counts the loaded tiles using
    it. Moving a tile's width loads a column (or row) and drops the one leaving; a tile that isn't cached takes a
-   free slot and is copied in at the next VBlank (src/stream.asm). 33x29 tiles can use at most 957 different
+   free slot and is copied in at the next VBlank (src/streamvb.asm). 33x29 tiles can use at most 957 different
    tiles, so the cache can't run out, short of a map pinning many animated tiles (then a blank tile is drawn).
 
    Map words: bits 0-10 the tile, 11-13 the palette, 14-15 the flips. */

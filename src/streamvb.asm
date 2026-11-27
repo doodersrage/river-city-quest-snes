@@ -1,5 +1,5 @@
 ;---------------------------------------------------------------------------------
-; Stage 13: the map at double size, streamed (the C half is src/stream.c).
+; Stage 13: the map at double size, streamed (the C half is src/stream.c; this file can't be stream.asm, which is what compiling stream.c makes).
 ;
 ; The tables live in bank $7F. Each VBlank, streamVBlank copies the queued tiles (32 bytes each, from the map's tile
 ; set in ROM) into their VRAM slots, then writes the queued tilemap words, then sets BG1's scroll, so a frame never
