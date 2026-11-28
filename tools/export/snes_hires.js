@@ -484,7 +484,15 @@ NATIVE['~'] = (s, X, Y, h, nb, fr) => {
 const drawLandmarks1 = drawLandmarks, drawDecor1 = drawDecor, shadeRect1 = shadeRect, tileH = tile;
 drawLandmarks = function (s, fr) { if (!HIRES_GROUND) drawLandmarks1(s, fr); };
 drawDecor = function (s) { if (!HIRES_GROUND) drawDecor1(s); };
-shadeRect = function (x, y, w, h) { if (!HIRES_GROUND) shadeRect1(x, y, w, h); };
+// stage 14: the 16 px style's shadows (walls and landmarks onto the ground) are left out of the 16 px scene and laid on
+// the 32 px ground instead, so they shade its texture; their 1 px dither becomes a finer one
+var HR_SCENE = false;
+shadeRect = function (x, y, w, h) {
+  if (!HR_SCENE) return shadeRect1(x, y, w, h);
+  if (!HIRES_GROUND) return;
+  if (w == 1 && h == 1) { SHADEQ.push([x * 2, y * 2, 1, 1], [x * 2 + 1, y * 2 + 1, 1, 1]); return; }
+  SHADEQ.push([x * 2, y * 2, w * 2, h * 2]);
+};
 tile = function (s, ch, tx, ty, fr, plain) {
   if (HIRES_GROUND && (ch == 'T' || PROPS.includes(ch) || ch == 'r')) {
     return tileH(s, ch == 'T' ? '.' : propGround(s, tx, ty), tx, ty, fr, plain);
@@ -542,12 +550,14 @@ function shadeOf(r, g2, b) {
 }
 renderMap = function (s, fr) {
   const W = s.w * TS, H = s.h * TS;
+  HR_SCENE = true; SHADEQ = [];
   const a = renderMap1(s, fr), ga = g; g = a.getContext('2d');
+  const C = g.getImageData(0, 0, W, H).data;   // the 16 px scene before the landmarks and decor: their shadows are judged against it
   try { drawLandmarks(s, fr); } catch (e) {} try { drawDecor(s); } catch (e) {}
   g = ga;
   HIRES_GROUND = true;
   let b;
-  try { b = renderMap1(s, fr); } finally { HIRES_GROUND = false; }
+  try { b = renderMap1(s, fr); } finally { HIRES_GROUND = false; HR_SCENE = false; }
   const A = a.getContext('2d').getImageData(0, 0, W, H).data, B = b.getContext('2d').getImageData(0, 0, W, H).data;
   // sort the pixels
   const kind = new Uint8Array(W * H), obj = new Uint8ClampedArray(W * H * 4);
@@ -555,6 +565,16 @@ renderMap = function (s, fr) {
     if (A[i] == B[i] && A[i + 1] == B[i + 1] && A[i + 2] == B[i + 2]) continue;
     const sh = shadeOf(B[i], B[i + 1], B[i + 2]);
     if (Math.abs(A[i] - sh[0]) < 9 && Math.abs(A[i + 1] - sh[1]) < 9 && Math.abs(A[i + 2] - sh[2]) < 9) { kind[p] = 1; continue; }
+    // a landmark's or a sign's shadow falls on the 16 px ground (a dark wash over it), not on this ground: find it by
+    // the same darkening in every channel against the scene without it
+    if (A[i] != C[i] || A[i + 1] != C[i + 1] || A[i + 2] != C[i + 2]) {
+      const la = A[i] + A[i + 1] + A[i + 2], lc = C[i] + C[i + 1] + C[i + 2], k = la / Math.max(1, lc);
+      if (k > .35 && k < .88 && lc > 60) {
+        let ok = true;
+        for (let c = 0; c < 3; c++) if (Math.abs(A[i + c] - (C[i + c] * k + 8 * (1 - k))) > 14) ok = false;
+        if (ok) { kind[p] = 1; continue; }
+      }
+    }
     kind[p] = 2; obj[i] = A[i]; obj[i + 1] = A[i + 1]; obj[i + 2] = A[i + 2]; obj[i + 3] = 255;
   }
   // stage 14: landmarks with native art (snes_lm32.js): cut their 16 px drawing out of the objects, pixel for pixel
@@ -568,6 +588,9 @@ renderMap = function (s, fr) {
     const M = cv.getContext('2d').getImageData(0, 0, W, H).data;
     for (let p = 0; p < W * H; p++) if (M[p * 4 + 3] && kind[p] == 2) { kind[p] = 0; obj[p * 4 + 3] = 0; }
   }
+  const decs = typeof decor32 != 'undefined' && !NOFX.includes('dec') ? decorFor(s) : [];
+  for (const d of decs) for (let y = d.y * TS - 2; y < d.y * TS + TS + 2; y++) for (let x = d.x * TS; x < (d.x + d.len) * TS; x++)
+    if (y >= 0 && y < H) { const p = y * W + x; if (kind[p] == 2) { kind[p] = 0; obj[p * 4 + 3] = 0; } }
   // the ground at 32 px: B through Scale2x, then the native cells drawn over it
   const out = mkCanvas(W * 2, H * 2), ctx = out.getContext('2d');
   const gi = ctx.createImageData(W * 2, H * 2); gi.data.set(scale2xData(B, W, H)); ctx.putImageData(gi, 0, 0);
@@ -607,6 +630,7 @@ renderMap = function (s, fr) {
   }
   // the native landmarks, and the doorways in them
   ctx.putImageData(N, 0, 0);
+  if (decs.length) { const o = g; g = ctx; try { for (const d of decs) decor32(d); } finally { g = o; } }
   if (lms.length) {
     const old2 = g; g = ctx;
     try {
@@ -617,6 +641,11 @@ renderMap = function (s, fr) {
     } finally { g = old2; }
   }
   const N2 = ctx.getImageData(0, 0, W * 2, H * 2), nd2 = N2.data;
+  if (typeof DBG != 'undefined') for (let ty = 0; ty < s.h; ty++) for (let tx = 0; tx < s.w; tx++) {
+    let n = 0; for (let y = ty * TS; y < ty * TS + TS; y++) for (let x = tx * TS; x < tx * TS + TS; x++) if (obj[(y * W + x) * 4 + 3]) n++;
+    if (n) { const k = 'OBJ ' + s.g[ty][tx] + (isDecor(s, tx, ty) ? ' decor' : '') + (typeof DBGXY != 'undefined' ? ' ' + s.id : ''); DBG[k] = (DBG[k] || 0) + 1; }
+  }
+  if (typeof OBJONLY != 'undefined' && OBJONLY) { const q = ctx.getImageData(0, 0, W * 2, H * 2); for (let i = 0; i < q.data.length; i += 4) { q.data[i] = q.data[i] * .3; q.data[i + 1] = q.data[i + 1] * .3; q.data[i + 2] = q.data[i + 2] * .3 + 40; } ctx.putImageData(q, 0, 0); N2.data.set(q.data); }
   // and the objects on top
   const O = NOFX.includes('rm') ? scale2xData(obj, W, H) : remaster(scale2xData(obj, W, H), W * 2, H * 2);
   for (let i = 0; i < nd2.length; i += 4) if (O[i + 3]) { nd2[i] = O[i]; nd2[i + 1] = O[i + 1]; nd2[i + 2] = O[i + 2]; }

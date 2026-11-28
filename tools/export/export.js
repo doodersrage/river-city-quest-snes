@@ -49,6 +49,8 @@ vm.runInContext('var ONLY_MAPS=' + JSON.stringify(process.env.ONLY ? process.env
 vm.runInContext('var SNES_HIRES=' + (HIRES ? 1 : 0), sb);
 if (process.env.DBG) vm.runInContext('var DBG={}', sb);
 vm.runInContext('var NOFX=' + JSON.stringify(process.env.NOFX || ''), sb);
+vm.runInContext('var OBJONLY=' + JSON.stringify(!!process.env.OBJONLY), sb);
+if (process.env.DBGXY) vm.runInContext('var DBGXY=1', sb);
 
 // Top-level consts (SC, TS, g...) live in the context's shared script scope.
 // Scenes for the SNES port so far: the outdoor maps plus every single-room area (interiors, caves).
@@ -142,6 +144,7 @@ const strip = createCanvas(16 * hero.length, 16), hx = strip.getContext('2d');
 // (hero strip continues below)
 hero.forEach((c, i) => hx.drawImage(c, i * 16, 16 - c.height));
 fs.writeFileSync(path.join(OUT, 'hero.png'), strip.toBuffer('image/png'));
+if (process.env.DBG && process.env.ONLY) { console.error(JSON.stringify(vm.runInContext('DBG', sb))); process.exit(0); }
 console.log('exported', index.length, 'maps of', dump.length);
 
 // ---------- Stage 2: things to read and people to talk to, per outdoor map ----------

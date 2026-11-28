@@ -260,6 +260,41 @@ function facade32(s, X, Y, h, tx, ty, r) {
     if (wantsPorch(s, h)) ironPorch32(X, Y);
     return true;
   }
+  if (s.hs == 'hill' && ft > 0 && ft < 3) {   // Church Hill: two tall windows between louvred green shutters
+    const sh = r7('#2f6a3a');
+    for (const a of [5, 19]) {
+      for (const sx of [a - 4, a + 8]) {
+        R(X + sx, Y + 7, 4, 18, sh[3]); R(X + sx, Y + 7, 4, 1, sh[5]); R(X + sx + 3, Y + 8, 1, 17, sh[1]);
+        for (let j = Y + 9; j < Y + 24; j += 2) R(X + sx + 1, j, 2, 1, sh[2]);
+      }
+      sash32(X + a, Y + 8, 8, 16, false);
+    }
+    if (wantsPorch(s, h)) ironPorch32(X, Y);
+    return true;
+  }
+  if (s.hs == 'ware' && ft > 0) {   // a tobacco warehouse: tall arched windows in brick, or a plank loading door
+    if (ft == 3) {
+      const wd = r7('#2f5a3a');
+      R(X + 5, Y + 6, 22, 26, '#1a1423'); R(X + 7, Y + 8, 18, 24, wd[3]);
+      for (let i = X + 9; i < X + 25; i += 4) R(i, Y + 8, 1, 24, wd[1]);
+      R(X + 7, Y + 8, 18, 1, wd[5]); R(X + 16, Y + 8, 1, 24, '#1a1423');
+      R(X + 7, Y + 17, 18, 2, wd[2]); R(X + 7, Y + 17, 18, 1, wd[4]); R(X + 7, Y + 27, 18, 2, wd[2]); R(X + 7, Y + 27, 18, 1, wd[4]);
+      for (let j = 0; j < 8; j++) { R(X + 8 + j, Y + 19 + j, 2, 1, wd[2]); R(X + 23 - j, Y + 19 + j, 2, 1, wd[2]); }
+      R(X + 13, Y + 21, 2, 3, '#8a8a94'); R(X + 18, Y + 21, 2, 3, '#8a8a94');
+      R(X + 4, Y + 5, 24, 2, SST[4]); R(X + 4, Y + 5, 24, 1, SST[6]);
+      return true;
+    }
+    const gl = r7('#24324e'), st = r7('#c8bca8');
+    for (const a of [4, 18]) {
+      R(X + a, Y + 10, 10, 18, st[3]); R(X + a + 2, Y + 8, 6, 2, st[3]); R(X + a + 1, Y + 9, 8, 1, st[3]);
+      R(X + a + 2, Y + 8, 6, 1, st[5]); R(X + a, Y + 10, 1, 18, st[5]); R(X + a + 9, Y + 10, 1, 18, st[1]);
+      R(X + a + 2, Y + 12, 6, 15, gl[3]); R(X + a + 3, Y + 11, 4, 1, gl[3]); R(X + a + 2, Y + 12, 6, 2, gl[2]);
+      R(X + a + 4, Y + 11, 1, 16, st[2]); R(X + a + 2, Y + 18, 6, 2, st[3]); R(X + a + 2, Y + 19, 6, 1, st[1]);
+      R(X + a + 2, Y + 13, 1, 3, gl[6]); R(X + a + 6, Y + 21, 1, 2, gl[5]);
+      R(X + a - 1, Y + 27, 12, 2, st[4]); R(X + a - 1, Y + 29, 12, 1, st[1]);
+    }
+    return true;
+  }
   if (s.hs && s.hs != 'jw' && s.hs != 'fan') return false;   // other districts' styled fronts stay as they are
   if (ft == 0) {   // a panelled door under a lit transom, on a stone step
     R(X + 5, Y + 7, 22, 25, CRM[3]); R(X + 5, Y + 7, 22, 2, CRM[6]); R(X + 25, Y + 9, 2, 23, CRM[1]);
@@ -768,3 +803,96 @@ PROP32.j = PROP32.J = (s, X, Y) => {
   R(X + 8, Y + 14, 16, 16, OUTL); R(X + 10, Y + 18, 12, 11, st[3]); R(X + 10, Y + 18, 3, 11, st[5]); R(X + 19, Y + 18, 3, 11, st[1]);
   R(X + 8, Y + 14, 16, 5, st[5]); R(X + 8, Y + 14, 16, 1, st[6]); R(X + 8, Y + 18, 16, 1, st[1]);
 };
+
+/* ---------- stage 14: ghost signs and murals on the brick, at 32 px ----------
+   A ghost sign is old paint soaking into the brick: a pale band and lettering, both see-through so the courses and
+   mortar show, worn away in flecks. A mural is a painted panel with a thin frame, its scene drawn with ramps and
+   dithered bands rather than flat stripes. Same sign text and mural kind as the 16 px wall (from d.k). */
+function dith(x, y, w, h, c, ph) { for (let j = 0; j < h; j++) for (let i = (j + (ph || 0)) & 1; i < w; i += 2) R(x + i, y + j, 1, 1, c); }
+function decor32(d) {
+  const X = d.x * 32, Y = d.y * 32, W = d.len * 32;
+  if (d.kind == 'sign') {
+    const txt = SIGNS[d.k % SIGNS.length], sc = txt.length * 16 <= W - 16 ? 4 : 2, tw = txt.length * 4 * sc - sc, th = 5 * sc;
+    g.globalAlpha = .46; R(X + 6, Y + 5, W - 12, 22, '#e8dcc0');
+    g.globalAlpha = .22; R(X + 6, Y + 5, W - 12, 1, '#fff8e8'); R(X + 6, Y + 26, W - 12, 1, '#3a2018');
+    g.globalAlpha = .55; sign5(txt, X + ((W - tw) >> 1), Y + 6 + ((20 - th) >> 1), sc, '#6a1c1c');
+    g.globalAlpha = .3; sign5(txt, X + ((W - tw) >> 1) + 1, Y + 7 + ((20 - th) >> 1), sc, '#2a0c0c');
+    g.globalAlpha = 1;
+    for (let i = 0; i < W / 2; i++) {   // flaking: the brick's own red through the paint
+      const q = HH(d.k, i, 9) >>> 0, px = X + 6 + q % (W - 12), py = Y + 5 + (q >> 8) % 22;
+      if (q % 3 == 0) R(px, py, 1 + (q >> 12) % 3, 1 + (q >> 14) % 2, '#a85040');
+      else if (q % 5 == 1) R(px, py, 1, 1, '#c89070');
+    }
+    return;
+  }
+  const x = X + 2, y = Y + 4, w = W - 4, h = 24;
+  g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
+  mural32(d.k % 6, x, y, w, h, d.k);
+  g.restore();
+  R(x - 1, y - 1, w + 2, 1, '#2a2430'); R(x - 1, y + h, w + 2, 1, '#2a2430'); R(x - 1, y, 1, h, '#2a2430'); R(x + w, y, 1, h, '#2a2430');
+  g.globalAlpha = .35; R(x, y + h + 1, w, 2, '#0a0818'); g.globalAlpha = .25; R(x, y, w, 1, '#ffffff'); g.globalAlpha = 1;
+}
+function mural32(kind, x, y, w, h, k) {
+  if (kind == 0) {   // sunset over the James: sky ramp, the sun and its glow, the water catching it, the rocks
+    const sky = ['#e86a3a', '#f08a4a', '#f4a058', '#f8b86a', '#f8c87c', '#f8d890'];
+    sky.forEach((c, i) => { R(x, y + i * 2, w, 2, c); if (i) dith(x, y + i * 2, w, 1, sky[i - 1], i); });
+    const sx = x + (w >> 1);
+    R(sx - 9, y + 3, 18, 9, '#fce4a0'); R(sx - 7, y + 1, 14, 11, '#fff2a8'); R(sx - 5, y + 2, 10, 8, '#fffbe0');
+    const wa = ['#3e6a8a', '#365e7c', '#2e526e', '#28485e'];
+    wa.forEach((c, i) => R(x, y + 12 + i * 3, w, 3, c));
+    dith(x, y + 12, w, 1, '#f4a058', 0);
+    for (let j = 0; j < 4; j++) R(sx - 6 + j * 2, y + 14 + j * 3, 12 - j * 4 > 2 ? 12 - j * 4 : 2, 1, '#fce4a0');
+    for (let i = 0; i < w; i += 12) { const q = HH(i, k, 3) % 5; R(x + i + q, y + 16 + (i >> 3 & 3), 6, 1, '#a8c8e0'); }
+    for (let i = 10; i < w; i += 34) { R(x + i, y + 19, 9, 4, '#7a7e8c'); R(x + i + 1, y + 18, 6, 2, '#9a9eac'); R(x + i, y + 22, 9, 1, '#4a4e5c'); }
+  } else if (kind == 1) {   // dogwood blossoms on teal
+    R(x, y, w, h, '#2e8a8a'); dith(x, y + h - 6, w, 6, '#26787a');
+    for (let i = 6; i < w - 12; i += 26) {
+      const cx = x + i + 7, cy = y + 11 + (HH(i, k, 5) % 5) - 2;
+      R(cx - 6, cy + 3, 8, 2, '#1c5a5a'); R(cx + 3, cy - 7, 2, 8, '#1c5a5a');   // a twig behind
+      for (const [dx, dy] of [[-7, -2], [3, -2], [-2, -7], [-2, 3]]) {
+        R(cx + dx, cy + dy + 1, 5, 3, '#ffffff'); R(cx + dx + 1, cy + dy, 3, 5, '#ffffff');
+        R(cx + dx + 1, cy + dy + 4, 3, 1, '#c8d0dc'); R(cx + dx + 4, cy + dy + 1, 1, 3, '#d8e0e8');
+        R(cx + dx + (dx < 0 ? 0 : 4), cy + dy + (dy < 0 ? 1 : 3), 1, 1, '#e06890');
+      }
+      R(cx - 2, cy - 2, 5, 5, '#d8b048'); R(cx - 1, cy - 1, 2, 2, '#f8e070'); R(cx + 1, cy + 1, 2, 2, '#9a7a28');
+    }
+  } else if (kind == 2) {   // cardinals on gold
+    R(x, y, w, h, '#f2c14e'); dith(x, y, w, 5, '#f8d070'); R(x, y + h - 3, w, 3, '#7a5a2a');
+    for (let i = 6; i < w - 16; i += 28) {
+      const bx = x + i, by = y + 8;
+      R(bx, by + 4, 11, 7, '#c41e3a'); R(bx + 2, by + 9, 8, 2, '#8a1424'); R(bx + 9, by, 6, 6, '#c41e3a'); R(bx + 11, by - 2, 2, 3, '#c41e3a');
+      R(bx + 9, by + 2, 2, 3, '#1a1423'); R(bx + 13, by + 2, 1, 1, '#1a1423'); R(bx + 15, by + 3, 3, 2, '#f08030');
+      R(bx - 4, by + 6, 5, 3, '#8a1424'); R(bx + 2, by + 5, 6, 3, '#e03a50'); R(bx + 4, by + 11, 1, 3, '#5a3a1a'); R(bx + 7, by + 11, 1, 3, '#5a3a1a');
+    }
+  } else if (kind == 3) {   // quilt peaks on navy
+    R(x, y, w, h, '#1e2a5e'); for (let i = 0; i < w; i += 3) R(x + i, y + ((i * 7 + k) % 9), 1, 1, '#4a5a98');
+    const C = [['#e83048', '#a01c30'], ['#f2c14e', '#b8862a'], ['#3ac2e8', '#2088a8'], ['#58c868', '#2e8a40'], ['#f890a0', '#c05a70']];
+    for (let i = 0, n = 0; i < w; i += 12, n++) {
+      const c = C[n % 5];
+      for (let j = 0; j < 12; j++) { const t = Math.min(j, 11 - j), hh = 2 + t * 2; R(x + i + j, y + h - hh, 1, hh, j < 6 ? c[0] : c[1]); }
+      R(x + i + 5, y + h - 13, 2, 1, '#ffffff');
+    }
+  } else if (kind == 4) {   // herons in the shallows
+    R(x, y, w, h, '#a8d0e0'); dith(x, y + 4, w, 4, '#b8dcea'); R(x, y + 16, w, 8, '#6a9ab0'); dith(x, y + 15, w, 1, '#6a9ab0');
+    for (let i = 0; i < w; i += 9) R(x + i + (i & 3), y + 19 + (i >> 2 & 2), 5, 1, '#8ab8cc');
+    for (let i = 8; i < w - 24; i += 44) {
+      const hx = x + i, hy = y + 1;
+      R(hx + 7, hy, 5, 4, '#5a6470'); R(hx + 8, hy, 3, 1, '#7a8490'); R(hx + 9, hy + 1, 1, 1, '#f8f0d0');
+      R(hx + 12, hy + 2, 7, 1, '#e8b048'); R(hx + 12, hy + 3, 4, 1, '#b8862a');
+      R(hx + 3, hy + 1, 5, 1, '#3a4048');   // the crest
+      R(hx + 6, hy + 4, 3, 7, '#8a94a0'); R(hx + 6, hy + 4, 1, 7, '#a8b0bc');   // the neck
+      R(hx, hy + 10, 16, 7, '#7a8490'); R(hx + 2, hy + 9, 10, 1, '#9aa4b0'); R(hx, hy + 10, 16, 1, '#9aa4b0');
+      R(hx + 10, hy + 12, 8, 4, '#5a6470'); R(hx - 4, hy + 12, 5, 3, '#5a6470'); R(hx + 2, hy + 16, 12, 1, '#5a6470');
+      R(hx + 5, hy + 17, 1, 6, '#3a4048'); R(hx + 9, hy + 17, 1, 6, '#3a4048');
+      R(hx + 2, hy + 20, 12, 1, '#8ab8cc');   // the ring in the water round its legs
+    }
+  } else {   // the skyline at dusk, lit windows and the moon
+    R(x, y, w, h, '#6a3a8a'); dith(x, y + 10, w, 4, '#7a4a98'); R(x, y + 14, w, h - 14, '#7a4a98');
+    R(x + 6, y + 3, 6, 6, '#fff2a8'); R(x + 8, y + 3, 4, 4, '#6a3a8a');
+    for (let i = 0; i < w; i += 9) {
+      const hh = 6 + HH(i, k, 3) % 14, bw = 8;
+      R(x + i, y + h - hh, bw, hh, '#2a1a3a'); R(x + i + bw - 1, y + h - hh, 1, hh, '#1a0e28'); R(x + i, y + h - hh, bw, 1, '#4a3060');
+      for (let yy = y + h - hh + 3; yy < y + h - 2; yy += 4) for (let xx = 2; xx < bw - 2; xx += 3) if (HH(i + xx, yy, k) % 3 == 0) R(x + i + xx, yy, 1, 2, '#f8d868');
+    }
+  }
+}

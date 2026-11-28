@@ -84,6 +84,10 @@ The scenery read as 8-bit art made bigger: flat fills, single-pixel steps from S
 - **All 31 landmarks** (LM32), from a small kit: dressed stone and brick in courses, round fluted columns shaded across their width, cornices with dentils, glass that glows or catches the sky, steps, domes. The 16 px drawing is cut out of the objects pixel for pixel (it's drawn alone to get its mask), and the new one goes in its place.
 - **Rooms:** flagstones each their own shade, with bevels, worn hollows, chips and the odd crack; walls of dressed blocks under a coping and over a baseboard, casting a shadow on the floor; pits with the floor's cut edge; stairs, iron-bound doors and parapets.
 - **Room props:** shop counters, theatre seats, crates, chests (closed and open), statues (bronze, marble, a bust) and their pedestals.
-- What's still Scale2x: a few one-off decorations, and a small remaster pass gives those a lit top and left edge and a shaded bottom and right.
+- **Ghost signs and murals** on the brick, at 32 px: the old paint lets the courses and mortar through and flakes away; the six murals (sunset on the James, dogwoods, cardinals, quilt peaks, herons, the skyline at dusk) are drawn with ramps and dithered bands in a thin frame.
+- **Church Hill and warehouse fronts:** louvred green shutters; tall arched windows in stone surrounds and braced plank loading doors.
+- **Shadows** of walls and landmarks on the ground are laid on the 32 px ground (so the grass shows through them, with a fine dithered edge) instead of being Scale2x'd as 16 px blocks.
+- Exporter debugging: `DBG=1` counts what's still Scale2x per cell kind (`DBGXY=1` per map), `OBJONLY=1` dims everything else.
+- What's still Scale2x: single-pixel specks (grass blades by rocks, shoreline foam) and a few one-offs, and a small remaster pass gives those a lit top and left edge and a shaded bottom and right.
 - Build: every data section that ends in a label gets a pad byte, so a section the linker puts at the very end of a bank still links (the end label would be $10000).
 - The exporter now renders a map at a time and lets the event loop turn between maps: @napi-rs/canvas frees pixel buffers only then, and the all-at-once render ran out of memory.

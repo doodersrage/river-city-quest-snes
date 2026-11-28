@@ -1073,6 +1073,9 @@ check(lab.ram('oamShown', 1, False, 100) == 1 and brightness() > day, 'snow fall
 lab.poke('wx', 0); lab.poke('wxK', 0); lab.run(None, 4)
 travel(lab, N('Hollywood Cemetery'), close_box)
 walk((28, 17)); lab.run('UP', 30); lab.run(None, 60); close_box()
+for _w in range(300):
+    if lab.ram('lightR1'): break
+    lab.run(None, 1)
 lab.screenshot(f'{out}/51-dark-room.png')
 check(lab.ram('darkLevel') == 4 and lab.ram('lightR1') == (120 if lab.ram('hasLantern') else 76),
       f"the Foundry Gate is dark but for your light (map {lab.map}, radius {lab.ram('lightR1')})")
