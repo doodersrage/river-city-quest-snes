@@ -2906,6 +2906,7 @@ hero_chrend:
 hero_pal:
 .incbin "data/hero.pal"
 hero_palend:
+.db 0
 .ends
 
 .section ".systext" superfree
@@ -3040,6 +3041,7 @@ paddle2_chr:
 enemy_chr:
 .incbin "data/enemy.chr"
 enemy_chrend:
+.db 0
 .ends
 
 .section ".block2" superfree
@@ -3064,18 +3066,21 @@ block_pal:
 town_chr:
 .incbin "data/town.chr"
 town_chrend:
+.db 0
 .ends
 
 .section ".townb" superfree
 townb_chr:
 .incbin "data/townb.chr"
 townb_chrend:
+.db 0
 .ends
 
 .section ".font" superfree
 font_chr:
 .incbin "data/font.chr"
 font_chrend:
+.db 0
 .ends
 
 .section ".mini0" superfree

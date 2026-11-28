@@ -1890,7 +1890,16 @@ def main():
     loader += ['    }', '}', '']
     loader += convert_minis(exp, out, asm, hdr, maps)
 
-    open(os.path.join(root, 'maps.asm'), 'w').write('\n'.join(asm))
+    # An end label is used as a 16-bit address (size = end - start). If the linker puts a section at the very
+    # end of a bank, a label after its last byte is $10000 and the link fails, so every section that ends
+    # in a label gets a pad byte.
+    asm = '\n'.join(asm).split('\n')
+    out = []
+    for k, line in enumerate(asm):
+        if line.strip() == '.ends' and out and out[-1].rstrip().endswith(':'):
+            out.append('.db 0')
+        out.append(line)
+    open(os.path.join(root, 'maps.asm'), 'w').write('\n'.join(out))
     open(os.path.join(root, 'maps.h'), 'w').write('\n'.join(hdr))
     open(os.path.join(root, 'src', 'maploader.c'), 'w').write('\n'.join(loader))
     print('\n'.join(report))
