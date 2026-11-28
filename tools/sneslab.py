@@ -224,6 +224,10 @@ class Lab:
         w, h = self.ram('mapW'), self.ram('mapH')
         if nx < 0 or ny < 0 or nx >= w * 16 or ny >= h * 16:
             return True
+        if self.ram('colRam', 1, False, (y // 16) * MAP_W + x // 16) in (2, 3):
+            # knocked onto the stairs already: only a step toward the middle of the room takes him off them
+            cx, cy = w * 8, h * 8
+            return abs(nx - cx) + abs(ny - cy) >= abs(x - cx) + abs(y - cy)
         return self.ram('colRam', 1, False, (ny // 16) * MAP_W + nx // 16) in (2, 3)
 
     def run_safe(self, d, frames):

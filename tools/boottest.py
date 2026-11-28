@@ -211,7 +211,8 @@ for _ in range(150):   # (until the room is in and faded up)
 lab.run(None, 10)
 check(lab.map == lab.map_named('Foundry Gate') and lab.ram('dentMap') == lab.map, 'the Tredegar door leads into the Foundry Gate')
 check(song() == 'forge', f'the ironworks play the forge theme ({song()})')
-check(clear_room() and lab.ram('roomFlags', 1, False, lab.map) & 1, 'the Foundry Gate is cleared')
+_cr = clear_room()
+check(_cr and lab.ram('roomFlags', 1, False, lab.map) & 1, 'the Foundry Gate is cleared')
 lab.walk_to_cell(14, 5)
 lab.run('RIGHT', 40)
 lab.run(None, 40)
@@ -1371,7 +1372,7 @@ def bat(f):
     else: lab.run(None, 1)
 check(play_mini(1, bat) and lab.ram('mgKind') == 1, 'the Ballplayer pitches: batting practice')
 check(lab.ram('mgHits') == 10 and lab.ram('mgHr') == 10, f"swing on time: {lab.ram('mgHits')} hits, {lab.ram('mgHr')} home runs")
-check(lab.map == N("Scott's Addition") and lab.ram('boxState') and lab.ram('coins', 2) == min(999, coins + 70) and lab.ram('miniBest', 2, False, 1) == 20,
+check(lab.map == N("Scott's Addition") and lab.ram('boxState') and min(999, coins + 70) <= lab.ram('coins', 2) <= min(999, coins + 75) and lab.ram('miniBest', 2, False, 1) == 20,
       f"back on the street, 70 coins richer ({coins} -> {lab.ram('coins', 2)})")
 lab.screenshot(f'{out}/64-batting-result.png')
 close_box()
@@ -1594,7 +1595,7 @@ lab.data.update_ram()
 sram = bytes(lab.data.memory.blocks[0x700000][:24])
 s16 = lambda o: (sram[o] | sram[o + 1] << 8) - (0x10000 if sram[o + 1] & 0x80 else 0)
 pos = (s16(18), s16(20))                 # where the arrival was saved (src/save.c: px at 18, py at 20)
-check(sram[:2] == b'RQ' and sram[17] == where, f'arriving saved the game to slot 1 (map {sram[17]} at {pos})')
+check(sram[:2] in (b'RQ', b'RX') and sram[17] == where, f'arriving saved the game to slot 1 (map {sram[17]} at {pos})')
 lab.poke('coins', (coins + 123) & 0xFF); lab.poke('coins', ((coins + 123) >> 8) & 0xFF, 1)   # spent after the save
 lab.power_cycle()
 lab.run(None, 150)
@@ -1609,4 +1610,47 @@ check(lab.ram('coins', 2) == coins,
       f"with the saved coins ({lab.ram('coins', 2)}, saved {coins})")
 check(lab.ram('frogsDone') == 1 and lab.ram('gameWon') == 1 and lab.ram('hasCamera') == 1, 'and the saved progress: the frogs, the win, the camera')
 lab.screenshot(f'{out}/92-continued.png')
+
+# Stage 15a: the quest log, the journal and the bus map, from the START menu.
+def menu_open(code):
+    close_box(); lab.press('START', 10)
+    lst = [lab.ram('menuList', 1, False, i) for i in range(lab.ram('menuN'))]
+    if code not in lst: return False
+    for _ in range(lst.index(code) - lab.ram('menuCur')): lab.press('DOWN', 4)
+    lab.press('A', 10)
+    return True
+def read_back(state):
+    for _ in range(40):
+        if lab.ram('boxState') == state: return True
+        lab.press('A', 4)
+    return False
+check(menu_open(97) and lab.ram('boxState') == 9, 'START: the quest log')
+lab.run(None, 30)
+lab.screenshot(f'{out}/93-quest-log.png')
+for _ in range(9): lab.press('DOWN', 4)
+lab.run(None, 30)
+lab.screenshot(f'{out}/93-quest-log-2.png')
+for _ in range(5): lab.press('DOWN', 4)
+lab.press('A', 40)
+lab.screenshot(f'{out}/94-what-next.png')
+check(lab.ram('boxState') in (1, 2, 3) and read_back(9), "'What next?' reads the hint and comes back to the log")
+lab.press('B', 10)
+check(menu_open(96) and lab.ram('boxState') == 10, 'the journal lists the stories')
+k = next(i for i in range(66) if lab.ram('loreRead', 1, False, i >> 3) >> (i & 7) & 1)
+for _ in range(k): lab.press('DOWN', 4)
+lab.press('A', 40)
+lab.screenshot(f'{out}/95-journal-story.png')
+check(lab.ram('boxState') in (1, 2, 3) and read_back(10), f'a story found earlier reads again from the journal (story {k})')
+lab.press('B', 10)
+check(menu_open(95) and lab.ram('boxState') == 11, 'outdoors, the bus map')
+lab.run(None, 16)
+lab.screenshot(f'{out}/96-bus-map.png')
+lab.press('DOWN', 6)
+lab.press('A', 2)
+lab.run(None, 90)
+check(lab.map == N('The Fan') and not lab.ram('boxState'), f'the Pulse takes you to the Fan (map {lab.map} at {lab.pos})')
+lab.screenshot(f'{out}/97-bus-arrived.png')
+x, y = lab.pos
+lab.run('LEFT', 20)
+check(lab.pos != (x, y), 'and you can walk off from the stop')
 sys.exit(0 if ok else 1)

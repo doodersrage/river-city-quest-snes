@@ -160,6 +160,7 @@ extern char m77_ani;  /* 6 animated tiles from tile id 153 */
 extern char m78_chr, m78_ch1, m78_map, m78_grid, m78_pal, m78_col, m78_wld, m78_och, m78_opl, m78_ene, m78_xtr;  /* Virginia Museum of History & Culture: 173 tiles, 39 metatiles */
 extern char m78_ani;  /* 6 animated tiles from tile id 167 */
 extern char sys_txt;
+extern char jour_txt;
 #define PART_GID0 7
 #define PART_GID1 8
 #define PART_GID2 11
@@ -461,6 +462,104 @@ static const u16 pinTxt[14] = {TXT_PIN1, TXT_PIN2, TXT_PIN3, TXT_PIN4, TXT_PIN5,
 static const u8 loreRef[204] = {0, 0, 51, 1, 0, 38, 2, 0, 39, 3, 0, 54, 3, 1, 55, 3, 3, 56, 4, 0, 47, 4, 1, 48, 4, 3, 49, 4, 4, 50, 5, 0, 15, 5, 1, 14, 6, 0, 13, 6, 2, 12, 7, 1, 9, 7, 2, 11, 8, 0, 1, 8, 2, 3, 8, 3, 2, 8, 4, 0, 9, 0, 40, 9, 2, 61, 10, 0, 18, 10, 2, 17, 10, 3, 16, 11, 0, 19, 11, 2, 20, 12, 0, 6, 12, 1, 5, 12, 3, 8, 13, 0, 33, 13, 2, 34, 13, 3, 41, 14, 1, 58, 14, 2, 59, 14, 3, 60, 15, 0, 52, 15, 1, 53, 16, 0, 22, 16, 2, 23, 17, 0, 25, 17, 1, 26, 17, 2, 24, 18, 0, 62, 18, 1, 28, 18, 2, 27, 19, 0, 31, 19, 2, 32, 20, 0, 35, 21, 0, 44, 22, 1, 45, 22, 2, 46, 23, 0, 36, 23, 1, 34, 24, 0, 52, 26, 0, 56, 29, 0, 7, 40, 0, 57, 43, 0, 55, 44, 0, 43, 48, 0, 42, 57, 0, 29, 60, 0, 47, 64, 0, 1, 71, 0, 30, 74, 0, 3, 77, 0, 18, 78, 0, 48};  /* map, text, story */
 static const u16 loreTxt[66] = {TXT_LORE0, TXT_LORE1, TXT_LORE2, TXT_LORE3, TXT_LORE4, TXT_LORE5, TXT_LORE6, TXT_LORE7, TXT_LORE8, TXT_LORE9, TXT_LORE10, TXT_LORE11, TXT_LORE12, TXT_LORE13, TXT_LORE14, TXT_LORE15, TXT_LORE16, TXT_LORE17, TXT_LORE18, TXT_LORE19, TXT_LORE20, TXT_LORE21, TXT_LORE22, TXT_LORE23, TXT_LORE24, TXT_LORE25, TXT_LORE26, TXT_LORE27, TXT_LORE28, TXT_LORE29, TXT_LORE30, TXT_LORE31, TXT_LORE32, TXT_LORE33, TXT_LORE34, TXT_LORE35, TXT_LORE36, TXT_LORE37, TXT_LORE38, TXT_LORE39, TXT_LORE40, TXT_LORE41, TXT_LORE42, TXT_LORE43, TXT_LORE44, TXT_LORE45, TXT_LORE46, TXT_LORE47, TXT_LORE48, TXT_LORE49, TXT_LORE50, TXT_LORE51, TXT_LORE52, TXT_LORE53, TXT_LORE54, TXT_LORE55, TXT_LORE56, TXT_LORE57, TXT_LORE58, TXT_LORE59, TXT_LORE60, TXT_LORE61, TXT_LORE62, TXT_LORE63, TXT_LORE64, TXT_LORE65};
 static const char *const loreTitle[66] = {"Named for a View", "St. John's Church", "Eliza Poe's Grave", "The Church Hill Tunnel", "The Richmond Vampire", "A Temple for a Capitol", "Capital Since 1780", "Houdon's Washington", "Civil Rights Memorial", "Harlem of the South", "St. Luke Penny Savings", "Bojangles' Traffic Light", "First Electric Streetcars", "Department Store Row", "Scott's Addition", "Baseball on the Boulevard", "Carytown", "The Byrd Theatre", "Imperial Easter Eggs", "Why It's Called the Fan", "Arthur Ashe", "Monument Avenue 10K", "The Carillon", "Maymont", "Hollywood Cemetery", "The Granite Pyramid", "The Iron Dog", "The Falls of the James", "Belle Isle", "The Quarry Pond", "Tredegar Iron Works", "Rocketts Landing", "Virginia Capital Trail", "Shockoe Bottom", "The Richmond Slave Trail", "Pony Pasture", "Ancarrow's Landing", "James River Bateaux", "Bryan Park", "Lewis Ginter Botanical Ga..", "Chimborazo", "The Old Stone House", "Poe in Richmond", "The Gold-Bug", "Forest Hill Park", "Manchester", "Mayo's Bridge", "Science Museum of Virginia", "Virginia Museum of Histor..", "Arthur Ashe Boulevard", "The Sauer's Sign", "Richmond Raceway", "Agecroft Hall", "Texas Beach", "VCU and the Rams", "John Marshall House", "Black History Museum", "The Jefferson Hotel", "The Canal Walk", "Brown's Island", "The Pipeline Walk", "The View That Named Richm..", "The Belle Isle Footbridge", "Hanover Tomatoes", "Ukrop's Rainbow Cookies", "Sally Bell's Kitchen"};
+#define TXJ_LORE0 0
+#define TXJ_LORE1 237
+#define TXJ_LORE2 458
+#define TXJ_LORE3 625
+#define TXJ_LORE4 955
+#define TXJ_LORE5 1227
+#define TXJ_LORE6 1407
+#define TXJ_LORE7 1581
+#define TXJ_LORE8 1798
+#define TXJ_LORE9 2051
+#define TXJ_LORE10 2277
+#define TXJ_LORE11 2522
+#define TXJ_LORE12 2788
+#define TXJ_LORE13 3000
+#define TXJ_LORE14 3205
+#define TXJ_LORE15 3396
+#define TXJ_LORE16 3583
+#define TXJ_LORE17 3738
+#define TXJ_LORE18 3935
+#define TXJ_LORE19 4217
+#define TXJ_LORE20 4419
+#define TXJ_LORE21 4638
+#define TXJ_LORE22 4797
+#define TXJ_LORE23 5016
+#define TXJ_LORE24 5220
+#define TXJ_LORE25 5446
+#define TXJ_LORE26 5636
+#define TXJ_LORE27 5873
+#define TXJ_LORE28 6106
+#define TXJ_LORE29 6342
+#define TXJ_LORE30 6546
+#define TXJ_LORE31 6715
+#define TXJ_LORE32 6901
+#define TXJ_LORE33 7058
+#define TXJ_LORE34 7207
+#define TXJ_LORE35 7481
+#define TXJ_LORE36 7674
+#define TXJ_LORE37 7848
+#define TXJ_LORE38 8041
+#define TXJ_LORE39 8224
+#define TXJ_LORE40 8424
+#define TXJ_LORE41 8601
+#define TXJ_LORE42 8832
+#define TXJ_LORE43 9045
+#define TXJ_LORE44 9228
+#define TXJ_LORE45 9514
+#define TXJ_LORE46 9695
+#define TXJ_LORE47 9938
+#define TXJ_LORE48 10223
+#define TXJ_LORE49 10444
+#define TXJ_LORE50 10701
+#define TXJ_LORE51 10910
+#define TXJ_LORE52 11106
+#define TXJ_LORE53 11369
+#define TXJ_LORE54 11564
+#define TXJ_LORE55 11828
+#define TXJ_LORE56 12037
+#define TXJ_LORE57 12271
+#define TXJ_LORE58 12477
+#define TXJ_LORE59 12711
+#define TXJ_LORE60 12963
+#define TXJ_LORE61 13150
+#define TXJ_LORE62 13360
+#define TXJ_LORE63 13542
+#define TXJ_LORE64 13710
+#define TXJ_LORE65 13891
+#define TXJ_GOAL0 14104
+#define TXJ_GOAL1 14157
+#define TXJ_GOAL2 14239
+#define TXJ_GOAL3 14311
+#define TXJ_GOAL4 14368
+#define TXJ_GOAL5 14412
+#define TXJ_GOAL6 14487
+#define TXJ_GOAL7 14557
+#define TXJ_GOAL8 14630
+#define TXJ_GOAL9 14689
+#define TXJ_GOAL10 14782
+#define TXJ_GOAL11 14847
+#define TXJ_GOAL12 14924
+#define TXJ_GOAL13 15015
+#define TXJ_GOAL14 15091
+#define TXJ_GOAL15 15162
+#define TXJ_BUSIN 15255
+#define TXJ_BUSNEW 15300
+static const u16 loreStory[66] = {TXJ_LORE0, TXJ_LORE1, TXJ_LORE2, TXJ_LORE3, TXJ_LORE4, TXJ_LORE5, TXJ_LORE6, TXJ_LORE7, TXJ_LORE8, TXJ_LORE9, TXJ_LORE10, TXJ_LORE11, TXJ_LORE12, TXJ_LORE13, TXJ_LORE14, TXJ_LORE15, TXJ_LORE16, TXJ_LORE17, TXJ_LORE18, TXJ_LORE19, TXJ_LORE20, TXJ_LORE21, TXJ_LORE22, TXJ_LORE23, TXJ_LORE24, TXJ_LORE25, TXJ_LORE26, TXJ_LORE27, TXJ_LORE28, TXJ_LORE29, TXJ_LORE30, TXJ_LORE31, TXJ_LORE32, TXJ_LORE33, TXJ_LORE34, TXJ_LORE35, TXJ_LORE36, TXJ_LORE37, TXJ_LORE38, TXJ_LORE39, TXJ_LORE40, TXJ_LORE41, TXJ_LORE42, TXJ_LORE43, TXJ_LORE44, TXJ_LORE45, TXJ_LORE46, TXJ_LORE47, TXJ_LORE48, TXJ_LORE49, TXJ_LORE50, TXJ_LORE51, TXJ_LORE52, TXJ_LORE53, TXJ_LORE54, TXJ_LORE55, TXJ_LORE56, TXJ_LORE57, TXJ_LORE58, TXJ_LORE59, TXJ_LORE60, TXJ_LORE61, TXJ_LORE62, TXJ_LORE63, TXJ_LORE64, TXJ_LORE65};
+static const u16 goalTxt[16] = {TXJ_GOAL0, TXJ_GOAL1, TXJ_GOAL2, TXJ_GOAL3, TXJ_GOAL4, TXJ_GOAL5, TXJ_GOAL6, TXJ_GOAL7, TXJ_GOAL8, TXJ_GOAL9, TXJ_GOAL10, TXJ_GOAL11, TXJ_GOAL12, TXJ_GOAL13, TXJ_GOAL14, TXJ_GOAL15};
+#define OW_COUNT 24
+static const u8 owIdx[MAP_COUNT] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};  /* outdoor number of each map, 255 indoors */
+static const u8 owMap[24] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+static const u8 owCol[24] = {0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 1, 2, 3, 4};  /* bus map column 0-5, row 0-4 */
+static const u8 owRow[24] = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4};
+static const u8 owArrX[24] = {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16};  /* where the bus leaves you (cell) */
+static const u8 owArrY[24] = {11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11};
+static const char *const owCode[24] = {"RCE", "BRY", "GIN", "VCU", "ASH", "SCT", "BRD", "JWD", "CHH", "CHM", "CAR", "FAN", "CAP", "SHK", "CNL", "TXB", "BYR", "HOL", "BEL", "RCK", "PNY", "FHP", "MAN", "ANC"};
+static const char *const owName[24] = {"Richmond Raceway", "Bryan Park", "Lewis Ginter Botanical G..", "VCU & Court End", "Arthur Ashe Boulevard", "Scott's Addition", "Broad Street", "Jackson Ward", "Church Hill", "Chimborazo", "Carytown", "The Fan", "Capitol Square", "Shockoe Bottom", "Canal Walk & Brown's Isl..", "Texas Beach & Agecroft", "Byrd Park & Maymont", "Hollywood Cemetery", "Belle Isle", "Rocketts Landing", "Pony Pasture", "Forest Hill Park", "Manchester", "Ancarrow's Landing"};
+static const u8 goalOw[15] = {12, 18, 17, 13, 16, 21, 11, 10, 18, 10, 8, 17, 2, 23, 16};
+#define MAP_TREDEGAR_BOSS 69
+#define MAP_CONSERV_BOSS 35
 static const u8 mapSong[MAP_COUNT] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 1, 3, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 3, 3, 1, 3, 1, 1, 3, 1, 1, 1, 5, 5, 5, 5, 3, 3, 3, 3, 1, 3};
 static const u8 mapDark[MAP_COUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1};
 static const u16 lightOff[80] = {0, 4, 4, 6, 22, 27, 43, 64, 86, 86, 88, 111, 135, 139, 146, 168, 168, 171, 172, 172, 179, 179, 179, 196, 196, 204, 212, 220, 228, 236, 244, 252, 260, 268, 276, 284, 292, 300, 308, 316, 324, 332, 340, 348, 356, 364, 372, 380, 388, 396, 404, 412, 420, 428, 436, 444, 452, 460, 468, 476, 484, 492, 500, 508, 516, 524, 532, 540, 548, 556, 564, 572, 580, 588, 596, 604, 612, 620, 628, 636};

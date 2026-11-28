@@ -240,8 +240,12 @@ void closeText(void)
     u16 i;
     if (cardReturn)
     {
+        u8 r = cardReturn;
         cardReturn = 0;
-        drawCards();
+        if (r == 2) drawJournal();
+        else if (r == 3) drawQuests();
+        else if (r == 4) drawBus();
+        else drawCards();
         return;
     }
     if (shopReturn)
@@ -512,6 +516,21 @@ void updateText(u16 pressed)
         updateMenu(pressed);
         return;
     }
+    if (boxState == 9) /* stage 15a: the quest log, the journal, the bus map */
+    {
+        updateQuests(pressed);
+        return;
+    }
+    if (boxState == 10)
+    {
+        updateJournal(pressed);
+        return;
+    }
+    if (boxState == 11)
+    {
+        updateBus(pressed);
+        return;
+    }
     if (boxState == BOX_TYPING)
     {
         typeChars((pressed & KEY_A) ? 255 : 1); /* A finishes the page at once */
@@ -773,6 +792,7 @@ void enterMap(u8 i)
     lastCell = 0xFFFF;
     dash = 0;
     curMap = i;
+    if (owIdx[i] != 255) roomFlags[i] |= ROOM_SEEN; /* stage 15a: the bus can take you back */
     rcqLoadMap(i);
     settle();
     updateCamera();
@@ -1262,6 +1282,7 @@ int main(void)
         px = MAP_PX_W / 2; /* the middle of the Fan */
         py = MAP_PX_H / 2;
     }
+    if (owIdx[curMap] != 255) roomFlags[curMap] |= ROOM_SEEN;
     rcqLoadMap(curMap);
     settle();
     updateCamera();

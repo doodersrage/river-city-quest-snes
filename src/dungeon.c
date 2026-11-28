@@ -116,6 +116,7 @@ void dungeonInit(void)
     askKind = 0;
     miniOn = 0; /* WRAM isn't cleared at power-on */
     for (i = 0; i < 8; i++) miniBest[i] = 0;
+    medals = 0;
     chalReset();
     fishReset();
     pins = 0;

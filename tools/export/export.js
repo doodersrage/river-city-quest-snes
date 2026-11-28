@@ -412,7 +412,7 @@ const bossArt = vm.runInContext(`(function(){
    const n=base(),y=n.getContext('2d');y.fillStyle='rgba(8,10,24,.82)';y.fillRect(16,20,224,160);y.fillStyle='#f2c14e';y.fillRect(16,20,224,1);out.namebg=n;}
   out.intro=PANELS.map(P=>{const o=st;st=newState();st.name='\x01';let t='';try{t=P.txt();}catch(e){}st=o;return t;});
   out.chal=Object.entries(CHAL).map(([id,d])=>({id,name:d.name,type:d.type,time:d.time||0,ic:d.ic||null,foe:d.foe||null,n:d.n||0,needs:d.needs||null,intro:d.intro}));
-  out.lore=LORE.map(([id,t,s])=>{const sn=s.split('. ')[0];return {id,title:t,quote:sn.length>95?sn.slice(0,92)+'...':sn+'.'};});
+  out.lore=LORE.map(([id,t,s])=>{const sn=s.split('. ')[0];return {id,title:t,story:s,quote:sn.length>95?sn.slice(0,92)+'...':sn+'.'};});
   out.keynames=KEYNAME;
   // heart container pickup (16x16, centre 8,9)
   {const c=mkCanvas(16,16),old=g;g=c.getContext('2d');frame=0;const k={kind:'container',x:8,y:9,life:1e9,t:0};

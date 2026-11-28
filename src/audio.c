@@ -42,10 +42,12 @@ void sfx(u8 id)
     if (curSong) spcEffect(sfxPitch[id], id, (sfxVol[id] << 4) | 8);
 }
 
+void flushText(void);
 void rcqVBlank(void)
 {
     WaitForVBlank();
     if (sLive) streamVBlank(); /* the map's new edge and its scroll first */
+    flushText();   /* stage 15: a changed window next, while VBlank lasts (after everything else it could run past the end and lose rows) */
     heroVBlank();
     paddleVBlank();
     bossBgVBlank();

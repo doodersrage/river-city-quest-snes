@@ -2914,6 +2914,12 @@ sys_txt:
 .incbin "data/sys.txt"
 .ends
 
+.section ".jourtext" superfree
+jour_txt:
+.incbin "data/jour.txt"
+.db 0
+.ends
+
 .section ".shops" superfree
 shops_bin:
 .incbin "data/shops.bin"

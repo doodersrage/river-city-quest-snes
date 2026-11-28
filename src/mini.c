@@ -893,6 +893,7 @@ static void endText(void)
         d = putStr(d, "You walk away from the game.");
     else if (mgKind == MINI_BAT)
     {
+        if (mgHr >= 3) medals |= 1; /* stage 15a: the slugger medal (web st.f.slugger) */
         coinsWon = mgHits * 2 + mgHr * 5;
         score = mgHits + mgHr;
         d = putStr(d, "Ten pitches: ");

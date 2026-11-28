@@ -529,6 +529,85 @@ CHAL_IDS = ['flies', 'bus', 'taps', 'lamps', 'melons', 'tenk', 'quiz', 'rats', '
 RADII = [30, 64, 76, 88, 92, 96, 108, 120]   # stage 13d, the web's radii doubled for 32 px cells (the last capped): windows, night, dark room, brazier, torch, lamp, night+lantern, dark+lantern
 
 
+# stage 15a: the bus map. Three letters a neighbourhood (the web game's SHORT names won't fit a 28-column box).
+OW_CODE = {'ow:-1,-1': 'RCE', 'ow:0,-1': 'BRY', 'ow:1,-1': 'GIN', 'ow:2,-1': 'VCU',
+           'ow:-1,0': 'ASH', 'ow:0,0': 'SCT', 'ow:1,0': 'BRD', 'ow:2,0': 'JWD', 'ow:3,0': 'CHH', 'ow:4,0': 'CHM',
+           'ow:0,1': 'CAR', 'ow:1,1': 'FAN', 'ow:2,1': 'CAP', 'ow:3,1': 'SHK', 'ow:4,1': 'CNL',
+           'ow:-1,2': 'TXB', 'ow:0,2': 'BYR', 'ow:1,2': 'HOL', 'ow:2,2': 'BEL', 'ow:3,2': 'RCK',
+           'ow:0,3': 'PNY', 'ow:1,3': 'FHP', 'ow:2,3': 'MAN', 'ow:3,3': 'ANC'}
+SOLID_WEB = 'TBCwrxfWPMLHjJcoYGQVhOZ%bUg~XRliaquyte_+z1'
+# web goalScene(), in the order of the ROM's goalStep()
+GOAL_MAPS = ['ow:2,1', 'ow:2,2', 'ow:1,2', 'ow:3,1', 'ow:0,2', 'ow:1,3', 'ow:1,1', 'ow:0,1', 'ow:2,2', 'ow:0,1',
+             'ow:3,0', 'ow:1,2', 'ow:1,-1', 'ow:3,3', 'ow:0,2']
+GOAL_TEXT = ['Talk to the archivist beside the Capitol.',
+             'Cross the footbridge south of Capitol Square to the Belle Isle quarry.',
+             'Blast the rubble off the pyramid door in Hollywood Cemetery.',
+             'Find the Poe Museum cellar in Shockoe Bottom.',
+             'Climb the Carillon in Byrd Park.',
+             'Paddle south to Forest Hill Park and look for the Carillon key.',
+             'Someone hungry in the Fan might trade for that watermelon.',
+             'The organist at the Byrd Theatre would love that sheet music.',
+             'The kayaker on Belle Isle wants that river map.',
+             'Ask the Carillon caretaker in Byrd Park, then visit the melon vendor in Carytown.',
+             'Take all four keystones to the tunnel on Church Hill.',
+             'Explore Tredegar Iron Works, in the corner of Hollywood Cemetery.',
+             'Explore the conservatory at Lewis Ginter Botanical Garden, north of Bryan Park.',
+             "Help the river historian at Ancarrow's Landing rebuild a bateau.",
+             'Count frogs for the naturalist in Byrd Park on a rainy day.',
+             "You've done everything the story asks. Explore, find secrets, and collect it all!"]
+
+
+def travel_texts(lore):
+    """jour.txt: the journal's stories, then the quest log's hints. Offsets as TXJ_* defines."""
+    blob, defs = bytearray(), []
+    def add(name, title, pages):
+        defs.append(f'#define TXJ_{name} {len(blob)}')
+        blob.extend(encode_text(title, pages))
+    for k, l in enumerate(lore): add(f'LORE{k}', l['title'], [ascii_text(l.get('story') or l['quote'])])
+    for k, t in enumerate(GOAL_TEXT): add(f'GOAL{k}', 'What next?', [t])
+    add('BUSIN', 'GRTC Pulse', ['Head back outside to catch a bus.'])
+    add('BUSNEW', 'GRTC Pulse', ["You haven't been there yet."])
+    J = lambda a: ', '.join(map(str, a))
+    defs += [f'static const u16 loreStory[{len(lore)}] = {{{J(f"TXJ_LORE{k}" for k in range(len(lore)))}}};',
+             f'static const u16 goalTxt[{len(GOAL_TEXT)}] = {{{J(f"TXJ_GOAL{k}" for k in range(len(GOAL_TEXT)))}}};']
+    return None, defs, bytes(blob)
+
+
+def travel_tables(maps, index_of):
+    """Per outdoor map: its place on the bus map, its code and full name, and where the bus leaves you
+    (web arrivalFor: the open cell nearest the middle with at least three open sides)."""
+    ow = [m for m in maps if m['ow']]
+    idx = [255] * len(maps)
+    ax, ay, arx, ary, codes, names = [], [], [], [], [], []
+    for k, m in enumerate(ow):
+        idx[index_of[m['id']]] = k
+        g, w, h = m['grid'], m['w'], m['h']
+        cx, cy, best = w >> 1, h >> 1, None
+        ok = lambda x, y: g[y][x] not in SOLID_WEB and g[y][x] not in 'DE~#'
+        for y in range(2, h - 2):
+            for x in range(2, w - 2):
+                if not ok(x, y): continue
+                if sum(1 for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)) if g[y + b][x + a] not in SOLID_WEB) < 3: continue
+                d = abs(x - cx) + abs(y - cy)
+                if best is None or d < best[0]: best = (d, x, y)
+        bx, by = (best[1], best[2]) if best else (cx, cy)
+        ax.append(m['ax'] + 1); ay.append(m['ay'] + 1); arx.append(bx); ary.append(by)
+        codes.append(OW_CODE.get(m['id'], m['name'][:3].upper()))
+        nm = ascii_text(m['name']); names.append(nm if len(nm) <= 26 else nm[:24] + '..')
+    J = lambda a: ', '.join(map(str, a))
+    return [f'#define OW_COUNT {len(ow)}',
+            f'static const u8 owIdx[MAP_COUNT] = {{{J(idx)}}};  /* outdoor number of each map, 255 indoors */',
+            f'static const u8 owMap[{len(ow)}] = {{{J(index_of[m["id"]] for m in ow)}}};',
+            f'static const u8 owCol[{len(ow)}] = {{{J(ax)}}};  /* bus map column 0-5, row 0-4 */',
+            f'static const u8 owRow[{len(ow)}] = {{{J(ay)}}};',
+            f'static const u8 owArrX[{len(ow)}] = {{{J(arx)}}};  /* where the bus leaves you (cell) */',
+            f'static const u8 owArrY[{len(ow)}] = {{{J(ary)}}};',
+            'static const char *const owCode[%d] = {%s};' % (len(ow), ', '.join(f'"{c}"' for c in codes)),
+            'static const char *const owName[%d] = {%s};' % (len(ow), ', '.join('"%s"' % n.replace('"', "'") for n in names)),
+            f'static const u8 goalOw[{len(GOAL_MAPS)}] = {{{J(idx[index_of[g_]] for g_ in GOAL_MAPS)}}};',
+            f'#define MAP_TREDEGAR_BOSS {index_of["tredegar:0,0"]}', f'#define MAP_CONSERV_BOSS {index_of["conserv:0,0"]}']
+
+
 def light_tables(maps):
     """Per map light sources (pixel x/2, y/2, kind 0 torch 1 lamp 2 window) and circle half-widths per radius."""
     import math
@@ -1722,6 +1801,12 @@ def main():
              f'static const u16 loreTxt[{len(lore)}] = {{{J(f"TXT_LORE{k}" for k in range(len(lore)))}}};',
              'static const char *const loreTitle[%d] = {%s};' % (len(lore), ', '.join('"%s"' % title(l['title']).replace('"', "'") for l in lore))]
     asm += ['.section ".systext" superfree', 'sys_txt:', '.incbin "data/sys.txt"', '.ends', '']
+    # stage 15a: the quest log, the journal and the bus map (web extras.js), text in a second bank (jour.txt)
+    jt, jdefs, jblob = travel_texts(lore)
+    open(os.path.join(out, 'jour.txt'), 'wb').write(jblob)
+    if len(jblob) > 0x8000: raise SystemExit(f'jour.txt is {len(jblob)} bytes, over one bank')
+    asm += ['.section ".jourtext" superfree', 'jour_txt:', '.incbin "data/jour.txt"', '.db 0', '.ends', '']
+    defs += jdefs + travel_tables(maps, index_of)
     # The ending (web startRelight and CREDITS): five neighbourhoods, then pages of credits.
     relight = boss_text['relight']
     relight_maps = [index_of[r[0]] for r in relight]
@@ -1745,7 +1830,7 @@ def main():
         pg = pg + ([''] if pg else []) + g
     if pg: pages.append(pg)
     credit_lines = [l for p_ in pages for l in p_ + ['\f']]
-    hdr += ['extern char sys_txt;'] + defs + [
+    hdr += ['extern char sys_txt;', 'extern char jour_txt;'] + defs + [
             # web wantSong(): outdoors 'south' below the river (ay 3) else 'city'; the Tredegar works 'forge';
             # lit interiors 'city'; every other dungeon, cave and museum 'dungeon' (song numbers from tools/mkaudio.py)
             'static const u8 mapSong[MAP_COUNT] = {%s};' % ', '.join(str(

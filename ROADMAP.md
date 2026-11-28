@@ -93,3 +93,12 @@ The scenery read as 8-bit art made bigger: flat fills, single-pixel steps from S
 - What's still Scale2x: single-pixel specks (grass blades by rocks, shoreline foam) and a few one-offs, and a small remaster pass gives those a lit top and left edge and a shaded bottom and right.
 - Build: every data section that ends in a label gets a pad byte, so a section the linker puts at the very end of a bank still links (the end label would be $10000).
 - The exporter now renders a map at a time and lets the event loop turn between maps: @napi-rs/canvas frees pixel buffers only then, and the all-at-once render ran out of memory.
+
+## Stage 15: the rest of the web game (branch stage15)
+
+Everything the web game has that the ROM didn't yet, in parts.
+
+- **15a Quest log, journal and bus (done).** The START menu has three new lines. *Quest Log*: the web game's quests with counts (keystones, the tunnel, the kayak trade, the Carillon key, the race bib, both bosses, the bateau, frogs, pins, heart pieces, cards, photos, mini-game medals) and *What next?*, which reads the web game's hint for the story's next step. *Journal*: every story you've found, to read again (the stories are in a second text bank, data/jour.txt). *Bus Map* (outdoors): the 24 neighbourhoods on a grid by three-letter code; any you've been to is a ride away, and you get off where the web game's bus leaves you (the open cell nearest the middle). The goal's neighbourhood blinks a "!". Outdoor maps are marked seen on arrival (ROOM_SEEN, already saved).
+  - Saves: a slot now ends in a 128-byte extension block (magic 'RX'), so later stages can add fields without moving anything. A save from before (magic 'RQ') still loads, with the new fields empty.
+  - The window is copied to VRAM straight after the map's edge in VBlank, not after every other VBlank job: when streaming was busy the copy could run past the end of VBlank and lose its lower rows.
+

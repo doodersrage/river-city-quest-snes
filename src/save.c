@@ -6,7 +6,9 @@
 
 #define SLOT_SIZE 1024
 #define MAGIC0 'R'
-#define MAGIC1 'Q'
+#define MAGIC1 'Q'   /* the first layout (stage 11) */
+#define MAGIC1X 'X'  /* stage 15: the same, then the extension block */
+#define EXT_SIZE 128 /* the extension block: fields added from stage 15 on, the rest zero, so it can grow without moving */
 
 extern u8 linkOpen[], roomBraz[], photoGot[], fishN[];
 extern u8 shopOwned[2][MAX_SHOP_ITEMS];
@@ -17,7 +19,9 @@ u8 saveSlot;          /* 1-3, 0 none */
 char heroName[9];
 u16 playMin, playSub; /* time played: minutes, and frames toward the next */
 u8 saveBuf[SLOT_SIZE];
-static u16 sp, saveLen;
+static u16 sp, saveLen, baseLen;
+static u8 svExt;
+extern u8 medals;
 static u8 svMode; /* 0 load, 1 save, 2 only count */
 
 static void sv(u8 *v, u16 n)
@@ -93,6 +97,13 @@ static void saveWalk(void)
     sv(photoGot, (PHOTO_COUNT + 7) / 8);
     sv((u8 *)miniBest, 16);
     sv((u8 *)&dayClock, 2);
+    if (!svExt) return;
+    /* stage 15 extension: add new fields at the end only */
+    {
+        u16 e0 = sp;
+        sv(&medals, 1);
+        sp = e0 + EXT_SIZE;
+    }
 }
 
 static u16 checksum(u16 n)
@@ -106,6 +117,10 @@ static u16 checksum(u16 n)
 void saveInit(void)
 {
     svMode = 2;
+    svExt = 0;
+    saveWalk();
+    baseLen = sp;
+    svExt = 1;
     saveWalk();
     saveLen = sp;
     saveSlot = 0;
@@ -117,9 +132,11 @@ void saveGame(void)
     u16 c;
     if (!saveSlot) return;
     svMode = 1;
+    svExt = 1;
+    for (c = baseLen; c < saveLen; c++) saveBuf[c] = 0;
     saveWalk();
     saveBuf[0] = MAGIC0;
-    saveBuf[1] = MAGIC1;
+    saveBuf[1] = MAGIC1X;
     c = checksum(saveLen);
     saveBuf[saveLen] = c & 0xFF;
     saveBuf[saveLen + 1] = c >> 8;
@@ -130,16 +147,25 @@ void saveGame(void)
 u8 slotOk(u8 slot)
 {
     u16 c;
+    u16 n;
     consoleLoadSramWithOffset(saveBuf, saveLen + 2, (slot - 1) * SLOT_SIZE);
-    if (saveBuf[0] != MAGIC0 || saveBuf[1] != MAGIC1) return 0;
-    c = checksum(saveLen);
-    return saveBuf[saveLen] == (c & 0xFF) && saveBuf[saveLen + 1] == (c >> 8);
+    if (saveBuf[0] != MAGIC0 || (saveBuf[1] != MAGIC1 && saveBuf[1] != MAGIC1X)) return 0;
+    n = saveBuf[1] == MAGIC1X ? saveLen : baseLen; /* a save from before stage 15 has no extension */
+    c = checksum(n);
+    svExt = saveBuf[1] == MAGIC1X;
+    return saveBuf[n] == (c & 0xFF) && saveBuf[n + 1] == (c >> 8);
 }
 
 /* start the game from a slot (one the title saw was good) */
 void loadGame(u8 slot)
 {
-    slotOk(slot); /* the buffer may hold another slot by now */
+    slotOk(slot); /* the buffer may hold another slot by now; sets svExt */
+    if (!svExt)
+    {
+        u16 i;
+        for (i = baseLen; i < saveLen; i++) saveBuf[i] = 0; /* an old save: the new fields start empty */
+    }
+    svExt = 1;
     svMode = 0;
     saveWalk();
     heroName[8] = 0;

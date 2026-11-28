@@ -198,9 +198,12 @@ static const char *const itemName[13] = {"", "Grappling Hook", "Blasting Powder"
                                           "Watering Can", "Baseballs", "Running Shoes", "Bicycle", "Ginger Beer", "Fishing Rod", "Camera"};
 #define MENU_CARDS 99 /* the last lines of the menu: your landmark cards, your photos */
 #define MENU_ALBUM 98
+#define MENU_QUEST 97 /* stage 15a */
+#define MENU_JOUR 96
+#define MENU_BUS 95
 /* the web game's menu order */
 static const u8 menuOrder[11] = {ITEM_LANTERN, ITEM_BALLS, ITEM_POWDER, ITEM_BUG, ITEM_SHOES, ITEM_HOOK, ITEM_CAN, ITEM_BIKE, ITEM_BOTTLE, ITEM_ROD, ITEM_CAMERA};
-u8 menuList[13], menuN, menuCur, menuTop;
+u8 menuList[16], menuN, menuCur, menuTop;
 
 void drawMenu(void)
 {
@@ -219,6 +222,21 @@ void drawMenu(void)
             boxNum(2 + r, 29, PHOTO_COUNT);
             boxPut(2 + r, 27, FONT_GOLD + '/' - 32);
             boxNum(2 + r, 26, photoCount());
+            continue;
+        }
+        if (it == MENU_QUEST)
+        {
+            boxText(2 + r, 3, (u8 *)"Quest Log", FONT_WHITE);
+            continue;
+        }
+        if (it == MENU_JOUR)
+        {
+            boxText(2 + r, 3, (u8 *)"Journal", FONT_WHITE);
+            continue;
+        }
+        if (it == MENU_BUS)
+        {
+            boxText(2 + r, 3, (u8 *)"Bus Map", FONT_WHITE);
             continue;
         }
         if (it == MENU_CARDS)
@@ -249,6 +267,9 @@ void openMenu(void)
             if (menuOrder[i] == eqItem) menuCur = menuN;
             menuList[menuN++] = menuOrder[i];
         }
+    menuList[menuN++] = MENU_QUEST;
+    menuList[menuN++] = MENU_JOUR;
+    if (owIdx[curMap] != 255 && !chalOn) menuList[menuN++] = MENU_BUS;
     menuList[menuN++] = MENU_CARDS;
     if (hasCamera) menuList[menuN++] = MENU_ALBUM;
     menuTop = menuCur > 3 ? menuCur - 3 : 0;
@@ -272,6 +293,12 @@ void updateMenu(u16 pressed)
         if (menuCur >= menuTop + 4) menuTop = menuCur - 3;
         drawMenu();
     }
+    else if ((pressed & KEY_A) && menuList[menuCur] == MENU_QUEST)
+        openQuests();
+    else if ((pressed & KEY_A) && menuList[menuCur] == MENU_JOUR)
+        openJournal();
+    else if ((pressed & KEY_A) && menuList[menuCur] == MENU_BUS)
+        openBus();
     else if ((pressed & KEY_A) && menuList[menuCur] == MENU_CARDS)
         openCards();
     else if ((pressed & KEY_A) && menuList[menuCur] == MENU_ALBUM)
