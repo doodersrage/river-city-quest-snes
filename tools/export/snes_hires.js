@@ -220,18 +220,34 @@ NATIVE['F'] = (s, X, Y, h, nb) => { floor32(s, X, Y, h); wallShade(X, Y, nb); };
 
 
 /* ---------- trees: a broad canopy of leaf clusters, lit from the top left, on a short trunk ---------- */
-function canopy32(X, Y, G, h) {   // G: five greens, dark to light; the crown fills the cell's top 26 rows
-  const rows = [10, 16, 20, 22, 24, 26, 26, 28, 28, 28, 28, 28, 28, 28, 26, 26, 24, 22, 20, 16, 10];
-  rows.forEach((w, i) => { const a = X + 16 - (w >> 1); R(a, Y + 1 + i, w, 1, G[2]); R(a, Y + 1 + i, 1, 1, G[0]); R(a + w - 1, Y + 1 + i, 1, 1, G[0]); });
-  R(X + 11, Y, 10, 1, G[0]); R(X + 11, Y + 22, 10, 1, G[0]);
-  for (let i = 12; i < 21; i++) { const w = rows[i], a = X + 16 - (w >> 1); R(a + 1, Y + 1 + i, w - 2, 1, i > 17 ? G[0] : G[1]); }   // the shaded underside
-  // leaf clusters: each a dark-edged lump with a lit cap, brighter toward the top left
-  for (let i = 0; i < 16; i++) {
-    const q = HH(h, i, 71), a = X + 6 + q % 18, b = Y + 3 + (q >> 5) % 15, lit = a + b < X + Y + 26;
-    R(a, b + 2, 5, 1, G[lit ? 1 : 0]); R(a, b, 5, 2, G[lit ? 3 : 2]); R(a + 1, b - 1, 3, 1, G[lit ? 3 : 2]);
-    R(a + 1, b - 1, 2, 1, G[lit ? 4 : 3]);
+function canopy32(X, Y, G, h) {   // G: five greens, dark to light; the crown fills the cell's top 25 rows
+  // a crown built of leaf clumps, each a ball lit from the top left; lower clumps sit in front of higher ones,
+  // the silhouette is lumpy, the shade between clumps is dark, and tones meet in a dither as 16-bit trees do
+  const T = new Int8Array(32 * 26).fill(-1), j = (i, m) => (HH(h, i, 91 + m) % 3) - 1;
+  const clumps = [[16, 6, 7], [9, 9, 6], [23, 9, 6], [6, 15, 6], [26, 15, 5], [16, 12, 8], [11, 18, 6], [21, 18, 6], [16, 20, 5]];
+  clumps.forEach(([cx, cy, r], i) => {
+    cx += j(i, 0); cy += j(i, 1);
+    for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) {
+      if (x < 1 || x > 30 || y < 0 || y > 24) continue;
+      const dx = x - cx, dy = y - cy, d2 = dx * dx + dy * dy;
+      if (d2 > r * r + r * .6) continue;
+      const lit = (-dx * .7 - dy * .9) / r + (1 - d2 / (r * r)) * .6;   // light from the top left, and the ball's roundness
+      let t = lit > .9 ? 4 : lit > .45 ? 3 : lit > -.1 ? 2 : 1;
+      if (lit > .45 && lit <= .6 && (x + y) & 1) t = 2;   // dither the edge of the light
+      if (lit > .9 && lit <= 1 && (x + y) & 1) t = 3;
+      if (lit <= -.1 && lit > -.25 && (x + y) & 1) t = 2;
+      T[y * 32 + x] = t;
+    }
+  });
+  for (let y = 0; y < 25; y++) for (let x = 0; x < 32; x++) {
+    const t = T[y * 32 + x]; if (t < 0) continue;
+    const out = (dx, dy) => { const X2 = x + dx, Y2 = y + dy; return X2 < 0 || X2 > 31 || Y2 < 0 || Y2 > 25 || T[Y2 * 32 + X2] < 0; };
+    let c = t;
+    if (out(1, 0) || out(0, 1) || out(-1, 0) || out(0, -1)) c = 0;        // the outline
+    else if (y > 14 && t > 1 && out(0, 2)) c = 1;                          // the underside in shade
+    if (c > 0 && c < 4) { const q = HH(h, x, y * 7 + 5); if (q % 11 == 0) c = c - 1; else if (q % 13 == 0 && c > 1) c = c + 1; }   // leaves
+    R(X + x, Y + y, 1, 1, G[c]);
   }
-  R(X + 8, Y + 4, 6, 2, G[3]); R(X + 6, Y + 6, 4, 3, G[3]); R(X + 9, Y + 3, 3, 1, G[4]); R(X + 7, Y + 6, 1, 2, G[4]);   // the sunlit crown
 }
 const OAK32 = ['#10301e', '#1a4a2a', '#2a6a36', '#48903e', '#78b858'];
 const MAG32 = ['#0a2418', '#143c28', '#1f5a3a', '#3a8a5a', '#68b080'];
@@ -245,8 +261,14 @@ function tree32(s, X, Y, h, nb) {
   R(X + 13, Y + 20, 6, 10, SWD[2]); R(X + 13, Y + 20, 2, 10, SWD[3]); R(X + 17, Y + 20, 2, 10, SWD[1]);   // the trunk, a root either side
   R(X + 11, Y + 28, 3, 2, SWD[1]); R(X + 18, Y + 28, 3, 2, SWD[1]); R(X + 14, Y + 23, 1, 3, SWD[1]);
   canopy32(X, Y, G, h);
-  if (tk == 'dogwood') for (let i = 0; i < 9; i++) { const q = HH(h, i, 73); R(X + 7 + q % 17, Y + 3 + (q >> 5) % 15, 2, 2, '#fff8f0'); R(X + 8 + q % 17, Y + 4 + (q >> 5) % 15, 1, 1, '#e8c8d8'); }
-  if (tk == 'magnolia') for (let i = 0; i < 5; i++) { const q = HH(h, i, 75); R(X + 7 + q % 17, Y + 4 + (q >> 5) % 13, 3, 3, '#fff8f0'); R(X + 8 + q % 17, Y + 6 + (q >> 5) % 13, 2, 1, '#e8c8d8'); }
+  if (tk == 'dogwood') for (let i = 0; i < 8; i++) {   // four-petalled blossoms, pink at the heart
+    const q = HH(h, i, 73), a = X + 7 + q % 17, b = Y + 4 + (q >> 5) % 15;
+    R(a, b - 1, 1, 3, '#fff8f0'); R(a - 1, b, 3, 1, '#fff8f0'); R(a, b, 1, 1, '#d87898'); R(a + 1, b + 1, 1, 1, '#c8c0c8');
+  }
+  if (tk == 'magnolia') for (let i = 0; i < 5; i++) {   // big cupped flowers
+    const q = HH(h, i, 75), a = X + 7 + q % 16, b = Y + 4 + (q >> 5) % 13;
+    R(a, b, 4, 3, '#fff8f0'); R(a + 1, b - 1, 2, 1, '#fff8f0'); R(a, b + 2, 4, 1, '#e8c8d8'); R(a + 3, b, 1, 2, '#f0d8e0'); R(a + 1, b + 1, 2, 1, '#f8e8ec');
+  }
 }
 NATIVE['T'] = (s, X, Y, h, nb) => tree32(s, X, Y, h, nb);
 
@@ -588,6 +610,31 @@ renderMap = function (s, fr) {
     const M = cv.getContext('2d').getImageData(0, 0, W, H).data;
     for (let p = 0; p < W * H; p++) if (M[p * 4 + 3] && kind[p] == 2) { kind[p] = 0; obj[p * 4 + 3] = 0; }
   }
+  // specks: object bits of four pixels or fewer on open ground (a grass blade by a rock, a fleck of foam) are 16 px
+  // texture that Scale2x would only turn into 2x2 blocks; the 32 px ground has its own
+  if (!NOFX.includes('speck')) {
+    const seen = new Uint8Array(W * H), st = [], comp = [];
+    for (let p0 = 0; p0 < W * H; p0++) {
+      if (kind[p0] != 2 || seen[p0]) continue;
+      st.length = 0; comp.length = 0; st.push(p0); seen[p0] = 1;
+      while (st.length) {
+        const p = st.pop(); comp.push(p); if (comp.length > 4) continue;
+        const x = p % W, y = (p / W) | 0;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+          const X = x + dx, Y = y + dy; if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+          const q = Y * W + X; if (kind[q] == 2 && !seen[q]) { seen[q] = 1; st.push(q); }
+        }
+      }
+      if (comp.length > 4) continue;
+      if (!comp.every(p => '.,_wsS'.includes(s.g[(p / W / TS) | 0][((p % W) / TS) | 0]))) continue;
+      for (const p of comp) { kind[p] = 0; obj[p * 4 + 3] = 0; }
+    }
+  }
+  // the 16 px trees' crowns poke a few pixels into the cell above; the 32 px tree is whole in its own cell
+  for (let ty = 0; ty < s.h - 1; ty++) for (let tx = 0; tx < s.w; tx++) {
+    if (s.g[ty + 1][tx] != 'T' || s.g[ty][tx] == 'T') continue;
+    for (let y = ty * TS + TS - 5; y < ty * TS + TS; y++) for (let x = tx * TS; x < tx * TS + TS; x++) { const p = y * W + x; if (kind[p] == 2) { kind[p] = 0; obj[p * 4 + 3] = 0; } }
+  }
   const decs = typeof decor32 != 'undefined' && !NOFX.includes('dec') ? decorFor(s) : [];
   for (const d of decs) for (let y = d.y * TS - 2; y < d.y * TS + TS + 2; y++) for (let x = d.x * TS; x < (d.x + d.len) * TS; x++)
     if (y >= 0 && y < H) { const p = y * W + x; if (kind[p] == 2) { kind[p] = 0; obj[p * 4 + 3] = 0; } }
@@ -643,7 +690,7 @@ renderMap = function (s, fr) {
   const N2 = ctx.getImageData(0, 0, W * 2, H * 2), nd2 = N2.data;
   if (typeof DBG != 'undefined') for (let ty = 0; ty < s.h; ty++) for (let tx = 0; tx < s.w; tx++) {
     let n = 0; for (let y = ty * TS; y < ty * TS + TS; y++) for (let x = tx * TS; x < tx * TS + TS; x++) if (obj[(y * W + x) * 4 + 3]) n++;
-    if (n) { const k = 'OBJ ' + s.g[ty][tx] + (isDecor(s, tx, ty) ? ' decor' : '') + (typeof DBGXY != 'undefined' ? ' ' + s.id : ''); DBG[k] = (DBG[k] || 0) + 1; }
+    if (n) { const k = 'OBJ ' + s.g[ty][tx] + (isDecor(s, tx, ty) ? ' decor' : '') + (typeof DBGXY != 'undefined' ? ' ' + s.id + (s.g[ty][tx] == '.' ? ' ' + tx + ',' + ty : '') : ''); DBG[k] = (DBG[k] || 0) + 1; }
   }
   if (typeof OBJONLY != 'undefined' && OBJONLY) { const q = ctx.getImageData(0, 0, W * 2, H * 2); for (let i = 0; i < q.data.length; i += 4) { q.data[i] = q.data[i] * .3; q.data[i + 1] = q.data[i + 1] * .3; q.data[i + 2] = q.data[i + 2] * .3 + 40; } ctx.putImageData(q, 0, 0); N2.data.set(q.data); }
   // and the objects on top

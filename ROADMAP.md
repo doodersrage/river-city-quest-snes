@@ -88,6 +88,7 @@ The scenery read as 8-bit art made bigger: flat fills, single-pixel steps from S
 - **Church Hill and warehouse fronts:** louvred green shutters; tall arched windows in stone surrounds and braced plank loading doors.
 - **Shadows** of walls and landmarks on the ground are laid on the 32 px ground (so the grass shows through them, with a fine dithered edge) instead of being Scale2x'd as 16 px blocks.
 - Exporter debugging: `DBG=1` counts what's still Scale2x per cell kind (`DBGXY=1` per map), `OBJONLY=1` dims everything else.
+- **Trees:** crowns built of leaf clumps, each lit from the top left, with a lumpy outline, shaded underside and dithered edges between tones; dogwoods carry four-petalled blossoms, magnolias big cupped flowers. The 16 px trees' crown tips that poked into the cell above (a dark nub on every tree) are dropped, as are object specks of four pixels or fewer on open ground.
 - What's still Scale2x: single-pixel specks (grass blades by rocks, shoreline foam) and a few one-offs, and a small remaster pass gives those a lit top and left edge and a shaded bottom and right.
 - Build: every data section that ends in a label gets a pad byte, so a section the linker puts at the very end of a bank still links (the end label would be $10000).
 - The exporter now renders a map at a time and lets the event loop turn between maps: @napi-rs/canvas frees pixel buffers only then, and the all-at-once render ran out of memory.
