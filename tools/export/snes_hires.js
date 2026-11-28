@@ -172,17 +172,37 @@ function floor32(s, X, Y, h) {
       if (q % 5 == 1) { R(X + 4 + (q >> 9) % 22, Y + i + 2, 3, 2, r[1]); R(X + 5 + (q >> 9) % 22, Y + i + 2, 1, 1, r[0]); }   // a knot
     }
   } else {
-    R(X, Y, 32, 32, r[1]);
+    // (stage 14) flagstones: each its own shade, lit along its top and left edges, shaded along the others,
+    // dark joints with a little grime in them; now and then a chip, a crack or a worn hollow
+    const f7 = typeof r7 == 'function' ? r7(f[0]) : null, t = f7 || [r[0], r[0], r[1], r[2], r[3], r[4], r[4]];
+    R(X, Y, 32, 32, t[1]);
+    let k = 0;
     for (const [a, b] of [[0, 0], [16, 0], [-8, 16], [8, 16], [24, 16]]) {
       const x0 = Math.max(0, a), x1 = Math.min(32, a + 16) - 1;
       if (x1 - x0 < 2) continue;
-      R(X + x0, Y + b, x1 - x0, 15, r[2]);
-      R(X + x0, Y + b, x1 - x0, 1, r[3]); if (a >= 0) R(X + x0, Y + b, 1, 15, r[3]);
-      R(X + x0 + 1, Y + b + 14, x1 - x0 - 1, 1, r[1]);
-      const q = HH(h, a + 9, b + 3);
-      if (q % 4 == 0) { R(X + x0 + 3 + q % 6, Y + b + 4 + (q >> 4) % 6, 2, 1, r[1]); R(X + x0 + 5 + q % 6, Y + b + 5 + (q >> 4) % 6, 1, 1, r[1]); }
+      const q = HH(h, a + 9, b + 3), tone = q % 5 == 0 ? t[4] : q % 5 == 1 ? t[2] : t[3];
+      R(X + x0, Y + b, x1 - x0, 15, tone);
+      R(X + x0, Y + b, x1 - x0, 1, t[5]); if (a >= 0) R(X + x0, Y + b, 1, 15, t[5]);
+      R(X + x0 + 1, Y + b + 1, x1 - x0 - 2, 1, tone == t[4] ? t[5] : t[4]);
+      R(X + x0 + 1, Y + b + 14, x1 - x0 - 1, 1, t[2]); R(X + x1 - 1, Y + b + 1, 1, 13, t[2]);
+      R(X + x0, Y + b + 15, x1 - x0 + 1, 1, t[0]); if (a + 15 < 32) R(X + x1, Y + b, 1, 16, t[0]);
+      const v = (q >> 4) % 9;
+      if (v == 0 && (q >> 8) % 3 == 0) { let cx = X + x0 + 3 + q % 6, cy = Y + b + 2; for (let i = 0; i < 6; i++) { R(cx, cy, 1, 2, t[0]); R(cx + 1, cy, 1, 1, t[4]); cx += (HH(q, i, 3) % 3) - 1; cy += 2; } }
+      else if (v == 1) { R(X + x0 + 4, Y + b + 5, 6, 4, t[2]); R(X + x0 + 5, Y + b + 4, 4, 1, t[2]); R(X + x0 + 5, Y + b + 8, 4, 1, t[4]); }   // a hollow worn by feet
+      else if (v == 2) { R(X + x1 - 3, Y + b + 11, 2, 2, t[1]); R(X + x1 - 2, Y + b + 10, 1, 1, t[1]); }                                            // a chipped corner
+      else if (v == 3) for (let i = 0; i < 4; i++) { const g3 = HH(q, i, 9); R(X + x0 + 2 + g3 % 11, Y + b + 2 + (g3 >> 4) % 11, 1, 1, t[2]); }
+      k++;
     }
   }
+}
+
+/* (stage 14) the shadow walls cast on the floor below and beside them: two steps deep under a wall, one beside */
+function wallShade(X, Y, nb) {
+  const wall = c => c == 'W' || c == 'B' || c == '_';
+  if (wall(nb(0, -1))) { R(X, Y, 32, 6, 'shade'); R(X, Y, 32, 3, 'shade'); }
+  if (wall(nb(-1, 0))) { R(X, Y, 4, 32, 'shade'); R(X, Y, 2, 32, 'shade'); }
+  if (wall(nb(1, 0))) R(X + 30, Y, 2, 32, 'shade');
+  if (wall(nb(-1, -1)) && !wall(nb(0, -1)) && !wall(nb(-1, 0))) R(X, Y, 4, 6, 'shade');
 }
 
 NATIVE['.'] = (s, X, Y, h) => grass32(X, Y, h);
@@ -190,7 +210,13 @@ NATIVE[','] = (s, X, Y, h) => flowers32(X, Y, h);
 NATIVE['p'] = (s, X, Y, h, nb) => { cobble32(X, Y, h); fringe32(X, Y, h, nb); };
 NATIVE['s'] = (s, X, Y, h, nb) => { sidewalk32(X, Y, h); fringe32(X, Y, h, nb); };
 NATIVE['n'] = (s, X, Y, h, nb) => { sand32(X, Y, h); fringe32(X, Y, h, nb); };
-NATIVE['F'] = (s, X, Y, h) => floor32(s, X, Y, h);
+NATIVE['_'] = (s, X, Y, h, nb) => {   // (stage 14) a pit: the floor's cut edge at its top, then darkness falling away
+  R(X, Y, 32, 32, '#0c0a14');
+  for (let i = 0; i < 12; i++) { const q = HH(h, i, 97); R(X + q % 30, Y + 10 + (q >> 5) % 20, 1, 1, '#16121e'); }
+  if (nb(0, -1) != '_') { const f = s.fl || ['#4a4458'], t = typeof r7 == 'function' ? r7(f[0]) : ramp(f[0]);
+    R(X, Y, 32, 8, t[1]); R(X, Y, 32, 1, t[3]); for (let i = 3; i < 32; i += 7) R(X + i, Y + 1, 1, 7, t[0]); R(X, Y + 8, 32, 3, '#14101c'); }
+};
+NATIVE['F'] = (s, X, Y, h, nb) => { floor32(s, X, Y, h); wallShade(X, Y, nb); };
 
 
 /* ---------- trees: a broad canopy of leaf clusters, lit from the top left, on a short trunk ---------- */
@@ -307,22 +333,26 @@ storey = function (s, x, y, h, tx, ty) { if (HIRES_GROUND) return facade(s, x, y
 
 /* ---------- walls inside: big dressed blocks under a dark cornice; the wall tops; torches ---------- */
 function wall32(s, X, Y, h) {
-  const c = s.wl || ['#5b5368', '#463f52', '#756c85'], r = ramp(c[0]);
-  R(X, Y, 32, 32, r[2]);
-  for (let row = 0; row < 3; row++) {
+  const c = s.wl || ['#5b5368', '#463f52', '#756c85'], r = typeof r7 == 'function' ? r7(c[0]) : ramp(c[0]);
+  R(X, Y, 32, 32, r[3]);
+  for (let row = 0; row < 3; row++) {   // (stage 14) dressed blocks, each its own shade, lit on top, shaded under
     const b = Y + 8 + row * 7, o = row & 1 ? 8 : 0;
     R(X, b + 6, 32, 1, r[0]);
     for (let i = o - 16; i < 32; i += 16) {
       const a = Math.max(0, i), w = Math.min(32, i + 15) - a;
       if (w <= 0) continue;
-      R(X + a, b, w, 1, r[3]); R(X + a, b + 5, w, 1, r[1]);
-      if (i >= 0) R(X + i, b, 1, 5, r[3]);
+      const q = HH(h, row, i + 20) % 6;
+      R(X + a, b, w, 6, q == 0 ? r[4] : q == 1 ? r[2] : r[3]);
+      R(X + a, b, w, 1, r[5]); R(X + a, b + 5, w, 1, r[1]);
+      if (i >= 0) R(X + i, b, 1, 5, r[4]);
       if (i + 15 < 32) R(X + i + 15, b, 1, 6, r[0]);
-      if (HH(h, row, i + 20) % 4 == 0) R(X + a + 3, b + 2, 3, 1, r[1]);
+      if (q == 3) { R(X + a + 4, b + 2, 3, 1, r[1]); R(X + a + 5, b + 3, 2, 1, r[2]); }
     }
   }
-  R(X, Y, 32, 8, '#2a2434'); R(X, Y, 32, 1, '#4a445a'); R(X, Y + 1, 32, 1, '#3a3446'); R(X, Y + 7, 32, 1, '#14101c');
-  R(X, Y + 28, 32, 4, r[1]); R(X, Y + 31, 32, 1, r[0]);
+  const cp = typeof r7 == 'function' ? r7('#3a3446') : null;   // the coping along the top
+  R(X, Y, 32, 8, cp ? cp[2] : '#2a2434'); R(X, Y, 32, 1, cp ? cp[5] : '#4a445a'); R(X, Y + 1, 32, 2, cp ? cp[3] : '#3a3446'); R(X, Y + 7, 32, 1, '#14101c');
+  for (let i = 0; i < 32; i += 8) R(X + i, Y + 2, 1, 5, cp ? cp[1] : '#14101c');
+  R(X, Y + 29, 32, 3, r[1]); R(X, Y + 29, 32, 1, r[2]); R(X, Y + 31, 32, 1, r[0]);   // the baseboard
 }
 NATIVE['W'] = (s, X, Y, h, nb, fr, tx, ty) => {
   if (nb(0, 1) != 'W') {
@@ -334,6 +364,7 @@ NATIVE['W'] = (s, X, Y, h, nb, fr, tx, ty) => {
     }
   } else {
     R(X, Y, 32, 32, '#2a2434');
+    for (let j = 0; j < 32; j += 16) for (let i = (j & 16) ? 8 : 0; i < 32; i += 16) { R(X + i, Y + j, 15, 15, '#302a3c'); R(X + i, Y + j, 15, 1, '#3a3446'); R(X + i, Y + j + 14, 15, 1, '#221c2c'); }
     if (nb(0, -1) != 'W') { R(X, Y, 32, 2, '#4a445a'); R(X, Y + 2, 32, 1, '#3a3446'); }
     if (nb(-1, 0) != 'W') R(X, Y, 2, 32, '#4a445a');
     if (nb(1, 0) != 'W') R(X + 30, Y, 2, 32, '#14101c');
@@ -566,9 +597,9 @@ renderMap = function (s, fr) {
   // shadows back on, as the shade of what's there now (and the native art's own shadows)
   const N = ctx.getImageData(0, 0, W * 2, H * 2), nd = N.data;
   const shq = new Uint8Array(W * H * 4);
-  for (const [x0, y0, w0, h0] of SHADEQ) for (let y = Math.max(0, y0); y < Math.min(H * 2, y0 + h0); y++) for (let x = Math.max(0, x0); x < Math.min(W * 2, x0 + w0); x++) shq[y * W * 2 + x] = 1;
+  for (const [x0, y0, w0, h0] of SHADEQ) for (let y = Math.max(0, y0); y < Math.min(H * 2, y0 + h0); y++) for (let x = Math.max(0, x0); x < Math.min(W * 2, x0 + w0); x++) if (shq[y * W * 2 + x] < 2) shq[y * W * 2 + x]++;
   SHADEQ = [];
-  for (let p = 0; p < W * H * 4; p++) if (shq[p]) { const i = p * 4, sh = shadeOf(nd[i], nd[i + 1], nd[i + 2]); nd[i] = sh[0]; nd[i + 1] = sh[1]; nd[i + 2] = sh[2]; }
+  for (let p = 0; p < W * H * 4; p++) for (let n = 0; n < shq[p]; n++) { const i = p * 4, sh = shadeOf(nd[i], nd[i + 1], nd[i + 2]); nd[i] = sh[0]; nd[i + 1] = sh[1]; nd[i + 2] = sh[2]; }
   for (let y = 0; y < H * 2; y++) for (let x = 0; x < W * 2; x++) {
     if (kind[(y >> 1) * W + (x >> 1)] != 1) continue;
     const i = (y * W * 2 + x) * 4, sh = shadeOf(nd[i], nd[i + 1], nd[i + 2]);

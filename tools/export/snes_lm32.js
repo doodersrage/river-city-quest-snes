@@ -677,3 +677,54 @@ LM32.trolley = (X, Y, W, H) => {   // a streetcar on display: green and gold, a 
   for (const a of [8, W - 16]) { R(X + a, Y + H - 6, 8, 6, OUTL); R(X + a + 2, Y + H - 5, 4, 3, '#5a5662'); }
   R(X + (W >> 1), Y - 8, 2, 12, OUTL);
 };
+
+/* ---------- inside (stage 14): stairs, counters, seats, iron-bound doors, crates, parapets ---------- */
+NATIVE['E'] = (s, X, Y, h, nb) => {   // stairs down: treads lit along their noses, each step deeper and darker
+  R(X, Y, 32, 32, '#0c0a12');
+  const st = ['#b0aabc', '#8a8498', '#6a6478', '#4a4458', '#2e2a3a'];
+  for (let i = 0; i < 5; i++) { const y = Y + i * 6, inset = i * 2; R(X + 2 + inset, y, 28 - inset * 2, 5, st[i]); R(X + 2 + inset, y, 28 - inset * 2, 1, i < 2 ? '#e4e0ec' : st[Math.max(0, i - 2)]); R(X + 2 + inset, y + 5, 28 - inset * 2, 1, '#0c0a12'); }
+  R(X, Y, 2, 32, '#3a3446'); R(X + 30, Y, 2, 32, '#1a1624');
+};
+NATIVE['V'] = (s, X, Y, h, nb) => {   // a shop counter: a marble top lit along its edge, panelled wood below
+  floor32(s, X, Y, h);
+  const w = r7('#5a3a22'), m = r7('#e8e4dc');
+  R(X, Y + 4, 32, 24, OUTL);
+  R(X, Y + 5, 32, 6, m[3]); R(X, Y + 5, 32, 2, m[6]); R(X, Y + 10, 32, 1, m[1]);
+  R(X, Y + 11, 32, 16, w[3]); R(X, Y + 11, 32, 1, w[1]);
+  for (const a of [3, 17]) { R(X + a, Y + 14, 12, 10, w[2]); R(X + a, Y + 14, 12, 1, w[1]); R(X + a, Y + 23, 12, 1, w[5]); R(X + a + 11, Y + 14, 1, 10, w[4]); R(X + a + 2, Y + 16, 8, 6, w[3]); }
+  if (nb(-1, 0) != 'V') R(X, Y + 5, 2, 22, m[5]);
+  if (nb(1, 0) != 'V') R(X + 30, Y + 5, 2, 22, w[0]);
+  R(X, Y + 28, 32, 3, 'shade');
+};
+NATIVE['h'] = (s, X, Y, h) => {   // theatre seats: two red velvet seats, their backs lit, gold numbers on the aisle
+  floor32(s, X, Y, h);
+  for (const a of [2, 18]) {
+    const v = r7('#a8243a');
+    R(X + a, Y + 4, 12, 24, OUTL); R(X + a + 1, Y + 5, 10, 14, v[3]); R(X + a + 1, Y + 5, 10, 3, v[5]); R(X + a + 1, Y + 5, 2, 14, v[4]); R(X + a + 9, Y + 5, 2, 14, v[1]);
+    R(X + a + 1, Y + 19, 10, 7, v[2]); R(X + a + 1, Y + 19, 10, 1, v[4]); R(X + a + 1, Y + 26, 10, 1, v[0]);
+    R(X + a + 4, Y + 8, 4, 2, '#f2c14e');
+  }
+};
+NATIVE['L'] = (s, X, Y, h) => {   // an iron-bound oak door in the wall: planks, two bands, studs, a brass lock
+  const c = s.wl || ['#5b5368', '#463f52', '#756c85'], wl = r7(c[0]);
+  R(X, Y, 32, 32, wl[2]); R(X + 2, Y + 2, 28, 30, OUTL);
+  const wd = r7('#7a4a28');
+  R(X + 4, Y + 4, 24, 28, wd[3]);
+  for (let i = 4; i < 28; i += 6) { R(X + i, Y + 4, 1, 28, wd[1]); R(X + i + 1, Y + 4, 1, 28, wd[5]); }
+  for (const b of [9, 23]) { R(X + 4, Y + b, 24, 4, '#3a3a48'); R(X + 4, Y + b, 24, 1, '#8a8a9a'); for (let i = 6; i < 28; i += 5) R(X + i, Y + b + 1, 2, 2, '#9a9aaa'); }
+  R(X + 12, Y + 14, 8, 8, '#f2c14e'); R(X + 12, Y + 14, 8, 2, '#fff2b0'); R(X + 15, Y + 16, 2, 2, OUTL); R(X + 15, Y + 18, 2, 3, OUTL);
+};
+NATIVE['g'] = (s, X, Y, h, nb) => {   // a wooden crate: boards, a cross brace, its shadow
+  floor32(s, X, Y, h); wallShade(X, Y, nb);
+  const w = r7('#7a5a3a');
+  R(X + 5, Y + 27, 24, 3, 'shade');
+  R(X + 4, Y + 8, 24, 20, OUTL); R(X + 6, Y + 10, 20, 16, w[3]); R(X + 6, Y + 10, 20, 2, w[5]); R(X + 6, Y + 24, 20, 2, w[1]);
+  for (let i = 0; i < 16; i++) { R(X + 6 + Math.round(i * 20 / 16), Y + 10 + i, 3, 1, w[4]); }
+  R(X + 6, Y + 17, 20, 1, w[1]); R(X + 4, Y + 8, 24, 2, w[6]);
+};
+NATIVE['Z'] = (s, X, Y, h, nb, fr, tx) => {   // a stone parapet: big capstones seen from above, a lit front edge
+  const st = r7('#2e2c36');
+  R(X, Y, 32, 32, st[2]);
+  for (let j = 0; j < 32; j += 16) for (let i = (j & 16) ? 8 : 0; i < 32; i += 16) { R(X + i, Y + j, 15, 15, st[3]); R(X + i, Y + j, 15, 1, st[5]); R(X + i, Y + j + 14, 15, 1, st[1]); }
+  if (nb(0, -1) != 'Z') { R(X, Y, 32, 4, st[5]); R(X, Y, 32, 1, st[6]); if (tx % 2 == 0) { R(X + 10, Y, 12, 8, st[1]); R(X + 12, Y, 8, 6, st[4]); } }
+};
