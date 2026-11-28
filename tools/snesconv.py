@@ -1042,10 +1042,14 @@ def convert_town(exp, tok_pal={}):
                     idx.append(nearest(c15(p_), tok_pal.get(palk, pal)) + 1 if p_[3] > 96 else 0)
             sheet[t - first + qy * 16 + qx] = tile4bpp(idx)
 
+    # stage 14: the vehicles are drawn at 32 px (tools/art/vehicles.py), not the web game's cells through Scale2x
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'art'))
+    import vehicles
+    vart = vehicles.sheet()
+    VX = {0: 0, 2: 64, 6: 128}   # first town cell -> x in the vehicle sheet (red car, the cab, the bus)
+
     def vehicle(sheet, v0, cells):   # cells: town cells left to right; each becomes 4 VRAM cells (piece p: v0 + 4p + q)
-        strip = Image.new('RGBA', (16 * len(cells), 16), (0, 0, 0, 0))
-        for i, c in enumerate(cells): strip.paste(im.crop((c * 16, 0, c * 16 + 16, 16)), (i * 16, 0))
-        big = scale2x_rgba(strip)
+        big = vart.crop((VX[cells[0]], 0, VX[cells[0]] + 32 * len(cells), 32))
         for i in range(len(cells)):
             for q, (qx, qy) in enumerate(((0, 0), (1, 0), (0, 1), (1, 1))):
                 put(sheet, v0 + i * 4 + q, big.crop((i * 32 + qx * 16, qy * 16, i * 32 + qx * 16 + 16, qy * 16 + 16)), -1)
