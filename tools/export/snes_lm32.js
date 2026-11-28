@@ -685,8 +685,7 @@ NATIVE['E'] = (s, X, Y, h, nb) => {   // stairs down: treads lit along their nos
   for (let i = 0; i < 5; i++) { const y = Y + i * 6, inset = i * 2; R(X + 2 + inset, y, 28 - inset * 2, 5, st[i]); R(X + 2 + inset, y, 28 - inset * 2, 1, i < 2 ? '#e4e0ec' : st[Math.max(0, i - 2)]); R(X + 2 + inset, y + 5, 28 - inset * 2, 1, '#0c0a12'); }
   R(X, Y, 2, 32, '#3a3446'); R(X + 30, Y, 2, 32, '#1a1624');
 };
-NATIVE['V'] = (s, X, Y, h, nb) => {   // a shop counter: a marble top lit along its edge, panelled wood below
-  floor32(s, X, Y, h);
+PROP32.V = (s, X, Y, h, nb) => {   // a shop counter: a marble top lit along its edge, panelled wood below
   const w = r7('#5a3a22'), m = r7('#e8e4dc');
   R(X, Y + 4, 32, 24, OUTL);
   R(X, Y + 5, 32, 6, m[3]); R(X, Y + 5, 32, 2, m[6]); R(X, Y + 10, 32, 1, m[1]);
@@ -696,8 +695,7 @@ NATIVE['V'] = (s, X, Y, h, nb) => {   // a shop counter: a marble top lit along 
   if (nb(1, 0) != 'V') R(X + 30, Y + 5, 2, 22, w[0]);
   R(X, Y + 28, 32, 3, 'shade');
 };
-NATIVE['h'] = (s, X, Y, h) => {   // theatre seats: two red velvet seats, their backs lit, gold numbers on the aisle
-  floor32(s, X, Y, h);
+PROP32.h = (s, X, Y, h) => {   // theatre seats: two red velvet seats, their backs lit, gold numbers on the aisle
   for (const a of [2, 18]) {
     const v = r7('#a8243a');
     R(X + a, Y + 4, 12, 24, OUTL); R(X + a + 1, Y + 5, 10, 14, v[3]); R(X + a + 1, Y + 5, 10, 3, v[5]); R(X + a + 1, Y + 5, 2, 14, v[4]); R(X + a + 9, Y + 5, 2, 14, v[1]);
@@ -714,8 +712,7 @@ NATIVE['L'] = (s, X, Y, h) => {   // an iron-bound oak door in the wall: planks,
   for (const b of [9, 23]) { R(X + 4, Y + b, 24, 4, '#3a3a48'); R(X + 4, Y + b, 24, 1, '#8a8a9a'); for (let i = 6; i < 28; i += 5) R(X + i, Y + b + 1, 2, 2, '#9a9aaa'); }
   R(X + 12, Y + 14, 8, 8, '#f2c14e'); R(X + 12, Y + 14, 8, 2, '#fff2b0'); R(X + 15, Y + 16, 2, 2, OUTL); R(X + 15, Y + 18, 2, 3, OUTL);
 };
-NATIVE['g'] = (s, X, Y, h, nb) => {   // a wooden crate: boards, a cross brace, its shadow
-  floor32(s, X, Y, h); wallShade(X, Y, nb);
+PROP32.g = (s, X, Y, h, nb) => {   // a wooden crate: boards, a cross brace, its shadow
   const w = r7('#7a5a3a');
   R(X + 5, Y + 27, 24, 3, 'shade');
   R(X + 4, Y + 8, 24, 20, OUTL); R(X + 6, Y + 10, 20, 16, w[3]); R(X + 6, Y + 10, 20, 2, w[5]); R(X + 6, Y + 24, 20, 2, w[1]);
@@ -727,4 +724,47 @@ NATIVE['Z'] = (s, X, Y, h, nb, fr, tx) => {   // a stone parapet: big capstones 
   R(X, Y, 32, 32, st[2]);
   for (let j = 0; j < 32; j += 16) for (let i = (j & 16) ? 8 : 0; i < 32; i += 16) { R(X + i, Y + j, 15, 15, st[3]); R(X + i, Y + j, 15, 1, st[5]); R(X + i, Y + j + 14, 15, 1, st[1]); }
   if (nb(0, -1) != 'Z') { R(X, Y, 32, 4, st[5]); R(X, Y, 32, 1, st[6]); if (tx % 2 == 0) { R(X + 10, Y, 12, 8, st[1]); R(X + 12, Y, 8, 6, st[4]); } }
+};
+
+/* chests: an oak chest bound in brass, closed (its lock glinting) or thrown open (the lid up, the dark inside) */
+PROP32.c = (s, X, Y) => {
+  const w = r7('#a8642c'), b = r7('#f2c14e');
+  R(X + 4, Y + 26, 26, 4, 'shade');
+  R(X + 2, Y + 6, 28, 22, OUTL);
+  R(X + 4, Y + 8, 24, 8, w[4]); R(X + 4, Y + 8, 24, 2, w[6]); R(X + 4, Y + 14, 24, 2, w[2]);   // the lid, rounded
+  R(X + 4, Y + 16, 24, 10, w[3]); R(X + 4, Y + 16, 24, 1, w[0]); R(X + 4, Y + 24, 24, 2, w[1]);
+  for (const a of [6, 23]) { R(X + a, Y + 8, 3, 18, b[2]); R(X + a, Y + 8, 1, 18, b[5]); }
+  R(X + 13, Y + 13, 6, 8, b[3]); R(X + 13, Y + 13, 6, 2, b[6]); R(X + 15, Y + 16, 2, 3, OUTL);
+};
+PROP32.o = (s, X, Y) => {
+  const w = r7('#a8642c'), b = r7('#f2c14e');
+  R(X + 4, Y + 26, 26, 4, 'shade');
+  R(X + 2, Y + 2, 28, 26, OUTL);
+  R(X + 4, Y + 4, 24, 8, w[4]); R(X + 4, Y + 4, 24, 2, w[6]); R(X + 4, Y + 10, 24, 2, w[2]);   // the lid, thrown back
+  R(X + 4, Y + 12, 24, 5, '#1a1008'); R(X + 6, Y + 13, 20, 2, '#2a1810');
+  R(X + 4, Y + 17, 24, 9, w[3]); R(X + 4, Y + 17, 24, 1, w[5]); R(X + 4, Y + 24, 24, 2, w[1]);
+  for (const a of [6, 23]) { R(X + a, Y + 4, 3, 22, b[2]); R(X + a, Y + 4, 1, 22, b[5]); }
+};
+/* a statue on its plinth: bronze (with a green patina), marble or a dark bust, shaded round its form */
+PROP32.Y = (s, X, Y) => {
+  const mar = s.statue == 'marble', bust = s.statue == 'bust', m = r7(mar ? '#e4e0d6' : bust ? '#3a3446' : '#4a6a5a'), st = r7('#8a8690');
+  R(X + 4, Y + 28, 26, 3, 'shade');
+  R(X + 4, Y + 18, 24, 12, OUTL); R(X + 6, Y + 20, 20, 9, st[3]); R(X + 6, Y + 20, 20, 2, st[6]); R(X + 6, Y + 27, 20, 2, st[1]);
+  if (bust) {
+    R(X + 9, Y + 4, 14, 15, OUTL); R(X + 11, Y + 3, 10, 2, OUTL);
+    R(X + 11, Y + 5, 10, 8, m[3]); R(X + 11, Y + 5, 3, 8, m[5]); R(X + 19, Y + 5, 2, 8, m[1]);
+    R(X + 10, Y + 13, 12, 6, m[3]); R(X + 10, Y + 13, 4, 6, m[5]); R(X + 20, Y + 13, 2, 6, m[1]);
+  } else {
+    R(X + 12, Y - 2, 8, 9, OUTL); R(X + 13, Y - 1, 6, 7, m[3]); R(X + 13, Y - 1, 2, 7, m[5]);         // the head
+    R(X + 9, Y + 6, 14, 13, OUTL); R(X + 10, Y + 7, 12, 11, m[3]); R(X + 10, Y + 7, 3, 11, m[5]); R(X + 20, Y + 7, 2, 11, m[1]);   // the body
+    R(X + 6, Y + 8, 4, 7, OUTL); R(X + 7, Y + 9, 2, 5, m[4]); R(X + 22, Y + 8, 4, 7, OUTL); R(X + 23, Y + 9, 2, 5, m[2]);           // the arms
+    if (!mar) { R(X + 14, Y + 9, 2, 2, m[6]); R(X + 18, Y + 14, 2, 3, m[1]); }
+  }
+};
+/* a stone pedestal (j, J): a column drum with a lit top */
+PROP32.j = PROP32.J = (s, X, Y) => {
+  const st = r7('#4a4458');
+  R(X + 6, Y + 26, 22, 4, 'shade');
+  R(X + 8, Y + 14, 16, 16, OUTL); R(X + 10, Y + 18, 12, 11, st[3]); R(X + 10, Y + 18, 3, 11, st[5]); R(X + 19, Y + 18, 3, 11, st[1]);
+  R(X + 8, Y + 14, 16, 5, st[5]); R(X + 8, Y + 14, 16, 1, st[6]); R(X + 8, Y + 18, 16, 1, st[1]);
 };

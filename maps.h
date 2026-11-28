@@ -5,160 +5,160 @@
 #define MAP_COUNT 79
 #define COL_STRIDE 32
 
-extern char m0_chr, m0_ch1, m0_map, m0_grid, m0_pal, m0_col, m0_wld, m0_och, m0_opl, m0_ene, m0_xtr;  /* Richmond Raceway: 1346 tiles, 350 metatiles */
-extern char m1_chr, m1_ch1, m1_map, m1_grid, m1_pal, m1_col, m1_wld, m1_och, m1_opl, m1_ene, m1_xtr;  /* Bryan Park: 1125 tiles, 212 metatiles */
-extern char m1_ani;  /* 11 animated tiles from tile id 1114 */
-extern char m2_chr, m2_ch1, m2_map, m2_grid, m2_pal, m2_col, m2_wld, m2_och, m2_opl, m2_ene, m2_xtr;  /* Lewis Ginter Botanical Garden: 1257 tiles, 222 metatiles */
-extern char m2_ani;  /* 8 animated tiles from tile id 1249 */
-extern char m3_chr, m3_ch1, m3_map, m3_grid, m3_pal, m3_col, m3_wld, m3_och, m3_opl, m3_ene, m3_xtr;  /* VCU & Court End: 1222 tiles, 272 metatiles */
-extern char m3_ani;  /* 41 animated tiles from tile id 1181 */
-extern char m4_chr, m4_ch1, m4_map, m4_grid, m4_pal, m4_col, m4_wld, m4_och, m4_opl, m4_ene, m4_xtr;  /* Arthur Ashe Boulevard: 1593 tiles, 319 metatiles */
-extern char m4_ani;  /* 39 animated tiles from tile id 1554 */
-extern char m5_chr, m5_ch1, m5_map, m5_grid, m5_pal, m5_col, m5_wld, m5_och, m5_opl, m5_ene, m5_xtr;  /* Scott's Addition: 1693 tiles, 261 metatiles */
-extern char m6_chr, m6_ch1, m6_map, m6_grid, m6_pal, m6_col, m6_wld, m6_och, m6_opl, m6_ene, m6_xtr;  /* Broad Street: 1856 tiles, 314 metatiles */
-extern char m7_chr, m7_ch1, m7_map, m7_grid, m7_pal, m7_col, m7_wld, m7_och, m7_opl, m7_ene, m7_xtr;  /* Jackson Ward: 1045 tiles, 201 metatiles */
-extern char m7_ani;  /* 27 animated tiles from tile id 1018 */
-extern char m8_chr, m8_ch1, m8_map, m8_grid, m8_pal, m8_col, m8_wld, m8_och, m8_opl, m8_ene, m8_xtr;  /* Church Hill: 1143 tiles, 236 metatiles */
-extern char m8_ani;  /* 16 animated tiles from tile id 1127 */
+extern char m0_chr, m0_ch1, m0_map, m0_grid, m0_pal, m0_col, m0_wld, m0_och, m0_opl, m0_ene, m0_xtr;  /* Richmond Raceway: 1341 tiles, 350 metatiles */
+extern char m1_chr, m1_ch1, m1_map, m1_grid, m1_pal, m1_col, m1_wld, m1_och, m1_opl, m1_ene, m1_xtr;  /* Bryan Park: 1139 tiles, 214 metatiles */
+extern char m1_ani;  /* 11 animated tiles from tile id 1128 */
+extern char m2_chr, m2_ch1, m2_map, m2_grid, m2_pal, m2_col, m2_wld, m2_och, m2_opl, m2_ene, m2_xtr;  /* Lewis Ginter Botanical Garden: 1259 tiles, 222 metatiles */
+extern char m2_ani;  /* 8 animated tiles from tile id 1251 */
+extern char m3_chr, m3_ch1, m3_map, m3_grid, m3_pal, m3_col, m3_wld, m3_och, m3_opl, m3_ene, m3_xtr;  /* VCU & Court End: 1254 tiles, 272 metatiles */
+extern char m3_ani;  /* 47 animated tiles from tile id 1207 */
+extern char m4_chr, m4_ch1, m4_map, m4_grid, m4_pal, m4_col, m4_wld, m4_och, m4_opl, m4_ene, m4_xtr;  /* Arthur Ashe Boulevard: 1585 tiles, 319 metatiles */
+extern char m4_ani;  /* 15 animated tiles from tile id 1570 */
+extern char m5_chr, m5_ch1, m5_map, m5_grid, m5_pal, m5_col, m5_wld, m5_och, m5_opl, m5_ene, m5_xtr;  /* Scott's Addition: 1698 tiles, 260 metatiles */
+extern char m6_chr, m6_ch1, m6_map, m6_grid, m6_pal, m6_col, m6_wld, m6_och, m6_opl, m6_ene, m6_xtr;  /* Broad Street: 1829 tiles, 314 metatiles */
+extern char m7_chr, m7_ch1, m7_map, m7_grid, m7_pal, m7_col, m7_wld, m7_och, m7_opl, m7_ene, m7_xtr;  /* Jackson Ward: 1050 tiles, 201 metatiles */
+extern char m7_ani;  /* 27 animated tiles from tile id 1023 */
+extern char m8_chr, m8_ch1, m8_map, m8_grid, m8_pal, m8_col, m8_wld, m8_och, m8_opl, m8_ene, m8_xtr;  /* Church Hill: 1144 tiles, 236 metatiles */
+extern char m8_ani;  /* 16 animated tiles from tile id 1128 */
 extern char m9_chr, m9_ch1, m9_map, m9_grid, m9_pal, m9_col, m9_wld, m9_och, m9_opl, m9_ene, m9_xtr;  /* Chimborazo: 1147 tiles, 227 metatiles */
 extern char m9_ani;  /* 8 animated tiles from tile id 1139 */
-extern char m10_chr, m10_ch1, m10_map, m10_grid, m10_pal, m10_col, m10_wld, m10_och, m10_opl, m10_ene, m10_xtr;  /* Carytown: 1456 tiles, 272 metatiles */
-extern char m10_ani;  /* 43 animated tiles from tile id 1413 */
-extern char m11_chr, m11_ch1, m11_map, m11_grid, m11_pal, m11_col, m11_wld, m11_och, m11_opl, m11_ene, m11_xtr;  /* The Fan: 1441 tiles, 239 metatiles */
-extern char m12_chr, m12_ch1, m12_map, m12_grid, m12_pal, m12_col, m12_wld, m12_och, m12_opl, m12_ene, m12_xtr;  /* Capitol Square: 1306 tiles, 201 metatiles */
-extern char m12_ani;  /* 17 animated tiles from tile id 1289 */
-extern char m13_chr, m13_ch1, m13_map, m13_grid, m13_pal, m13_col, m13_wld, m13_och, m13_opl, m13_ene, m13_xtr;  /* Shockoe Bottom: 1145 tiles, 202 metatiles */
-extern char m13_ani;  /* 29 animated tiles from tile id 1116 */
-extern char m14_chr, m14_ch1, m14_map, m14_grid, m14_pal, m14_col, m14_wld, m14_och, m14_opl, m14_ene, m14_xtr;  /* Canal Walk & Brown's Island: 1223 tiles, 256 metatiles */
-extern char m14_ani;  /* 28 animated tiles from tile id 1195 */
-extern char m15_chr, m15_ch1, m15_map, m15_grid, m15_pal, m15_col, m15_wld, m15_och, m15_opl, m15_ene, m15_xtr;  /* Texas Beach & Agecroft: 1767 tiles, 297 metatiles */
-extern char m15_ani;  /* 49 animated tiles from tile id 1718 */
-extern char m16_chr, m16_ch1, m16_map, m16_grid, m16_pal, m16_col, m16_wld, m16_och, m16_opl, m16_ene, m16_xtr;  /* Byrd Park & Maymont: 1734 tiles, 286 metatiles */
-extern char m16_ani;  /* 49 animated tiles from tile id 1685 */
-extern char m17_chr, m17_ch1, m17_map, m17_grid, m17_pal, m17_col, m17_wld, m17_och, m17_opl, m17_ene, m17_xtr;  /* Hollywood Cemetery: 1135 tiles, 189 metatiles */
-extern char m17_ani;  /* 13 animated tiles from tile id 1122 */
-extern char m18_chr, m18_ch1, m18_map, m18_grid, m18_pal, m18_col, m18_wld, m18_och, m18_opl, m18_ene, m18_xtr;  /* Belle Isle: 928 tiles, 171 metatiles */
-extern char m18_ani;  /* 44 animated tiles from tile id 884 */
-extern char m19_chr, m19_ch1, m19_map, m19_grid, m19_pal, m19_col, m19_wld, m19_och, m19_opl, m19_ene, m19_xtr;  /* Rocketts Landing: 862 tiles, 151 metatiles */
-extern char m19_ani;  /* 60 animated tiles from tile id 802 */
-extern char m20_chr, m20_ch1, m20_map, m20_grid, m20_pal, m20_col, m20_wld, m20_och, m20_opl, m20_ene, m20_xtr;  /* Pony Pasture: 1345 tiles, 275 metatiles */
-extern char m20_ani;  /* 33 animated tiles from tile id 1312 */
-extern char m21_chr, m21_ch1, m21_map, m21_grid, m21_pal, m21_col, m21_wld, m21_och, m21_opl, m21_ene, m21_xtr;  /* Forest Hill Park: 1112 tiles, 194 metatiles */
-extern char m21_ani;  /* 34 animated tiles from tile id 1078 */
-extern char m22_chr, m22_ch1, m22_map, m22_grid, m22_pal, m22_col, m22_wld, m22_och, m22_opl, m22_ene, m22_xtr;  /* Manchester: 1057 tiles, 182 metatiles */
-extern char m22_ani;  /* 31 animated tiles from tile id 1026 */
+extern char m10_chr, m10_ch1, m10_map, m10_grid, m10_pal, m10_col, m10_wld, m10_och, m10_opl, m10_ene, m10_xtr;  /* Carytown: 1449 tiles, 272 metatiles */
+extern char m10_ani;  /* 43 animated tiles from tile id 1406 */
+extern char m11_chr, m11_ch1, m11_map, m11_grid, m11_pal, m11_col, m11_wld, m11_och, m11_opl, m11_ene, m11_xtr;  /* The Fan: 1441 tiles, 240 metatiles */
+extern char m12_chr, m12_ch1, m12_map, m12_grid, m12_pal, m12_col, m12_wld, m12_och, m12_opl, m12_ene, m12_xtr;  /* Capitol Square: 1324 tiles, 202 metatiles */
+extern char m12_ani;  /* 17 animated tiles from tile id 1307 */
+extern char m13_chr, m13_ch1, m13_map, m13_grid, m13_pal, m13_col, m13_wld, m13_och, m13_opl, m13_ene, m13_xtr;  /* Shockoe Bottom: 1150 tiles, 201 metatiles */
+extern char m13_ani;  /* 29 animated tiles from tile id 1121 */
+extern char m14_chr, m14_ch1, m14_map, m14_grid, m14_pal, m14_col, m14_wld, m14_och, m14_opl, m14_ene, m14_xtr;  /* Canal Walk & Brown's Island: 1241 tiles, 256 metatiles */
+extern char m14_ani;  /* 28 animated tiles from tile id 1213 */
+extern char m15_chr, m15_ch1, m15_map, m15_grid, m15_pal, m15_col, m15_wld, m15_och, m15_opl, m15_ene, m15_xtr;  /* Texas Beach & Agecroft: 1781 tiles, 297 metatiles */
+extern char m15_ani;  /* 49 animated tiles from tile id 1732 */
+extern char m16_chr, m16_ch1, m16_map, m16_grid, m16_pal, m16_col, m16_wld, m16_och, m16_opl, m16_ene, m16_xtr;  /* Byrd Park & Maymont: 1731 tiles, 286 metatiles */
+extern char m16_ani;  /* 49 animated tiles from tile id 1682 */
+extern char m17_chr, m17_ch1, m17_map, m17_grid, m17_pal, m17_col, m17_wld, m17_och, m17_opl, m17_ene, m17_xtr;  /* Hollywood Cemetery: 1137 tiles, 189 metatiles */
+extern char m17_ani;  /* 13 animated tiles from tile id 1124 */
+extern char m18_chr, m18_ch1, m18_map, m18_grid, m18_pal, m18_col, m18_wld, m18_och, m18_opl, m18_ene, m18_xtr;  /* Belle Isle: 930 tiles, 171 metatiles */
+extern char m18_ani;  /* 44 animated tiles from tile id 886 */
+extern char m19_chr, m19_ch1, m19_map, m19_grid, m19_pal, m19_col, m19_wld, m19_och, m19_opl, m19_ene, m19_xtr;  /* Rocketts Landing: 866 tiles, 151 metatiles */
+extern char m19_ani;  /* 61 animated tiles from tile id 805 */
+extern char m20_chr, m20_ch1, m20_map, m20_grid, m20_pal, m20_col, m20_wld, m20_och, m20_opl, m20_ene, m20_xtr;  /* Pony Pasture: 1348 tiles, 275 metatiles */
+extern char m20_ani;  /* 33 animated tiles from tile id 1315 */
+extern char m21_chr, m21_ch1, m21_map, m21_grid, m21_pal, m21_col, m21_wld, m21_och, m21_opl, m21_ene, m21_xtr;  /* Forest Hill Park: 1120 tiles, 195 metatiles */
+extern char m21_ani;  /* 34 animated tiles from tile id 1086 */
+extern char m22_chr, m22_ch1, m22_map, m22_grid, m22_pal, m22_col, m22_wld, m22_och, m22_opl, m22_ene, m22_xtr;  /* Manchester: 1055 tiles, 181 metatiles */
+extern char m22_ani;  /* 31 animated tiles from tile id 1024 */
 extern char m23_chr, m23_ch1, m23_map, m23_grid, m23_pal, m23_col, m23_wld, m23_och, m23_opl, m23_ene, m23_xtr;  /* Ancarrow's Landing: 1065 tiles, 182 metatiles */
 extern char m23_ani;  /* 31 animated tiles from tile id 1034 */
-extern char m24_chr, m24_ch1, m24_map, m24_grid, m24_pal, m24_col, m24_wld, m24_och, m24_opl, m24_ene, m24_xtr;  /* Agecroft Hall: 197 tiles, 42 metatiles */
-extern char m24_ani;  /* 5 animated tiles from tile id 192 */
-extern char m25_chr, m25_ch1, m25_map, m25_grid, m25_pal, m25_col, m25_wld, m25_och, m25_opl, m25_ene, m25_xtr;  /* St. Luke Penny Savings Bank: 162 tiles, 41 metatiles */
-extern char m25_ani;  /* 6 animated tiles from tile id 156 */
-extern char m26_chr, m26_ch1, m26_map, m26_grid, m26_pal, m26_col, m26_wld, m26_och, m26_opl, m26_ene, m26_xtr;  /* Black History Museum: 149 tiles, 36 metatiles */
-extern char m26_ani;  /* 4 animated tiles from tile id 145 */
-extern char m27_chr, m27_ch1, m27_map, m27_grid, m27_pal, m27_col, m27_wld, m27_och, m27_opl, m27_ene, m27_xtr;  /* Rocketts Boathouse: 275 tiles, 58 metatiles */
-extern char m27_ani;  /* 14 animated tiles from tile id 261 */
-extern char m28_chr, m28_ch1, m28_map, m28_grid, m28_pal, m28_col, m28_wld, m28_och, m28_opl, m28_ene, m28_xtr;  /* The Byrd Theatre: 178 tiles, 37 metatiles */
-extern char m28_ani;  /* 4 animated tiles from tile id 174 */
-extern char m29_chr, m29_ch1, m29_map, m29_grid, m29_pal, m29_col, m29_wld, m29_och, m29_opl, m29_ene, m29_xtr;  /* Capitol Rotunda: 163 tiles, 36 metatiles */
-extern char m29_ani;  /* 5 animated tiles from tile id 158 */
-extern char m30_chr, m30_ch1, m30_map, m30_grid, m30_pal, m30_col, m30_wld, m30_och, m30_opl, m30_ene, m30_xtr;  /* Bell Loft: 189 tiles, 43 metatiles */
-extern char m30_ani;  /* 5 animated tiles from tile id 184 */
+extern char m24_chr, m24_ch1, m24_map, m24_grid, m24_pal, m24_col, m24_wld, m24_och, m24_opl, m24_ene, m24_xtr;  /* Agecroft Hall: 181 tiles, 42 metatiles */
+extern char m24_ani;  /* 5 animated tiles from tile id 176 */
+extern char m25_chr, m25_ch1, m25_map, m25_grid, m25_pal, m25_col, m25_wld, m25_och, m25_opl, m25_ene, m25_xtr;  /* St. Luke Penny Savings Bank: 157 tiles, 41 metatiles */
+extern char m25_ani;  /* 6 animated tiles from tile id 151 */
+extern char m26_chr, m26_ch1, m26_map, m26_grid, m26_pal, m26_col, m26_wld, m26_och, m26_opl, m26_ene, m26_xtr;  /* Black History Museum: 135 tiles, 36 metatiles */
+extern char m26_ani;  /* 4 animated tiles from tile id 131 */
+extern char m27_chr, m27_ch1, m27_map, m27_grid, m27_pal, m27_col, m27_wld, m27_och, m27_opl, m27_ene, m27_xtr;  /* Rocketts Boathouse: 274 tiles, 58 metatiles */
+extern char m27_ani;  /* 14 animated tiles from tile id 260 */
+extern char m28_chr, m28_ch1, m28_map, m28_grid, m28_pal, m28_col, m28_wld, m28_och, m28_opl, m28_ene, m28_xtr;  /* The Byrd Theatre: 174 tiles, 37 metatiles */
+extern char m28_ani;  /* 4 animated tiles from tile id 170 */
+extern char m29_chr, m29_ch1, m29_map, m29_grid, m29_pal, m29_col, m29_wld, m29_och, m29_opl, m29_ene, m29_xtr;  /* Capitol Rotunda: 165 tiles, 37 metatiles */
+extern char m29_ani;  /* 5 animated tiles from tile id 160 */
+extern char m30_chr, m30_ch1, m30_map, m30_grid, m30_pal, m30_col, m30_wld, m30_och, m30_opl, m30_ene, m30_xtr;  /* Bell Loft: 192 tiles, 43 metatiles */
+extern char m30_ani;  /* 5 animated tiles from tile id 187 */
 extern char m31_chr, m31_ch1, m31_map, m31_grid, m31_pal, m31_col, m31_wld, m31_och, m31_opl, m31_ene, m31_xtr;  /* The Great Bell: 168 tiles, 44 metatiles */
 extern char m31_ani;  /* 6 animated tiles from tile id 162 */
-extern char m32_chr, m32_ch1, m32_map, m32_grid, m32_pal, m32_col, m32_wld, m32_och, m32_opl, m32_ene, m32_xtr;  /* Rope Room: 198 tiles, 48 metatiles */
-extern char m32_ani;  /* 6 animated tiles from tile id 192 */
+extern char m32_chr, m32_ch1, m32_map, m32_grid, m32_pal, m32_col, m32_wld, m32_och, m32_opl, m32_ene, m32_xtr;  /* Rope Room: 200 tiles, 48 metatiles */
+extern char m32_ani;  /* 6 animated tiles from tile id 194 */
 extern char m33_chr, m33_ch1, m33_map, m33_grid, m33_pal, m33_col, m33_wld, m33_och, m33_opl, m33_ene, m33_xtr;  /* Carillon Base: 165 tiles, 44 metatiles */
 extern char m33_ani;  /* 6 animated tiles from tile id 159 */
-extern char m34_chr, m34_ch1, m34_map, m34_grid, m34_pal, m34_col, m34_wld, m34_och, m34_opl, m34_ene, m34_xtr;  /* Belfry Ledge: 193 tiles, 43 metatiles */
-extern char m34_ani;  /* 4 animated tiles from tile id 189 */
+extern char m34_chr, m34_ch1, m34_map, m34_grid, m34_pal, m34_col, m34_wld, m34_och, m34_opl, m34_ene, m34_xtr;  /* Belfry Ledge: 196 tiles, 44 metatiles */
+extern char m34_ani;  /* 4 animated tiles from tile id 192 */
 extern char m35_chr, m35_ch1, m35_map, m35_grid, m35_pal, m35_col, m35_wld, m35_och, m35_opl, m35_ene, m35_xtr;  /* Under the Dome: 325 tiles, 54 metatiles */
 extern char m35_ani;  /* 6 animated tiles from tile id 319 */
-extern char m36_chr, m36_ch1, m36_map, m36_grid, m36_pal, m36_col, m36_wld, m36_och, m36_opl, m36_ene, m36_xtr;  /* Fern Gully: 301 tiles, 64 metatiles */
-extern char m36_ani;  /* 6 animated tiles from tile id 295 */
+extern char m36_chr, m36_ch1, m36_map, m36_grid, m36_pal, m36_col, m36_wld, m36_och, m36_opl, m36_ene, m36_xtr;  /* Fern Gully: 302 tiles, 64 metatiles */
+extern char m36_ani;  /* 6 animated tiles from tile id 296 */
 extern char m37_chr, m37_ch1, m37_map, m37_grid, m37_pal, m37_col, m37_wld, m37_och, m37_opl, m37_ene, m37_xtr;  /* Palm House: 291 tiles, 50 metatiles */
 extern char m37_ani;  /* 5 animated tiles from tile id 286 */
-extern char m38_chr, m38_ch1, m38_map, m38_grid, m38_pal, m38_col, m38_wld, m38_och, m38_opl, m38_ene, m38_xtr;  /* Orchid Room: 374 tiles, 62 metatiles */
-extern char m38_ani;  /* 5 animated tiles from tile id 369 */
-extern char m39_chr, m39_ch1, m39_map, m39_grid, m39_pal, m39_col, m39_wld, m39_och, m39_opl, m39_ene, m39_xtr;  /* The Hippodrome: 195 tiles, 46 metatiles */
-extern char m39_ani;  /* 6 animated tiles from tile id 189 */
-extern char m40_chr, m40_ch1, m40_map, m40_grid, m40_pal, m40_col, m40_wld, m40_och, m40_opl, m40_ene, m40_xtr;  /* The Jefferson Hotel: 216 tiles, 42 metatiles */
-extern char m40_ani;  /* 13 animated tiles from tile id 203 */
-extern char m41_chr, m41_ch1, m41_map, m41_grid, m41_pal, m41_col, m41_wld, m41_och, m41_opl, m41_ene, m41_xtr;  /* Cave Under Libby Hill: 185 tiles, 40 metatiles */
-extern char m41_ani;  /* 5 animated tiles from tile id 180 */
-extern char m42_chr, m42_ch1, m42_map, m42_grid, m42_pal, m42_col, m42_wld, m42_och, m42_opl, m42_ene, m42_xtr;  /* Maymont House: 217 tiles, 43 metatiles */
+extern char m38_chr, m38_ch1, m38_map, m38_grid, m38_pal, m38_col, m38_wld, m38_och, m38_opl, m38_ene, m38_xtr;  /* Orchid Room: 378 tiles, 62 metatiles */
+extern char m38_ani;  /* 5 animated tiles from tile id 373 */
+extern char m39_chr, m39_ch1, m39_map, m39_grid, m39_pal, m39_col, m39_wld, m39_och, m39_opl, m39_ene, m39_xtr;  /* The Hippodrome: 198 tiles, 47 metatiles */
+extern char m39_ani;  /* 6 animated tiles from tile id 192 */
+extern char m40_chr, m40_ch1, m40_map, m40_grid, m40_pal, m40_col, m40_wld, m40_och, m40_opl, m40_ene, m40_xtr;  /* The Jefferson Hotel: 218 tiles, 44 metatiles */
+extern char m40_ani;  /* 13 animated tiles from tile id 205 */
+extern char m41_chr, m41_ch1, m41_map, m41_grid, m41_pal, m41_col, m41_wld, m41_och, m41_opl, m41_ene, m41_xtr;  /* Cave Under Libby Hill: 187 tiles, 40 metatiles */
+extern char m41_ani;  /* 5 animated tiles from tile id 182 */
+extern char m42_chr, m42_ch1, m42_map, m42_grid, m42_pal, m42_col, m42_wld, m42_och, m42_opl, m42_ene, m42_xtr;  /* Maymont House: 217 tiles, 44 metatiles */
 extern char m42_ani;  /* 5 animated tiles from tile id 212 */
-extern char m43_chr, m43_ch1, m43_map, m43_grid, m43_pal, m43_col, m43_wld, m43_och, m43_opl, m43_ene, m43_xtr;  /* John Marshall House: 171 tiles, 42 metatiles */
-extern char m43_ani;  /* 6 animated tiles from tile id 165 */
+extern char m43_chr, m43_ch1, m43_map, m43_grid, m43_pal, m43_col, m43_wld, m43_och, m43_opl, m43_ene, m43_xtr;  /* John Marshall House: 162 tiles, 42 metatiles */
+extern char m43_ani;  /* 6 animated tiles from tile id 156 */
 extern char m44_chr, m44_ch1, m44_map, m44_grid, m44_pal, m44_col, m44_wld, m44_och, m44_opl, m44_ene, m44_xtr;  /* Enchanted Garden: 394 tiles, 65 metatiles */
 extern char m44_ani;  /* 14 animated tiles from tile id 380 */
-extern char m45_chr, m45_ch1, m45_map, m45_grid, m45_pal, m45_col, m45_wld, m45_och, m45_opl, m45_ene, m45_xtr;  /* Hidden Vault: 174 tiles, 41 metatiles */
-extern char m45_ani;  /* 6 animated tiles from tile id 168 */
+extern char m45_chr, m45_ch1, m45_map, m45_grid, m45_pal, m45_col, m45_wld, m45_och, m45_opl, m45_ene, m45_xtr;  /* Hidden Vault: 172 tiles, 41 metatiles */
+extern char m45_ani;  /* 6 animated tiles from tile id 166 */
 extern char m46_chr, m46_ch1, m46_map, m46_grid, m46_pal, m46_col, m46_wld, m46_och, m46_opl, m46_ene, m46_xtr;  /* The Raven's Roost: 147 tiles, 41 metatiles */
 extern char m46_ani;  /* 5 animated tiles from tile id 142 */
-extern char m47_chr, m47_ch1, m47_map, m47_grid, m47_pal, m47_col, m47_wld, m47_och, m47_opl, m47_ene, m47_xtr;  /* Raven's Study: 189 tiles, 48 metatiles */
-extern char m47_ani;  /* 6 animated tiles from tile id 183 */
-extern char m48_chr, m48_ch1, m48_map, m48_grid, m48_pal, m48_col, m48_wld, m48_och, m48_opl, m48_ene, m48_xtr;  /* Cellar Stair: 175 tiles, 43 metatiles */
-extern char m48_ani;  /* 5 animated tiles from tile id 170 */
-extern char m49_chr, m49_ch1, m49_map, m49_grid, m49_pal, m49_col, m49_wld, m49_och, m49_opl, m49_ene, m49_xtr;  /* Wine Cellar: 161 tiles, 42 metatiles */
-extern char m49_ani;  /* 6 animated tiles from tile id 155 */
-extern char m50_chr, m50_ch1, m50_map, m50_grid, m50_pal, m50_col, m50_wld, m50_och, m50_opl, m50_ene, m50_xtr;  /* Burial Vault: 159 tiles, 41 metatiles */
-extern char m50_ani;  /* 5 animated tiles from tile id 154 */
-extern char m51_chr, m51_ch1, m51_map, m51_grid, m51_pal, m51_col, m51_wld, m51_och, m51_opl, m51_ene, m51_xtr;  /* Hall of Lamps: 189 tiles, 44 metatiles */
-extern char m51_ani;  /* 6 animated tiles from tile id 183 */
-extern char m52_chr, m52_ch1, m52_map, m52_grid, m52_pal, m52_col, m52_wld, m52_och, m52_opl, m52_ene, m52_xtr;  /* Ossuary: 182 tiles, 41 metatiles */
-extern char m52_ani;  /* 6 animated tiles from tile id 176 */
+extern char m47_chr, m47_ch1, m47_map, m47_grid, m47_pal, m47_col, m47_wld, m47_och, m47_opl, m47_ene, m47_xtr;  /* Raven's Study: 188 tiles, 48 metatiles */
+extern char m47_ani;  /* 6 animated tiles from tile id 182 */
+extern char m48_chr, m48_ch1, m48_map, m48_grid, m48_pal, m48_col, m48_wld, m48_och, m48_opl, m48_ene, m48_xtr;  /* Cellar Stair: 173 tiles, 43 metatiles */
+extern char m48_ani;  /* 5 animated tiles from tile id 168 */
+extern char m49_chr, m49_ch1, m49_map, m49_grid, m49_pal, m49_col, m49_wld, m49_och, m49_opl, m49_ene, m49_xtr;  /* Wine Cellar: 153 tiles, 40 metatiles */
+extern char m49_ani;  /* 6 animated tiles from tile id 147 */
+extern char m50_chr, m50_ch1, m50_map, m50_grid, m50_pal, m50_col, m50_wld, m50_och, m50_opl, m50_ene, m50_xtr;  /* Burial Vault: 162 tiles, 41 metatiles */
+extern char m50_ani;  /* 5 animated tiles from tile id 157 */
+extern char m51_chr, m51_ch1, m51_map, m51_grid, m51_pal, m51_col, m51_wld, m51_och, m51_opl, m51_ene, m51_xtr;  /* Hall of Lamps: 161 tiles, 40 metatiles */
+extern char m51_ani;  /* 6 animated tiles from tile id 155 */
+extern char m52_chr, m52_ch1, m52_map, m52_grid, m52_pal, m52_col, m52_wld, m52_och, m52_opl, m52_ene, m52_xtr;  /* Ossuary: 184 tiles, 41 metatiles */
+extern char m52_ani;  /* 6 animated tiles from tile id 178 */
 extern char m53_chr, m53_ch1, m53_map, m53_grid, m53_pal, m53_col, m53_wld, m53_och, m53_opl, m53_ene, m53_xtr;  /* Heart of the Pyramid: 170 tiles, 40 metatiles */
 extern char m53_ani;  /* 6 animated tiles from tile id 164 */
-extern char m54_chr, m54_ch1, m54_map, m54_grid, m54_pal, m54_col, m54_wld, m54_och, m54_opl, m54_ene, m54_xtr;  /* Powder Store: 214 tiles, 44 metatiles */
-extern char m54_ani;  /* 6 animated tiles from tile id 208 */
-extern char m55_chr, m55_ch1, m55_map, m55_grid, m55_pal, m55_col, m55_wld, m55_och, m55_opl, m55_ene, m55_xtr;  /* Quarry Floor: 257 tiles, 48 metatiles */
-extern char m55_ani;  /* 14 animated tiles from tile id 243 */
+extern char m54_chr, m54_ch1, m54_map, m54_grid, m54_pal, m54_col, m54_wld, m54_och, m54_opl, m54_ene, m54_xtr;  /* Powder Store: 216 tiles, 44 metatiles */
+extern char m54_ani;  /* 6 animated tiles from tile id 210 */
+extern char m55_chr, m55_ch1, m55_map, m55_grid, m55_pal, m55_col, m55_wld, m55_och, m55_opl, m55_ene, m55_xtr;  /* Quarry Floor: 259 tiles, 48 metatiles */
+extern char m55_ani;  /* 14 animated tiles from tile id 245 */
 extern char m56_chr, m56_ch1, m56_map, m56_grid, m56_pal, m56_col, m56_wld, m56_och, m56_opl, m56_ene, m56_xtr;  /* Quarry Pond: 245 tiles, 48 metatiles */
 extern char m56_ani;  /* 14 animated tiles from tile id 231 */
-extern char m57_chr, m57_ch1, m57_map, m57_grid, m57_pal, m57_col, m57_wld, m57_och, m57_opl, m57_ene, m57_xtr;  /* Flooded Cut: 243 tiles, 55 metatiles */
-extern char m57_ani;  /* 13 animated tiles from tile id 230 */
-extern char m58_chr, m58_ch1, m58_map, m58_grid, m58_pal, m58_col, m58_wld, m58_och, m58_opl, m58_ene, m58_xtr;  /* Your Row House: 200 tiles, 41 metatiles */
-extern char m58_ani;  /* 5 animated tiles from tile id 195 */
-extern char m59_chr, m59_ch1, m59_map, m59_grid, m59_pal, m59_col, m59_wld, m59_och, m59_opl, m59_ene, m59_xtr;  /* Power Plant Ruins: 261 tiles, 53 metatiles */
-extern char m59_ani;  /* 13 animated tiles from tile id 248 */
-extern char m60_chr, m60_ch1, m60_map, m60_grid, m60_pal, m60_col, m60_wld, m60_och, m60_opl, m60_ene, m60_xtr;  /* Science Museum of Virginia: 183 tiles, 40 metatiles */
-extern char m60_ani;  /* 6 animated tiles from tile id 177 */
+extern char m57_chr, m57_ch1, m57_map, m57_grid, m57_pal, m57_col, m57_wld, m57_och, m57_opl, m57_ene, m57_xtr;  /* Flooded Cut: 246 tiles, 55 metatiles */
+extern char m57_ani;  /* 13 animated tiles from tile id 233 */
+extern char m58_chr, m58_ch1, m58_map, m58_grid, m58_pal, m58_col, m58_wld, m58_och, m58_opl, m58_ene, m58_xtr;  /* Your Row House: 198 tiles, 41 metatiles */
+extern char m58_ani;  /* 5 animated tiles from tile id 193 */
+extern char m59_chr, m59_ch1, m59_map, m59_grid, m59_pal, m59_col, m59_wld, m59_och, m59_opl, m59_ene, m59_xtr;  /* Power Plant Ruins: 263 tiles, 53 metatiles */
+extern char m59_ani;  /* 13 animated tiles from tile id 250 */
+extern char m60_chr, m60_ch1, m60_map, m60_grid, m60_pal, m60_col, m60_wld, m60_och, m60_opl, m60_ene, m60_xtr;  /* Science Museum of Virginia: 169 tiles, 40 metatiles */
+extern char m60_ani;  /* 6 animated tiles from tile id 163 */
 extern char m61_chr, m61_ch1, m61_map, m61_grid, m61_pal, m61_col, m61_wld, m61_och, m61_opl, m61_ene, m61_xtr;  /* Carytown Goods: 187 tiles, 47 metatiles */
 extern char m61_ani;  /* 5 animated tiles from tile id 182 */
-extern char m62_chr, m62_ch1, m62_map, m62_grid, m62_pal, m62_col, m62_wld, m62_och, m62_opl, m62_ene, m62_xtr;  /* The Siegel Center: 164 tiles, 44 metatiles */
-extern char m62_ani;  /* 5 animated tiles from tile id 159 */
-extern char m63_chr, m63_ch1, m63_map, m63_grid, m63_pal, m63_col, m63_wld, m63_och, m63_opl, m63_ene, m63_xtr;  /* Main Street Station: 192 tiles, 46 metatiles */
-extern char m63_ani;  /* 5 animated tiles from tile id 187 */
-extern char m64_chr, m64_ch1, m64_map, m64_grid, m64_pal, m64_col, m64_wld, m64_och, m64_opl, m64_ene, m64_xtr;  /* St. John's Church: 176 tiles, 43 metatiles */
-extern char m64_ani;  /* 6 animated tiles from tile id 170 */
+extern char m62_chr, m62_ch1, m62_map, m62_grid, m62_pal, m62_col, m62_wld, m62_och, m62_opl, m62_ene, m62_xtr;  /* The Siegel Center: 159 tiles, 44 metatiles */
+extern char m62_ani;  /* 5 animated tiles from tile id 154 */
+extern char m63_chr, m63_ch1, m63_map, m63_grid, m63_pal, m63_col, m63_wld, m63_och, m63_opl, m63_ene, m63_xtr;  /* Main Street Station: 198 tiles, 46 metatiles */
+extern char m63_ani;  /* 5 animated tiles from tile id 193 */
+extern char m64_chr, m64_ch1, m64_map, m64_grid, m64_pal, m64_col, m64_wld, m64_och, m64_opl, m64_ene, m64_xtr;  /* St. John's Church: 168 tiles, 43 metatiles */
+extern char m64_ani;  /* 6 animated tiles from tile id 162 */
 extern char m65_chr, m65_ch1, m65_map, m65_grid, m65_pal, m65_col, m65_wld, m65_och, m65_opl, m65_ene, m65_xtr;  /* Stone House Arcade: 144 tiles, 38 metatiles */
 extern char m65_ani;  /* 5 animated tiles from tile id 139 */
-extern char m66_chr, m66_ch1, m66_map, m66_grid, m66_pal, m66_col, m66_wld, m66_och, m66_opl, m66_ene, m66_xtr;  /* Manchester Art Studio: 208 tiles, 41 metatiles */
-extern char m66_ani;  /* 6 animated tiles from tile id 202 */
-extern char m67_chr, m67_ch1, m67_map, m67_grid, m67_pal, m67_col, m67_wld, m67_och, m67_opl, m67_ene, m67_xtr;  /* Scott's Addition Taproom: 192 tiles, 44 metatiles */
-extern char m67_ani;  /* 6 animated tiles from tile id 186 */
+extern char m66_chr, m66_ch1, m66_map, m66_grid, m66_pal, m66_col, m66_wld, m66_och, m66_opl, m66_ene, m66_xtr;  /* Manchester Art Studio: 205 tiles, 42 metatiles */
+extern char m66_ani;  /* 6 animated tiles from tile id 199 */
+extern char m67_chr, m67_ch1, m67_map, m67_grid, m67_pal, m67_col, m67_wld, m67_och, m67_opl, m67_ene, m67_xtr;  /* Scott's Addition Taproom: 190 tiles, 44 metatiles */
+extern char m67_ani;  /* 6 animated tiles from tile id 184 */
 extern char m68_chr, m68_ch1, m68_map, m68_grid, m68_pal, m68_col, m68_wld, m68_och, m68_opl, m68_ene, m68_xtr;  /* Miller & Rhoads Tea Room: 199 tiles, 38 metatiles */
 extern char m68_ani;  /* 5 animated tiles from tile id 194 */
 extern char m69_chr, m69_ch1, m69_map, m69_grid, m69_pal, m69_col, m69_wld, m69_och, m69_opl, m69_ene, m69_xtr;  /* Furnace Hall: 151 tiles, 41 metatiles */
 extern char m69_ani;  /* 6 animated tiles from tile id 145 */
-extern char m70_chr, m70_ch1, m70_map, m70_grid, m70_pal, m70_col, m70_wld, m70_och, m70_opl, m70_ene, m70_xtr;  /* Casting Floor: 244 tiles, 60 metatiles */
-extern char m70_ani;  /* 6 animated tiles from tile id 238 */
+extern char m70_chr, m70_ch1, m70_map, m70_grid, m70_pal, m70_col, m70_wld, m70_och, m70_opl, m70_ene, m70_xtr;  /* Casting Floor: 245 tiles, 60 metatiles */
+extern char m70_ani;  /* 5 animated tiles from tile id 240 */
 extern char m71_chr, m71_ch1, m71_map, m71_grid, m71_pal, m71_col, m71_wld, m71_och, m71_opl, m71_ene, m71_xtr;  /* Foundry Gate: 181 tiles, 42 metatiles */
 extern char m71_ani;  /* 6 animated tiles from tile id 175 */
-extern char m72_chr, m72_ch1, m72_map, m72_grid, m72_pal, m72_col, m72_wld, m72_och, m72_opl, m72_ene, m72_xtr;  /* Pattern Shop: 232 tiles, 52 metatiles */
-extern char m72_ani;  /* 6 animated tiles from tile id 226 */
+extern char m72_chr, m72_ch1, m72_map, m72_grid, m72_pal, m72_col, m72_wld, m72_och, m72_opl, m72_ene, m72_xtr;  /* Pattern Shop: 238 tiles, 52 metatiles */
+extern char m72_ani;  /* 6 animated tiles from tile id 232 */
 extern char m73_chr, m73_ch1, m73_map, m73_grid, m73_pal, m73_col, m73_wld, m73_och, m73_opl, m73_ene, m73_xtr;  /* Engine 231: 191 tiles, 46 metatiles */
 extern char m73_ani;  /* 4 animated tiles from tile id 187 */
 extern char m74_chr, m74_ch1, m74_map, m74_grid, m74_pal, m74_col, m74_wld, m74_och, m74_opl, m74_ene, m74_xtr;  /* Church Hill Tunnel: 235 tiles, 45 metatiles */
 extern char m74_ani;  /* 6 animated tiles from tile id 229 */
-extern char m75_chr, m75_ch1, m75_map, m75_grid, m75_pal, m75_col, m75_wld, m75_och, m75_opl, m75_ene, m75_xtr;  /* Signal Room: 216 tiles, 47 metatiles */
-extern char m75_ani;  /* 5 animated tiles from tile id 211 */
+extern char m75_chr, m75_ch1, m75_map, m75_grid, m75_pal, m75_col, m75_wld, m75_och, m75_opl, m75_ene, m75_xtr;  /* Signal Room: 204 tiles, 46 metatiles */
+extern char m75_ani;  /* 5 animated tiles from tile id 199 */
 extern char m76_chr, m76_ch1, m76_map, m76_grid, m76_pal, m76_col, m76_wld, m76_och, m76_opl, m76_ene, m76_xtr;  /* Flooded Siding: 312 tiles, 68 metatiles */
 extern char m76_ani;  /* 14 animated tiles from tile id 298 */
-extern char m77_chr, m77_ch1, m77_map, m77_grid, m77_pal, m77_col, m77_wld, m77_och, m77_opl, m77_ene, m77_xtr;  /* Virginia Museum of Fine Arts: 171 tiles, 39 metatiles */
-extern char m77_ani;  /* 6 animated tiles from tile id 165 */
-extern char m78_chr, m78_ch1, m78_map, m78_grid, m78_pal, m78_col, m78_wld, m78_och, m78_opl, m78_ene, m78_xtr;  /* Virginia Museum of History & Culture: 184 tiles, 39 metatiles */
-extern char m78_ani;  /* 6 animated tiles from tile id 178 */
+extern char m77_chr, m77_ch1, m77_map, m77_grid, m77_pal, m77_col, m77_wld, m77_och, m77_opl, m77_ene, m77_xtr;  /* Virginia Museum of Fine Arts: 159 tiles, 39 metatiles */
+extern char m77_ani;  /* 6 animated tiles from tile id 153 */
+extern char m78_chr, m78_ch1, m78_map, m78_grid, m78_pal, m78_col, m78_wld, m78_och, m78_opl, m78_ene, m78_xtr;  /* Virginia Museum of History & Culture: 172 tiles, 39 metatiles */
+extern char m78_ani;  /* 6 animated tiles from tile id 166 */
 extern char sys_txt;
 #define PART_GID0 7
 #define PART_GID1 8
